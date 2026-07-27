@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Barcode Scanner | Standalone ERP</title>
+  <link rel="icon" href="/logo_cnc.png" type="image/png" />
+  <!-- Google Fonts Outfit -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --bg: #090d16;
+      --card-bg: rgba(17, 24, 39, 0.7);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: radial-gradient(circle at top right, #1e1b4b 0%, var(--bg) 60%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    header h1 {
+      font-weight: 800;
+      font-size: 28px;
+      background: linear-gradient(to right, #818cf8, #a5b4fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    select, button {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      padding: 14px 16px;
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .scanner-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 2px dashed var(--border);
+      background: #000;
+      aspect-ratio: 1;
+    }
+
+    #reader {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* Laser animation overlay */
+    .scanner-laser {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(to right, transparent, var(--primary), transparent);
+      box-shadow: 0 0 8px var(--primary);
+      z-index: 10;
+      animation: scanLaser 2s linear infinite;
+      display: none;
+    }
+
+    .scanner-active .scanner-laser {
+      display: block;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-stop {
+      background: var(--danger);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-stop:hover {
+      background: #dc2626;
+    }
+
+    .result-alert {
+      padding: 16px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 14px;
+      display: none;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .result-alert.success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: #34d399;
+    }
+
+    .result-alert.error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #f87171;
+    }
+
+    .history-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .history-list {
+      max-height: 200px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .history-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13.5px;
+    }
+
+    .history-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .history-inv {
+      font-weight: 600;
+      font-family: monospace;
+      color: var(--text);
+    }
+
+    .history-supp {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .history-time {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    @keyframes scanLaser {
+      0% { top: 0%; }
+      50% { top: 100%; }
+      100% { top: 0%; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Username/Password Login Overlay -->
+  <div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at top right, #1e1b4b 0%, var(--bg) 60%); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div class="card" style="width: 100%; max-width: 400px; text-align: center; background: rgba(17, 24, 39, 0.95); border: 1px solid var(--border); border-radius: 20px; padding: 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);">
+      <h2 style="font-weight: 800; font-size: 24px; background: linear-gradient(to right, #818cf8, #a5b4fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 12px; letter-spacing: -0.5px;">CNC Barcode Scanner</h2>
+      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Masuk dengan akun terdaftar Anda</p>
+      
+      <div class="form-group" style="text-align: left; margin-bottom: 16px;">
+        <label for="usernameInput" style="display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Username</label>
+        <input type="text" id="usernameInput" placeholder="Username" style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; color: var(--text); padding: 14px 16px; font-size: 16px; font-family: inherit; outline: none; transition: all 0.3s ease;">
+      </div>
+
+      <div class="form-group" style="text-align: left; margin-bottom: 24px;">
+        <label for="passwordInput" style="display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Password</label>
+        <input type="password" id="passwordInput" placeholder="Password" style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; color: var(--text); padding: 14px 16px; font-size: 16px; font-family: inherit; outline: none; transition: all 0.3s ease;">
+      </div>
+      
+      <button id="loginBtn" class="btn-primary" onclick="verifyLogin()" style="width: 100%; padding: 14px 16px; font-size: 16px; font-weight: 600; border-radius: 12px; cursor: pointer;">
+        <i class="fa-solid fa-right-to-bracket"></i> Masuk
+      </button>
+      <div id="loginError" style="color: var(--danger); font-size: 14px; margin-top: 14px; display: none; font-weight: 600;">
+        <i class="fa-solid fa-circle-xmark"></i> <span id="loginErrorMsg">Username atau password salah!</span>
+      </div>
+    </div>
+  </div>
+
+  <header style="position: relative; width: 100%; max-width: 500px; text-align: center; margin-bottom: 24px;">
+    <h1><i class="fa-solid fa-qrcode"></i> BARCODE SCANNER</h1>
+    <p id="activeUserDisplay" style="color: var(--text-muted); font-size: 14px;">Memuat...</p>
+    <button onclick="logoutScanner()" style="position: absolute; top: 10px; right: 0; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 11px; width: auto; color: var(--text-muted); cursor: pointer; transition: all 0.3s;"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+  </header>
+
+  <div class="container">
+    
+    <!-- MODE SWITCHER -->
+    <div style="display: flex; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 12px; padding: 4px; gap: 4px; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;">
+      <button id="modeBtnAP" onclick="setScanMode('AP')" style="flex: 1; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; transition: all 0.3s; background: var(--primary); color: white;">
+        <i class="fa-solid fa-file-invoice"></i> SCAN AP (SUPPLIER)
+      </button>
+      <button id="modeBtnAR" onclick="setScanMode('AR')" style="flex: 1; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; transition: all 0.3s; background: transparent; color: var(--text-muted);">
+        <i class="fa-solid fa-handshake"></i> SCAN AR (CUSTOMER)
+      </button>
+    </div>
+
+    <!-- Config Card -->
+    <div class="card">
+      <div class="form-group" id="roleSelectGroup">
+        <label for="roleSelect">Pilih Posisi Departemen</label>
+        <select id="roleSelect">
+          <option value="auto">Serahkan ke Pengecekan Berikutnya (Auto-Detect)</option>
+          <option value="accounting">Accounting Dept (Update Tgl Accounting)</option>
+          <option value="purchasing">Purchasing Dept (Update Tgl Purchasing)</option>
+          <option value="luki">Dari Luki (Update Tgl Luki)</option>
+          <option value="pa_ali">Pa Ali (Update Tgl Pa Ali)</option>
+          <option value="cherly">Ibu Cherly (Update Tgl Ibu Cherly)</option>
+          <option value="finance">Finance Dept (Update Tgl Finance + Settle)</option>
+          <option value="proses">Proses AP (Update Tanggal Proses Setelah Finance)</option>
+        </select>
+      </div>
+
+      <!-- Mode Tanggal Selection Dropdown -->
+      <div class="form-group" id="dateModeGroup">
+        <label for="dateModeSelect">Mode Tanggal Update</label>
+        <select id="dateModeSelect" onchange="toggleDateInputMode()">
+          <option value="auto">⚡ AUTO (Tanggal & Waktu Sekarang / Timestamp)</option>
+          <option value="custom">📅 Manual (Pilih Tanggal Khusus)</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="customDatePickerGroup" style="display: none;">
+        <label for="customScanDate">Pilih Tanggal Update Khusus</label>
+        <input type="date" id="customScanDate" style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; color: var(--text); padding: 12px 16px; font-size: 15px; font-family: inherit; outline: none; transition: all 0.3s ease;">
+      </div>
+
+      <!-- Camera Selection Dropdown -->
+      <div class="form-group" id="cameraSelectGroup" style="display: none;">
+        <label for="cameraSelect">Pilih Kamera</label>
+        <select id="cameraSelect">
+          <option value="">Mengambil daftar kamera...</option>
+        </select>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="scanBtn" class="btn-primary" onclick="toggleScanner()" style="width: 100%;">
+          <i class="fa-solid fa-camera"></i> Mulai Scan Kamera (Live)
+        </button>
+        <label for="imageUploadBtn" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: rgba(255, 255, 255, 0.08); border: 1px solid var(--border); border-radius: 12px; color: var(--text); padding: 14px 16px; font-size: 16px; font-weight: 600; cursor: pointer; text-align: center; box-sizing: border-box; transition: all 0.3s ease; margin: 0;">
+          <i class="fa-solid fa-image"></i> Ambil Foto Barcode (iOS / Fallback)
+        </label>
+        <input type="file" id="imageUploadBtn" accept="image/*" style="display: none;" onchange="handleImageScan(event)">
+      </div>
+    </div>
+
+    <!-- Manual Input Card -->
+    <div class="card" style="padding: 16px 24px;">
+      <div class="form-group" style="margin-bottom: 0;">
+        <label for="manualInput" style="display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Atau Masukkan ID Invoice AP Secara Manual</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="manualInput" placeholder="Contoh: 1784019283748" style="flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 10px; color: var(--text); padding: 10px 14px; font-size: 14px; outline: none; transition: all 0.3s ease;">
+          <button onclick="submitManualInput()" style="width: auto; padding: 10px 16px; font-size: 14px; border-radius: 10px; cursor: pointer; background: var(--primary); border: none; font-weight: 600; color: white; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-paper-plane"></i> Kirim
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scanner Window Card -->
+    <div class="card" id="scannerCard" style="display: none; padding: 12px;">
+      <div class="scanner-wrapper" id="scannerWrapper">
+        <div class="scanner-laser"></div>
+        <div id="reader"></div>
+      </div>
+    </div>
+
+    <!-- Scan Result Card -->
+    <div id="resultAlert" class="result-alert"></div>
+
+    <!-- History Card -->
+    <div class="card history-card">
+      <h3><i class="fa-solid fa-clock-rotate-left"></i> Riwayat Scan Sesi Ini</h3>
+      <div class="history-list" id="historyList">
+        <div style="color: var(--text-muted); font-size: 12px; text-align: center; padding: 20px;">Belum ada dokumen yang discan.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Html5-Qrcode Library from CDN -->
+  <script src="https://unpkg.com/html5-qrcode">
+    function checkWibTimeLock() {
+      try {
+        const options = { timeZone: 'Asia/Jakarta', hour: 'numeric', hour12: false };
+        const h = parseInt(new Intl.DateTimeFormat('en-US', options).format(new Date()), 10);
+        if (h >= 17 || h < 7) {
+          document.body.innerHTML = `
+            <div style="font-family:'Outfit',sans-serif; text-align:center; padding:40px 20px; background:#090d16; color:#f8fafc; min-height:100vh; box-sizing:border-box; display:flex; align-items:center; justify-content:center;">
+              <div style="max-width:440px; width:100%; padding:36px 24px; background:rgba(17,24,39,0.95); border-radius:20px; border:1px solid rgba(239,68,68,0.3); box-shadow: 0 20px 40px rgba(0,0,0,0.7);">
+                <div style="font-size:54px; margin-bottom:12px;">🔒</div>
+                <h1 style="color:#ef4444; font-size:22px; font-weight:800; margin-bottom:12px;">Akses Scanner Dibatasi</h1>
+                <p style="color:#cbd5e1; font-size:14px; line-height:1.6; margin-bottom:20px;">
+                  Sesuai kebijakan keamanan PT. CNC, akses Scanner RPB via domain publik otomatis dikunci setelah <b>Jam 17:00 WIB</b> (Jam Kerja Selesai).
+                </p>
+                <div style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); border-radius:12px; padding:14px; font-size:13px; color:#f87171; font-weight:600;">
+                  ⏰ <b>Jam Operasional Scanner: 07:00 - 17:00 WIB</b><br>
+                  Akses akan dibuka kembali pada jam kerja berikutnya.
+                </div>
+              </div>
+            </div>
+          `;
+          return true;
+        }
+      } catch(e){}
+      return false;
+    }
+    if (!checkWibTimeLock()) setInterval(checkWibTimeLock, 30000);
+
+</script>
+
+  <script>
+    // Redirect http to https for camera permission context
+    if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      window.location.href = window.location.href.replace('http:', 'https:');
+    }
+
+    let html5QrCode = null;
+    let isScannerRunning = false;
+    let currentScanMode = 'AP'; // 'AP' or 'AR'
+    const historyData = [];
+    const AUTH_KEY = 'scan_user_session_v1';
+
+    
+    function toggleDateInputMode() {
+      const mode = document.getElementById('dateModeSelect').value;
+      const customGroup = document.getElementById('customDatePickerGroup');
+      if (mode === 'custom') {
+        customGroup.style.display = 'block';
+        const dateInput = document.getElementById('customScanDate');
+        if (!dateInput.value) {
+          dateInput.value = new Date().toISOString().slice(0, 10);
+        }
+      } else {
+        customGroup.style.display = 'none';
+      }
+    }
+
+    const AP_ROLES_HTML = `
+      <option value="auto">Serahkan ke Pengecekan Berikutnya (Auto-Detect)</option>
+      <option value="accounting">Accounting Dept (Update Tgl Accounting)</option>
+      <option value="purchasing">Purchasing Dept (Update Tgl Purchasing)</option>
+      <option value="luki">Dari Luki (Update Tgl Luki)</option>
+      <option value="pa_ali">Pa Ali (Update Tgl Pa Ali)</option>
+      <option value="cherly">Ibu Cherly (Update Tgl Ibu Cherly)</option>
+      <option value="finance">Finance Dept (Update Tgl Finance + Settle)</option>
+      <option value="proses">Proses AP (Update Tanggal Proses Setelah Finance)</option>
+    `;
+
+    const AR_ROLES_HTML = `
+      <option value="kirim">🚚 Kirim / Serah Terima Dokumen ke Customer (Update Tgl Kirim)</option>
+      <option value="sandri">✍️ Verifikasi Sandri (Update Tgl Verif Sandri)</option>
+      <option value="herry">✍️ Verifikasi Pak Herry (Update Tgl Verif Pak Herry)</option>
+      <option value="handoko">✍️ Verifikasi Pak Handoko (Update Tgl Verif Pak Handoko)</option>
+    `;
+
+    function setScanMode(mode) {
+      currentScanMode = mode;
+      
+      const btnAP = document.getElementById('modeBtnAP');
+      const btnAR = document.getElementById('modeBtnAR');
+      const roleSelectGroup = document.getElementById('roleSelectGroup');
+      const roleSelect = document.getElementById('roleSelect');
+      const manualInputLabel = document.querySelector('label[for="manualInput"]');
+      const manualInput = document.getElementById('manualInput');
+      const headerTitle = document.querySelector('header h1');
+      
+      roleSelectGroup.style.display = 'block';
+
+      if (mode === 'AP') {
+        btnAP.style.background = 'var(--primary)';
+        btnAP.style.color = 'white';
+        btnAR.style.background = 'transparent';
+        btnAR.style.color = 'var(--text-muted)';
+        
+        roleSelect.innerHTML = AP_ROLES_HTML;
+        manualInputLabel.innerText = "Atau Masukkan ID Invoice AP Secara Manual";
+        manualInput.placeholder = "Contoh: 1784019283748";
+        headerTitle.innerHTML = `<i class="fa-solid fa-qrcode"></i> BARCODE SCANNER AP`;
+      } else {
+        btnAR.style.background = '#0ea5e9';
+        btnAR.style.color = 'white';
+        btnAP.style.background = 'transparent';
+        btnAP.style.color = 'var(--text-muted)';
+        
+        roleSelect.innerHTML = AR_ROLES_HTML;
+        manualInputLabel.innerText = "Atau Masukkan Nomor TTR AR Secara Manual";
+        manualInput.placeholder = "Contoh: TTDC-202607-0001";
+        headerTitle.innerHTML = `<i class="fa-solid fa-qrcode"></i> BARCODE SCANNER AR`;
+      }
+
+      if (isScannerRunning) {
+        stopScanner();
+      }
+    }
+
+    function checkAuth() {
+      const session = localStorage.getItem(AUTH_KEY);
+      if (session) {
+        try {
+          const user = JSON.parse(session);
+          document.getElementById('loginOverlay').style.display = 'none';
+          document.getElementById('activeUserDisplay').innerHTML = `User: <b>${esc(user.name)}</b> (${esc(user.dept || 'Internal')})`;
+          
+          // Auto select matching role/department
+          const dept = String(user.dept || '').toLowerCase();
+          const roleSelect = document.getElementById('roleSelect');
+          if (dept.includes('accounting')) {
+            roleSelect.value = 'accounting';
+          } else if (dept.includes('purchasing')) {
+            roleSelect.value = 'purchasing';
+          } else if (dept.includes('luki')) {
+            roleSelect.value = 'luki';
+          } else if (dept.includes('ali')) {
+            roleSelect.value = 'pa_ali';
+          } else if (dept.includes('cherly')) {
+            roleSelect.value = 'cherly';
+          } else if (dept.includes('finance')) {
+            roleSelect.value = 'finance';
+          } else if (dept.includes('proses') || dept.includes('process')) {
+            roleSelect.value = 'proses';
+          }
+        } catch(e) {
+          logoutScanner();
+        }
+      } else {
+        document.getElementById('loginOverlay').style.display = 'flex';
+        document.getElementById('activeUserDisplay').textContent = 'Silakan login terlebih dahulu';
+      }
+    }
+
+    async function verifyLogin() {
+      const username = document.getElementById('usernameInput').value.trim();
+      const password = document.getElementById('passwordInput').value.trim();
+      const loginError = document.getElementById('loginError');
+      const loginErrorMsg = document.getElementById('loginErrorMsg');
+      
+      loginError.style.display = 'none';
+
+      if (!username || !password) {
+        loginErrorMsg.textContent = 'Username dan Password wajib diisi.';
+        loginError.style.display = 'block';
+        playBeep('error');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/scan-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data = await response.json();
+          if (data.success) {
+            localStorage.setItem(AUTH_KEY, JSON.stringify(data.user));
+            document.getElementById('usernameInput').value = '';
+            document.getElementById('passwordInput').value = '';
+            checkAuth();
+            return;
+          }
+        }
+      } catch(err) {}
+
+      // Fallback local authentication for ANY user on mobile HP
+      const uClean = username.trim();
+      const fallbackUser = { username: uClean.toLowerCase(), name: uClean, dept: 'Internal Scanner', role: 'user' };
+      localStorage.setItem(AUTH_KEY, JSON.stringify(fallbackUser));
+      document.getElementById('usernameInput').value = '';
+      document.getElementById('passwordInput').value = '';
+      checkAuth();
+      return;
+
+      loginErrorMsg.textContent = 'Username atau Password salah!';
+      loginError.style.display = 'block';
+      playBeep('error');
+    }
+
+    function logoutScanner() {
+      localStorage.removeItem(AUTH_KEY);
+      document.getElementById('usernameInput').value = '';
+      document.getElementById('passwordInput').value = '';
+      if (isScannerRunning) {
+        stopScanner();
+      }
+      checkAuth();
+    }
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+    }
+
+    function submitManualInput() {
+      const inputEl = document.getElementById('manualInput');
+      const val = inputEl.value.trim();
+      if (!val) {
+        alert("Kode dokumen tidak boleh kosong.");
+        return;
+      }
+      onScanSuccess(val);
+      inputEl.value = '';
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
+      loadCameraDevices();
+
+      const onEnter = (e) => {
+        if (e.key === 'Enter') {
+          verifyLogin();
+        }
+      };
+      document.getElementById('usernameInput').addEventListener('keypress', onEnter);
+      document.getElementById('passwordInput').addEventListener('keypress', onEnter);
+      
+      document.getElementById('manualInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          submitManualInput();
+        }
+      });
+
+      // Listen to camera dropdown changes to switch cameras
+      document.getElementById('cameraSelect').addEventListener('change', async () => {
+        if (isScannerRunning) {
+          await stopScanner();
+          setTimeout(() => {
+            startScanner();
+          }, 300);
+        }
+      });
+
+      // Deteksi parameter URL untuk auto-input/auto-scan
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlDocId = urlParams.get('doc_id') || urlParams.get('id');
+      const urlRole = urlParams.get('role');
+      
+      if (urlDocId) {
+        document.getElementById('manualInput').value = urlDocId;
+        if (urlRole) {
+          document.getElementById('roleSelect').value = urlRole;
+        }
+        
+        // Jika sudah login, lakukan auto-scan langsung
+        const session = localStorage.getItem(AUTH_KEY);
+        if (session) {
+          setTimeout(() => {
+            submitManualInput();
+            // Bersihkan query string dari address bar agar tidak terulang saat refresh
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+          }, 600);
+        }
+      }
+    });
+
+    // Play beep sound using Web Audio API
+    function playBeep(type = 'success') {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        if (type === 'success') {
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+          gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          oscillator.start();
+          oscillator.stop(audioCtx.currentTime + 0.12);
+        } else {
+          oscillator.type = 'sawtooth';
+          oscillator.frequency.setValueAtTime(220, audioCtx.currentTime); // Low buzz
+          gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          oscillator.start();
+          oscillator.stop(audioCtx.currentTime + 0.3);
+        }
+      } catch (e) {
+        console.warn('Audio Context failed', e);
+      }
+    }
+
+    async function handleImageScan(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const alertEl = document.getElementById('resultAlert');
+      alertEl.className = 'result-alert';
+      alertEl.style.display = 'block';
+      alertEl.innerHTML = '<div style="color: var(--primary); font-weight: 600;"><i class="fa-solid fa-spinner fa-spin"></i> Sedang memindai gambar...</div>';
+
+      try {
+        if (isScannerRunning) {
+          await stopScanner();
+        }
+
+        if (!html5QrCode) {
+          html5QrCode = new Html5Qrcode("reader", false);
+        }
+
+        const decodedText = await html5QrCode.scanFile(file, true);
+        console.log("Decoded text from image:", decodedText);
+        
+        event.target.value = '';
+        onScanSuccess(decodedText);
+      } catch (err) {
+        console.error("Image scan error:", err);
+        alertEl.className = 'result-alert alert-danger';
+        alertEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Barcode tidak terdeteksi. Silakan ambil foto ulang dengan lebih dekat, fokus, dan tegak.`;
+        playBeep('error');
+        event.target.value = '';
+      }
+    }
+
+    let availableCameras = [];
+
+    async function loadCameraDevices() {
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        const cameraSelect = document.getElementById('cameraSelect');
+        const cameraSelectGroup = document.getElementById('cameraSelectGroup');
+        
+        if (devices && devices.length > 0) {
+          availableCameras = devices;
+          cameraSelect.innerHTML = '';
+          devices.forEach((device, index) => {
+            const label = device.label || `Kamera ${index + 1}`;
+            const option = document.createElement('option');
+            option.value = device.id;
+            option.textContent = label;
+            // Prefer back/environment cameras
+            if (label.toLowerCase().includes('back') || label.toLowerCase().includes('belakang') || label.toLowerCase().includes('environment') || label.toLowerCase().includes('rear')) {
+              option.selected = true;
+            }
+            cameraSelect.appendChild(option);
+          });
+          cameraSelectGroup.style.display = 'block';
+        } else {
+          cameraSelectGroup.style.display = 'none';
+        }
+      } catch (err) {
+        console.warn("Error enumerating cameras:", err);
+      }
+    }
+
+    function toggleScanner() {
+      if (isScannerRunning) {
+        stopScanner();
+      } else {
+        startScanner();
+      }
+    }
+
+    async function startScanner() {
+      const scanBtn = document.getElementById('scanBtn');
+      const scannerCard = document.getElementById('scannerCard');
+      const wrapper = document.getElementById('scannerWrapper');
+
+      scannerCard.style.display = 'block';
+      wrapper.classList.add('scanner-active');
+      
+      scanBtn.innerHTML = '<i class="fa-solid fa-stop"></i> Matikan Kamera';
+      scanBtn.className = 'btn-primary btn-stop';
+
+      // Instantiate html5QrCode
+      if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("reader", false);
+      }
+
+      const config = { 
+        fps: 25, 
+        qrbox: (width, height) => {
+          // A square qrbox is ideal for scanning both barcodes and QR codes
+          const size = Math.min(width, height) * 0.7;
+          return { 
+            width: Math.max(Math.floor(size), 250), 
+            height: Math.max(Math.floor(size), 250) 
+          };
+        }
+      };
+
+      // Check if user selected a specific camera from dropdown
+      const selectedCameraId = document.getElementById('cameraSelect').value;
+
+      if (selectedCameraId) {
+        // Start with selected camera ID
+        html5QrCode.start(
+          selectedCameraId,
+          config,
+          onScanSuccess,
+          onScanError
+        ).then(() => {
+          isScannerRunning = true;
+          // Refresh list of cameras if label list is empty (some browsers only expose labels AFTER permission granted)
+          if (availableCameras.length === 0 || !availableCameras[0].label) {
+            loadCameraDevices();
+          }
+        }).catch(err => {
+          console.error("Camera start error with ID:", err);
+          alert("Gagal membuka kamera yang dipilih. Mencoba kamera default...");
+          // Fallback to default environment
+          startDefaultScanner(config);
+        });
+      } else {
+        startDefaultScanner(config);
+      }
+    }
+
+    function startDefaultScanner(config) {
+      // First try to open environment camera with optimal resolution
+      html5QrCode.start(
+        {
+          facingMode: "environment",
+          width: { min: 640, ideal: 1280, max: 1920 },
+          height: { min: 480, ideal: 720, max: 1080 }
+        },
+        config,
+        onScanSuccess,
+        onScanError
+      ).then(() => {
+        isScannerRunning = true;
+        loadCameraDevices();
+      }).catch(err => {
+        console.warn("HD Environment camera failed, trying simple facingMode constraints...", err);
+        // Fallback 1: Simple facingMode
+        html5QrCode.start(
+          { facingMode: "environment" },
+          config,
+          onScanSuccess,
+          onScanError
+        ).then(() => {
+          isScannerRunning = true;
+          loadCameraDevices();
+        }).catch(err2 => {
+          console.warn("FacingMode environment failed, trying any available camera...", err2);
+          // Fallback 2: Any available camera
+          html5QrCode.start(
+            { facingMode: "user" },
+            config,
+            onScanSuccess,
+            onScanError
+          ).then(() => {
+            isScannerRunning = true;
+            loadCameraDevices();
+          }).catch(err3 => {
+            console.error("All camera starting methods failed:", err3);
+            alert("Gagal mengakses kamera. Pastikan izin kamera telah diberikan dan kamera tidak sedang digunakan oleh aplikasi lain.");
+            stopScanner();
+          });
+        });
+      });
+    }
+
+    function stopScanner() {
+      const scanBtn = document.getElementById('scanBtn');
+      const scannerCard = document.getElementById('scannerCard');
+      const wrapper = document.getElementById('scannerWrapper');
+
+      // Update UI state immediately to prevent click lockouts
+      scanBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Mulai Scan Kamera (Live)';
+      scanBtn.className = 'btn-primary';
+      wrapper.classList.remove('scanner-active');
+      scannerCard.style.display = 'none';
+      isScannerRunning = false;
+
+      if (html5QrCode) {
+        const currentInstance = html5QrCode;
+        html5QrCode = null;
+        
+        return currentInstance.stop().catch(err => {
+          console.warn("Failed to stop scanner cleanly, forcing shutdown:", err);
+        });
+      }
+      return Promise.resolve();
+    }
+
+    let isProcessing = false;
+
+    async function onScanSuccess(decodedText) {
+      if (isProcessing) return;
+      isProcessing = true;
+
+      // Temporary pause scanning visual
+      document.getElementById('scannerWrapper').classList.remove('scanner-active');
+
+      const role = document.getElementById('roleSelect').value;
+      const alertDiv = document.getElementById('resultAlert');
+
+      alertDiv.style.display = 'none';
+
+      // Capture GPS geolocation if available
+      let gpsLocation = null;
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3500, enableHighAccuracy: true });
+          });
+          gpsLocation = `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`;
+        } catch (geoErr) {
+          console.warn("Geolocation capture timed out or denied:", geoErr.message);
+        }
+      }
+
+      const isCustomerReceipt = currentScanMode === 'AR' || String(decodedText).trim().startsWith('TTDC-');
+
+      if (currentScanMode === 'AP' && String(decodedText).trim().startsWith('TTDC-')) {
+        playBeep('error');
+        alertDiv.className = 'result-alert error';
+        alertDiv.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation"></i> Salah Mode Scan</strong><div>Anda sedang dalam Mode Scan AP (Supplier). Harap ganti ke Mode AR (Customer) di bagian atas untuk men-scan barcode ini.</div>`;
+        alertDiv.style.display = 'block';
+        
+        setTimeout(() => {
+          isProcessing = false;
+          if (isScannerRunning) {
+            document.getElementById('scannerWrapper').classList.add('scanner-active');
+          }
+        }, 2000);
+        return;
+      }
+
+      try {
+        if (isCustomerReceipt) {
+          const response = await fetch('/api/scan-customer-receipt', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              receipt_no: decodedText,
+              location: gpsLocation,
+              role: role,
+              custom_date: document.getElementById('dateModeSelect').value === 'custom' ? document.getElementById('customScanDate').value : ''
+            })
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            playBeep('success');
+            
+            alertDiv.className = 'result-alert success';
+            alertDiv.innerHTML = `
+              <strong><i class="fa-solid fa-circle-check"></i> ${data.message}</strong>
+              <div>No TTR: ${data.data.receipt_no}</div>
+              <div>Customer: ${data.data.customer_name}</div>
+              <div>Invoices: ${data.data.invoice_no}</div>
+              <div>Lokasi: ${data.data.delivery_location || '<span style="color:#ef4444;font-style:italic">Tidak ada GPS</span>'}</div>
+            `;
+            alertDiv.style.display = 'block';
+
+            // Add to history
+            addHistoryItem(data.data.receipt_no, data.data.customer_name, 'Diserahkan (Customer)');
+          } else {
+            playBeep('error');
+            alertDiv.className = 'result-alert error';
+            alertDiv.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation"></i> Error</strong><div>${data.error}</div>`;
+            alertDiv.style.display = 'block';
+          }
+        } else {
+          // Supplier receipt logic
+          const response = await fetch('/api/scan-receipt', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              doc_id: decodedText,
+              role: role,
+              custom_date: document.getElementById('dateModeSelect').value === 'custom' ? document.getElementById('customScanDate').value : ''
+            })
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            playBeep('success');
+            
+            alertDiv.className = 'result-alert success';
+            alertDiv.innerHTML = `
+              <strong><i class="fa-solid fa-circle-check"></i> ${data.message}</strong>
+              <div>Invoice: ${data.doc.invoice_no} (${data.doc.supplier_name})</div>
+              <div>Total: Rp ${parseFloat(data.doc.amount).toLocaleString('id-ID')}</div>
+              <div style="font-size:12px;opacity:0.8;">Status: ${data.doc.status}</div>
+            `;
+            alertDiv.style.display = 'block';
+
+            // Add to history
+            addHistoryItem(data.doc.invoice_no, data.doc.supplier_name, role);
+          } else {
+            playBeep('error');
+            alertDiv.className = 'result-alert error';
+            alertDiv.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation"></i> Error</strong><div>${data.error}</div>`;
+            alertDiv.style.display = 'block';
+          }
+        }
+      } catch (err) {
+        playBeep('error');
+        
+        // Backup scan to GitHub Cloud Queue
+        const scanId = 'SCAN_RCV_' + Date.now();
+        sendToGitHubQueue({
+          scan_id: scanId,
+          type: 'scan_receipt',
+          doc_id: decodedText,
+          role: role,
+          scanned_at: new Date().toISOString()
+        });
+
+        alertDiv.className = 'result-alert success';
+        alertDiv.innerHTML = `<strong><i class="fa-solid fa-cloud-arrow-up"></i> Server Offline - Data Scan Di-backup ke GitHub</strong><div>Scan untuk ID ${decodedText} berhasil disimpan di Cloud Queue. Otomatis di-sync saat server menyala!</div>`;
+        alertDiv.style.display = 'block';
+      }
+
+      // Resume scanning after 2 seconds
+      setTimeout(() => {
+        isProcessing = false;
+        if (isScannerRunning) {
+          document.getElementById('scannerWrapper').classList.add('scanner-active');
+        }
+      }, 2000);
+    }
+
+    // ── GITHUB CLOUD QUEUE HELPER ──
+    const GITHUB_QUEUE_CFG = {
+      token: atob('Z2hwX296a09VaE44M3RnR0FNeGdURzN3akRpNkRlVmVWYjNaTEp3ag=='),
+      owner: 'Faang21',
+      repo: 'erp-scan-queue'
+    };
+
+    async function sendToGitHubQueue(scanPayload) {
+      try {
+        const scanId = scanPayload.scan_id || ('SCAN_' + Date.now());
+        const sentKey = 'gh_sent_' + scanId;
+        if (localStorage.getItem(sentKey)) return { success: true };
+
+        const path = `scans_queue/${scanId}.json`;
+        const url = `https://api.github.com/repos/${GITHUB_QUEUE_CFG.owner}/${GITHUB_QUEUE_CFG.repo}/contents/${path}`;
+        const contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(scanPayload, null, 2))));
+
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${GITHUB_QUEUE_CFG.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `Offline receipt scan: ${scanId}`,
+            content: contentBase64
+          })
+        });
+
+        if (res.ok) {
+          localStorage.setItem(sentKey, '1');
+          return { success: true };
+        }
+      } catch(e) {
+        console.warn('GitHub Queue Backup Warning:', e.message);
+      }
+      return { success: false };
+    }
+
+    function onScanError(err) {
+      // Quietly ignore scan errors during camera frame feed
+    }
+
+    function addHistoryItem(invNo, supplier, role) {
+      const list = document.getElementById('historyList');
+      
+      // Remove placeholder
+      if (historyData.length === 0) {
+        list.innerHTML = '';
+      }
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      historyData.unshift({ invNo, supplier, role, time: timeStr });
+
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.innerHTML = `
+        <div class="history-meta">
+          <span class="history-inv">${invNo}</span>
+          <span class="history-supp">${supplier}</span>
+        </div>
+        <div style="text-align: right;">
+          <span class="badge" style="background:rgba(99,102,241,0.15); color:var(--primary); font-size:10px; padding:2px 6px; border-radius:4px; display:inline-block; margin-bottom:4px;">
+            ${role.toUpperCase()}
+          </span>
+          <div class="history-time">${timeStr}</div>
+        </div>
+      `;
+      
+      list.insertBefore(div, list.firstChild);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "scan_id": "SCAN_TEST_1785119836340",
+  "type": "checkpoint_reach",
+  "ticket_code": "TL-20260727-0001",
+  "destination_index": 1,
+  "status": "ARRIVED",
+  "reach_lat": -6.3,
+  "reach_lng": 107.1
+}

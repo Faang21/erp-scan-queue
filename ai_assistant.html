@@ -436,22 +436,22 @@
               <div class="text-secondary small">Bantu penulisan kode JS, Python, SQL, & HTML.</div>
             </div>
 
-            <div class="prompt-card" onclick="sendPrompt('Bagaimana cara membuat Tiket Tugas Luar dan scan checkpoint GPS?')">
-              <i class="fa-solid fa-map-location-dot text-purple mb-2" style="font-size: 1.3rem;"></i>
-              <div class="fw-bold text-white small mb-1">Panduan ERP & GPS</div>
-              <div class="text-secondary small">Langkah buat tiket, checkpoint, & stamp security.</div>
+            <div class="prompt-card" onclick="sendPrompt('Tolong bantu saya mengedit dan menganalisis foto nota / video dokumen terlampir.')">
+              <i class="fa-solid fa-photo-film text-pink mb-2" style="font-size: 1.3rem;"></i>
+              <div class="fw-bold text-white small mb-1">Edit Foto & Video</div>
+              <div class="text-secondary small">Editor visual, OCR Nota, & analisis media video.</div>
             </div>
 
-            <div class="prompt-card" onclick="sendPrompt('Analisis data penerimaan invoice supplier dan RPB Epicor terkini.')">
-              <i class="fa-solid fa-chart-line text-pink mb-2" style="font-size: 1.3rem;"></i>
-              <div class="fw-bold text-white small mb-1">Analisis Data & RPB</div>
-              <div class="text-secondary small">Ringkasan tagihan AP, RPB, & histori transaksi.</div>
+            <div class="prompt-card" onclick="sendPrompt('Apa saja berita hari ini dan tren teknologi terkini di Indonesia?')">
+              <i class="fa-solid fa-newspaper text-warning mb-2" style="font-size: 1.3rem;"></i>
+              <div class="fw-bold text-white small mb-1">Berita Hari Ini & Tren</div>
+              <div class="text-secondary small">Informasi terkini & inspirasi topik terbaru.</div>
             </div>
 
-            <div class="prompt-card" onclick="sendPrompt('Buatkan draf email profesional balasan ke supplier mengenai jadwal pembayaran invoice.')">
-              <i class="fa-solid fa-pen-fancy text-success mb-2" style="font-size: 1.3rem;"></i>
-              <div class="fw-bold text-white small mb-1">Draf Pesan & Email</div>
-              <div class="text-secondary small">Tulis draf surat & percakapan profesional.</div>
+            <div class="prompt-card" onclick="sendPrompt('Bagaimana cara membuat Tiket Tugas Luar, AP Invoice, dan scan checkpoint GPS?')">
+              <i class="fa-solid fa-gears text-purple mb-2" style="font-size: 1.3rem;"></i>
+              <div class="fw-bold text-white small mb-1">Panduan ERP & Tugas Luar</div>
+              <div class="text-secondary small">Penjelasan alur AP, RPB, & checkpoint GPS.</div>
             </div>
           </div>
         </div>
@@ -544,7 +544,8 @@
   </div>
 
   <script>
-    // USER SESSION MANAGEMENT
+    // USER SESSION MANAGEMENT & APP VARIABLES
+    let isProcessing = false;
     let currentUser = JSON.parse(localStorage.getItem('prince_user_session') || JSON.stringify({
       email: 'aangcrypto21@gmail.com',
       name: 'Aang Crypto',
@@ -666,8 +667,26 @@
       if (file) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          document.getElementById('profileModalPreview').src = e.target.result;
-          document.getElementById('inputAvatarUrl').value = e.target.result;
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxDim = 128;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+              else { w = Math.round((w * maxDim) / h); h = maxDim; }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+
+            document.getElementById('profileModalPreview').src = compressedBase64;
+            document.getElementById('inputAvatarUrl').value = compressedBase64;
+          };
+          img.src = e.target.result;
         };
         reader.readAsDataURL(file);
       }

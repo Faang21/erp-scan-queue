@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PRINCE AI — Super Multi-Agent AI Platform</title>
+  <title>PRINCE AI — Google Gemini Style Platform</title>
   
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -20,13 +20,14 @@
 
   <style>
     :root {
-      --bg-dark: #070913;
-      --bg-card: rgba(18, 22, 43, 0.75);
-      --bg-card-hover: rgba(30, 37, 68, 0.85);
-      --accent-purple: #7928ca;
+      --bg-main: #0e1017;
+      --bg-sidebar: #13151f;
+      --bg-input: #1e202e;
+      --bg-card: rgba(255, 255, 255, 0.04);
       --accent-cyan: #00dfd8;
+      --accent-purple: #7928ca;
       --accent-pink: #ff0080;
-      --text-main: #f1f5f9;
+      --text-main: #e2e8f0;
       --text-muted: #94a3b8;
     }
 
@@ -38,114 +39,307 @@
 
     body {
       font-family: 'Inter', sans-serif;
-      background-color: var(--bg-dark);
-      background-image: 
-        radial-gradient(circle at 10% 10%, rgba(121, 40, 202, 0.18) 0%, transparent 40%),
-        radial-gradient(circle at 90% 90%, rgba(0, 223, 216, 0.18) 0%, transparent 40%);
+      background-color: var(--bg-main);
       color: var(--text-main);
       height: 100vh;
       display: flex;
-      flex-direction: column;
       overflow: hidden;
     }
 
-    /* CLEAN GLASSMORPHISM NAVBAR */
-    .navbar-glass {
-      background: rgba(10, 12, 24, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 12px 28px;
+    /* GOOGLE GEMINI STYLE SIDEBAR */
+    .gemini-sidebar {
+      width: 280px;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid rgba(255, 255, 255, 0.07);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.3s ease;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .gemini-sidebar.collapsed {
+      width: 70px;
+    }
+
+    .gemini-sidebar.collapsed .sidebar-text,
+    .gemini-sidebar.collapsed .recents-section,
+    .gemini-sidebar.collapsed .user-info {
+      display: none !important;
+    }
+
+    .sidebar-header {
+      padding: 16px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      z-index: 100;
     }
 
-    .brand-logo {
+    .sidebar-brand {
       font-family: 'Outfit', sans-serif;
       font-weight: 800;
-      font-size: 1.5rem;
+      font-size: 1.35rem;
       background: linear-gradient(135deg, #00dfd8 0%, #7928ca 50%, #ff0080 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       text-decoration: none;
     }
 
-    .brand-badge {
-      font-size: 0.72rem;
-      padding: 3px 12px;
-      border-radius: 20px;
-      background: rgba(121, 40, 202, 0.25);
-      border: 1px solid rgba(121, 40, 202, 0.5);
-      color: #e9d5ff;
-      font-weight: 600;
+    .sidebar-toggle-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+      transition: all 0.2s;
     }
 
-    .user-profile-badge {
+    .sidebar-toggle-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-new-chat {
+      margin: 10px 16px;
+      padding: 12px 18px;
+      border-radius: 30px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-weight: 600;
       display: flex;
       align-items: center;
       gap: 12px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      padding: 6px 14px;
-      border-radius: 30px;
       cursor: pointer;
       transition: all 0.25s;
     }
 
-    .user-profile-badge:hover {
+    .btn-new-chat:hover {
       background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(0, 223, 216, 0.5);
+      border-color: var(--accent-cyan);
     }
 
-    .user-avatar-img {
-      width: 34px;
-      height: 34px;
+    .sidebar-menu {
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .sidebar-item {
+      padding: 10px 14px;
+      border-radius: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      font-size: 0.93rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .sidebar-item:hover, .sidebar-item.active {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* RECENTS CHAT LIST */
+    .recents-section {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .recents-section::-webkit-scrollbar { width: 4px; }
+    .recents-section::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
+
+    .recents-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-uppercase;
+      color: var(--text-muted);
+      margin: 12px 6px 6px 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .recent-chat-item {
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: #cbd5e1;
+      font-size: 0.86rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .recent-chat-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .sidebar-footer {
+      padding: 14px 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .user-avatar {
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #00dfd8;
+      border: 2px solid var(--accent-cyan);
     }
 
-    /* MAIN CONTAINER */
-    .app-layout {
-      flex: 1;
-      display: flex;
-      height: calc(100vh - 65px);
-      overflow: hidden;
-    }
-
-    .chat-container {
+    /* MAIN CHAT AREA */
+    .main-wrapper {
       flex: 1;
       display: flex;
       flex-direction: column;
-      max-width: 1050px;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chat-stream-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      max-width: 950px;
       margin: 0 auto;
       width: 100%;
-      height: 100%;
+    }
+
+    .chat-stream-container::-webkit-scrollbar { width: 6px; }
+    .chat-stream-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+
+    /* CENTER GEMINI HERO TITLE */
+    .hero-center {
+      margin: auto 0;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .hero-center-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 28px;
+    }
+
+    /* GEMINI FLOATING INPUT BAR */
+    .gemini-input-container {
+      max-width: 850px;
+      margin: 0 auto 30px auto;
+      width: 100%;
       padding: 0 20px;
     }
 
-    .chat-stream {
-      flex: 1;
-      overflow-y: auto;
-      padding: 28px 0;
+    .gemini-input-box {
+      background: var(--bg-input);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      padding: 12px 20px;
       display: flex;
-      flex-direction: column;
-      gap: 22px;
-      scroll-behavior: smooth;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+      transition: all 0.25s;
     }
 
-    .chat-stream::-webkit-scrollbar { width: 6px; }
-    .chat-stream::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+    .gemini-input-box:focus-within {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 12px 45px rgba(0, 223, 216, 0.25);
+    }
 
-    /* MESSAGE BUBBLES */
-    .message-row {
+    .gemini-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 1.05rem;
+      outline: none;
+    }
+
+    .model-selector-badge {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--accent-cyan);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
       display: flex;
-      gap: 14px;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .input-action-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+
+    .input-action-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-send-gemini {
+      background: linear-gradient(135deg, #7928ca 0%, #00dfd8 100%);
+      color: #fff;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(121, 40, 202, 0.45);
+    }
+
+    /* BUBBLE CHAT STYLES */
+    .msg-row {
+      display: flex;
+      gap: 16px;
       align-items: flex-start;
       animation: fadeIn 0.3s ease-out;
     }
@@ -155,61 +349,55 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .message-row.user {
+    .msg-row.user {
       flex-direction: row-reverse;
     }
 
-    .avatar {
-      width: 42px;
-      height: 42px;
-      border-radius: 14px;
+    .msg-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 1.1rem;
       flex-shrink: 0;
       overflow: hidden;
     }
 
-    .avatar.ai {
+    .msg-avatar.ai {
       background: linear-gradient(135deg, #7928ca 0%, #00dfd8 100%);
       color: #fff;
-      box-shadow: 0 4px 18px rgba(121, 40, 202, 0.45);
     }
 
-    .avatar.user img {
+    .msg-avatar.user img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
-    .bubble {
-      max-width: 82%;
-      padding: 18px 22px;
+    .msg-bubble {
+      max-width: 85%;
+      padding: 18px 24px;
       border-radius: 20px;
-      font-size: 0.97rem;
+      font-size: 0.98rem;
       line-height: 1.65;
     }
 
-    .message-row.ai .bubble {
+    .msg-row.ai .msg-bubble {
       background: var(--bg-card);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(14px);
       border-top-left-radius: 4px;
-      color: var(--text-main);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
     }
 
-    .message-row.user .bubble {
+    .msg-row.user .msg-bubble {
       background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
       color: #fff;
       border-top-right-radius: 4px;
-      box-shadow: 0 4px 18px rgba(37, 99, 235, 0.35);
     }
 
-    .bubble pre {
-      background: #181b2c;
+    .msg-bubble pre {
+      background: #161824;
       border-radius: 12px;
       padding: 16px;
       overflow-x: auto;
@@ -231,134 +419,13 @@
       cursor: pointer;
     }
 
-    .ai-generated-image {
-      max-width: 100%;
-      border-radius: 14px;
-      border: 1px solid rgba(0, 223, 216, 0.4);
-      margin-top: 12px;
-      box-shadow: 0 8px 25px rgba(0, 223, 216, 0.25);
-    }
-
-    /* HERO WELCOME */
-    .hero-welcome {
-      text-align: center;
-      margin: auto 0;
-      padding: 30px 20px;
-    }
-
-    .hero-title {
-      font-family: 'Outfit', sans-serif;
-      font-size: 2.6rem;
-      font-weight: 800;
-      margin-bottom: 12px;
-      background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .prompt-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      max-width: 850px;
-      margin: 24px auto 0 auto;
-    }
-
-    .prompt-card {
-      background: var(--bg-card);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 18px;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.25s;
-    }
-
-    .prompt-card:hover {
-      background: var(--bg-card-hover);
-      border-color: rgba(0, 223, 216, 0.5);
-      transform: translateY(-4px);
-      box-shadow: 0 12px 30px rgba(0, 223, 216, 0.2);
-    }
-
-    /* INPUT CONTAINER */
-    .input-area {
-      padding: 16px 0 24px 0;
-    }
-
-    .input-wrapper {
-      background: rgba(18, 22, 43, 0.95);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 20px;
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      backdrop-filter: blur(18px);
-      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
-    }
-
-    .input-wrapper:focus-within {
-      border-color: rgba(121, 40, 202, 0.8);
-      box-shadow: 0 12px 40px rgba(121, 40, 202, 0.35);
-    }
-
-    .chat-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: #fff;
-      font-size: 1.02rem;
-      padding: 10px 8px;
-      outline: none;
-    }
-
-    .btn-action {
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.15rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn-send {
-      background: linear-gradient(135deg, #7928ca 0%, #00dfd8 100%);
-      color: #fff;
-      box-shadow: 0 4px 18px rgba(121, 40, 202, 0.45);
-    }
-
-    .btn-icon {
-      background: transparent;
-      color: var(--text-muted);
-    }
-
-    .btn-icon:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    .btn-voice.recording {
-      color: #ff0080;
-      animation: pulse 1s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.15); }
-      100% { transform: scale(1); }
-    }
-
     /* MEDIA PREVIEW */
-    .media-preview-container {
+    .media-preview-area {
       display: flex;
       gap: 10px;
-      padding: 8px 12px;
-      overflow-x: auto;
+      padding: 8px 20px;
+      max-width: 850px;
+      margin: 0 auto;
     }
     .media-preview-item {
       position: relative;
@@ -390,120 +457,110 @@
 </head>
 <body>
 
-  <!-- CLEAN GLASSMORPHISM NAVBAR -->
-  <header class="navbar-glass">
-    <a href="#" class="brand-logo">
-      <i class="fa-solid fa-crown text-warning"></i> PRINCE AI
-      <span class="brand-badge">MULTI-AGENT PLATFORM</span>
-    </a>
+  <!-- GOOGLE GEMINI SIDEBAR -->
+  <aside class="gemini-sidebar" id="geminiSidebar">
+    <div>
+      <div class="sidebar-header">
+        <a href="#" class="sidebar-brand">
+          <i class="fa-solid fa-crown text-warning"></i> <span class="sidebar-text">PRINCE AI</span>
+        </a>
+        <button class="sidebar-toggle-btn" title="Toggle Sidebar" onclick="toggleSidebar()">
+          <i class="bi bi-layout-sidebar-inset"></i>
+        </button>
+      </div>
 
-    <div class="d-flex align-items-center gap-3">
-      <!-- LOGIN / AUTH PROMINENT BUTTON -->
-      <button class="btn btn-outline-info btn-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-2" onclick="openAuthModal('login')">
-        <i class="bi bi-box-arrow-in-right"></i> <span id="navAuthBtnText">Login / Masuk</span>
+      <div class="btn-new-chat" onclick="startNewChat()">
+        <i class="bi bi-plus-lg"></i>
+        <span class="sidebar-text">New chat</span>
+      </div>
+
+      <div class="sidebar-menu">
+        <a href="#" class="sidebar-item active">
+          <i class="bi bi-chat-dots-fill"></i>
+          <span class="sidebar-text">Chats</span>
+        </a>
+        <a href="#" class="sidebar-item">
+          <i class="bi bi-image-fill"></i>
+          <span class="sidebar-text">Images</span>
+        </a>
+        <a href="#" class="sidebar-item">
+          <i class="bi bi-film"></i>
+          <span class="sidebar-text">Videos</span>
+        </a>
+        <a href="/ap_dashboard.html" class="sidebar-item">
+          <i class="bi bi-grid-fill"></i>
+          <span class="sidebar-text">ERP Dashboard</span>
+        </a>
+      </div>
+
+      <!-- RECENTS LIST -->
+      <div class="recents-section">
+        <div class="recents-title">Recents</div>
+        <div id="recentsChatList"></div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR FOOTER (USER PROFILE & SETTINGS) -->
+    <div class="sidebar-footer">
+      <div class="user-badge" onclick="openProfileModal()">
+        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Aang" alt="Avatar" class="user-avatar" id="sidebarAvatarImg">
+        <div class="user-info" style="line-height: 1.2;">
+          <div class="fw-bold text-white small" id="sidebarUserName">Aang Crypto</div>
+          <div class="text-info" style="font-size: 10px;">Pro Plan</div>
+        </div>
+      </div>
+      <button class="sidebar-toggle-btn text-secondary" title="Settings / Login" onclick="openAuthModal('login')">
+        <i class="bi bi-gear-fill"></i>
       </button>
+    </div>
+  </aside>
 
-      <!-- USER PROFILE DROPDOWN -->
-      <div class="dropdown">
-        <div class="user-profile-badge" data-bs-toggle="dropdown" aria-expanded="false" id="userBadgeBtn">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Aang" alt="Avatar" class="user-avatar-img" id="navAvatarImg">
-          <div class="d-none d-md-block text-start" style="line-height: 1.2;">
-            <div class="fw-bold text-white small" id="navUserName">Aang Crypto</div>
-            <div class="text-secondary" style="font-size: 10px;" id="navUserEmail">aangcrypto21@gmail.com</div>
-          </div>
-          <i class="bi bi-chevron-down text-secondary ms-1"></i>
-        </div>
-
-        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg p-2" style="background: rgba(18, 22, 43, 0.95); border: 1px solid rgba(255, 255, 255, 0.15); min-width: 220px;">
-          <li><h6 class="dropdown-header text-uppercase font-monospace text-info">Pengaturan Akun</h6></li>
-          <li><a class="dropdown-item rounded py-2" href="#" onclick="openAuthModal('login')"><i class="bi bi-box-arrow-in-right me-2 text-success"></i> Login / Ganti Akun</a></li>
-          <li><a class="dropdown-item rounded py-2" href="#" onclick="openAuthModal('register')"><i class="bi bi-person-plus-fill me-2 text-warning"></i> Registrasi Akun Baru</a></li>
-          <li><a class="dropdown-item rounded py-2" href="#" onclick="openProfileModal()"><i class="bi bi-image-fill me-2 text-cyan"></i> Ganti Foto Profil</a></li>
-          <li><a class="dropdown-item rounded py-2" href="#" onclick="clearChatHistory()"><i class="bi bi-trash3-fill me-2 text-danger"></i> Hapus Riwayat Chat</a></li>
-          <li><hr class="dropdown-divider border-secondary"></li>
-          <li><a class="dropdown-item rounded py-2" href="/ap_dashboard.html"><i class="bi bi-grid-fill me-2 text-purple"></i> Dashboard ERP</a></li>
-          <li><a class="dropdown-item rounded py-2 text-danger" href="#" onclick="logoutUser()"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
-        </ul>
+  <!-- MAIN CHAT AREA -->
+  <main class="main-wrapper">
+    
+    <!-- CHAT STREAM CONTAINER -->
+    <div class="chat-stream-container" id="chatStream">
+      <div class="hero-center" id="heroCenter">
+        <h1 class="hero-center-title" id="heroTitle">What can I help with, Aang?</h1>
       </div>
     </div>
-  </header>
 
-  <!-- APP LAYOUT -->
-  <div class="app-layout">
-    <div class="chat-container">
-      
-      <!-- CHAT STREAM -->
-      <div class="chat-stream" id="chatStream">
-        <div class="hero-welcome" id="heroWelcome">
-          <div class="avatar ai mx-auto mb-3" style="width: 65px; height: 65px; font-size: 2rem;">
-            <i class="fa-solid fa-crown"></i>
-          </div>
-          <h1 class="hero-title">Halo! Saya PRINCE AI</h1>
-          <p class="text-secondary" style="font-size: 1.05rem; max-width: 620px; margin: 0 auto 24px auto;">
-            Super AI Multi-Agent. Tanya Jawab, Coding, Edit/Generate Foto, Analisis Video, Matematika, & ERP Mogaworld!
-          </p>
+    <!-- MEDIA PREVIEW -->
+    <div id="mediaPreviewArea" class="media-preview-area d-none"></div>
 
-          <div class="prompt-grid">
-            <div class="prompt-card" onclick="sendPrompt('Bantu saya membuat script JavaScript & SQL Query untuk laporan AP Invoice Mogaworld ERP')">
-              <i class="fa-solid fa-code text-cyan mb-2" style="font-size: 1.3rem;"></i>
-              <div class="fw-bold text-white small mb-1">Coding & Backend Script</div>
-              <div class="text-secondary small">Bantu penulisan kode JS, Python, SQL, & HTML.</div>
-            </div>
+    <!-- GEMINI FLOATING INPUT BAR -->
+    <div class="gemini-input-container">
+      <div class="gemini-input-box">
+        <input type="file" id="fileInput" accept="image/*,video/*" class="d-none" onchange="handleFileSelect(event)">
+        <button class="input-action-btn" title="Upload Media" onclick="document.getElementById('fileInput').click()">
+          <i class="bi bi-plus-lg"></i>
+        </button>
 
-            <div class="prompt-card" onclick="sendPrompt('Buatkan gambar naga cybernetic berkilauan futuristik di kota malam neon')">
-              <i class="fa-solid fa-wand-magic-sparkles text-pink mb-2" style="font-size: 1.3rem;"></i>
-              <div class="fw-bold text-white small mb-1">Generate & Edit Foto</div>
-              <div class="text-secondary small">Buat foto/gambar AI baru & editor visual.</div>
-            </div>
+        <input type="text" class="gemini-input" id="userInput" placeholder="Ask Prince AI..." onkeydown="handleKeyPress(event)" autocomplete="off">
 
-            <div class="prompt-card" onclick="sendPrompt('Tolong hitungkan kalkulus & analisis matematika rumus akuntansi berikut')">
-              <i class="fa-solid fa-calculator text-warning mb-2" style="font-size: 1.3rem;"></i>
-              <div class="fw-bold text-white small mb-1">Matematika & Logika (DeepSeek R1)</div>
-              <div class="text-secondary small">Penalaran akuntansi, matematika, & statistik.</div>
-            </div>
-
-            <div class="prompt-card" onclick="sendPrompt('Bagaimana cara membuat Tiket Tugas Luar, AP Invoice, dan scan checkpoint GPS?')">
-              <i class="fa-solid fa-gears text-purple mb-2" style="font-size: 1.3rem;"></i>
-              <div class="fw-bold text-white small mb-1">Panduan ERP & Tugas Luar</div>
-              <div class="text-secondary small">Penjelasan alur AP, RPB, & checkpoint GPS.</div>
-            </div>
-          </div>
+        <div class="model-selector-badge" title="Multi-Agent Model Engine">
+          <span>Multi-Agent Ultra</span> <i class="bi bi-chevron-down"></i>
         </div>
+
+        <button class="input-action-btn btn-voice" id="btnVoice" title="Voice Input" onclick="toggleVoiceRecording()">
+          <i class="bi bi-mic-fill"></i>
+        </button>
+
+        <button class="btn-send-gemini" onclick="submitUserMessage()" id="btnSend">
+          <i class="bi bi-arrow-up-short" style="font-size: 1.6rem;"></i>
+        </button>
       </div>
-
-      <!-- MEDIA PREVIEW -->
-      <div id="mediaPreviewArea" class="media-preview-container d-none"></div>
-
-      <!-- INPUT AREA -->
-      <div class="input-area">
-        <div class="input-wrapper">
-          <input type="file" id="fileInput" accept="image/*,video/*" class="d-none" onchange="handleFileSelect(event)">
-          <button class="btn-action btn-icon text-cyan" title="Upload Foto / Video" onclick="document.getElementById('fileInput').click()">
-            <i class="bi bi-paperclip"></i>
-          </button>
-          
-          <input type="text" class="chat-input" id="userInput" placeholder="Tanyakan apa saja, bicarakan suara, buat gambar, atau upload foto/video..." onkeydown="handleKeyPress(event)" autocomplete="off">
-
-          <button class="btn-action btn-icon btn-voice" id="btnVoice" title="Percakapan Suara (Voice Chat)" onclick="toggleVoiceRecording()">
-            <i class="bi bi-mic-fill"></i>
-          </button>
-
-          <button class="btn-action btn-send" onclick="submitUserMessage()" id="btnSend">
-            <i class="bi bi-send-fill"></i>
-          </button>
-        </div>
-        <div class="text-center mt-2" style="font-size: 11px; color: var(--text-muted);">
-          PRINCE AI terhubung ke OpenRouter Multi-Agent (Claude 3.5, Gemini 3.6, DeepSeek R1, GPT-4o) & Google Storage 5.39 TB.
-        </div>
+      <div class="text-center mt-2" style="font-size: 11px; color: var(--text-muted);">
+        Prince AI can make mistakes. Verify important info. Connected to Google Drive 5.39 TB Project.
       </div>
-
     </div>
-  </div>
+
+  </main>
 
   <!-- AUTH MODAL (LOGIN & REGISTER) -->
   <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content text-white" style="background: rgba(14, 18, 36, 0.95); border: 1px solid rgba(121, 40, 202, 0.4); backdrop-filter: blur(20px);">
+      <div class="modal-content text-white" style="background: rgba(19, 21, 31, 0.95); border: 1px solid rgba(121, 40, 202, 0.4); backdrop-filter: blur(20px);">
         <div class="modal-header border-bottom border-secondary">
           <h5 class="modal-title font-monospace" id="authModalTitle"><i class="bi bi-shield-lock-fill text-warning me-2"></i> Login Akun PRINCE AI</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -511,16 +568,16 @@
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label small text-secondary">Alamat Email:</label>
-            <input type="email" id="authEmail" class="form-control text-white" placeholder="email@domain.com" style="background: #111528; border: 1px solid #334155;">
+            <input type="email" id="authEmail" class="form-control text-white" placeholder="email@domain.com" style="background: #161824; border: 1px solid #334155;">
           </div>
           <div class="mb-3">
             <label class="form-label small text-secondary">Password:</label>
-            <input type="password" id="authPassword" class="form-control text-white" placeholder="••••••••" style="background: #111528; border: 1px solid #334155;">
+            <input type="password" id="authPassword" class="form-control text-white" placeholder="••••••••" style="background: #161824; border: 1px solid #334155;">
           </div>
           <div id="authRegisterExtra" class="d-none">
             <div class="mb-3">
               <label class="form-label small text-secondary">Nama Lengkap / Username:</label>
-              <input type="text" id="authName" class="form-control text-white" placeholder="Nama Anda" style="background: #111528; border: 1px solid #334155;">
+              <input type="text" id="authName" class="form-control text-white" placeholder="Nama Anda" style="background: #161824; border: 1px solid #334155;">
             </div>
           </div>
         </div>
@@ -535,7 +592,7 @@
   <!-- PROFILE MODAL (CHANGE AVATAR) -->
   <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content text-white" style="background: rgba(14, 18, 36, 0.95); border: 1px solid rgba(0, 223, 216, 0.4); backdrop-filter: blur(20px);">
+      <div class="modal-content text-white" style="background: rgba(19, 21, 31, 0.95); border: 1px solid rgba(0, 223, 216, 0.4); backdrop-filter: blur(20px);">
         <div class="modal-header border-bottom border-secondary">
           <h5 class="modal-title font-monospace"><i class="bi bi-image-fill text-cyan me-2"></i> Pengaturan Foto Profil (Avatar)</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -545,12 +602,12 @@
           
           <div class="mb-3 text-start">
             <label class="form-label small text-secondary">URL Foto Profil / Unggah Gambar:</label>
-            <input type="text" id="inputAvatarUrl" class="form-control text-white mb-2" placeholder="https://..." style="background: #111528; border: 1px solid #334155;">
-            <input type="file" id="inputAvatarFile" accept="image/*" class="form-control" style="background: #111528; border: 1px solid #334155; color: #fff;" onchange="previewAvatarFile(event)">
+            <input type="text" id="inputAvatarUrl" class="form-control text-white mb-2" placeholder="https://..." style="background: #161824; border: 1px solid #334155;">
+            <input type="file" id="inputAvatarFile" accept="image/*" class="form-control" style="background: #161824; border: 1px solid #334155; color: #fff;" onchange="previewAvatarFile(event)">
           </div>
         </div>
-        <div class="modal-footer border-top border-secondary">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+        <div class="modal-footer border-top border-secondary justify-content-between">
+          <button type="button" class="btn btn-outline-danger btn-sm" onclick="logoutUser()">Logout</button>
           <button type="button" class="btn btn-cyan btn-sm fw-bold px-4 text-dark" style="background: #00dfd8;" onclick="saveUserProfile()">Simpan Foto Profil</button>
         </div>
       </div>
@@ -566,21 +623,7 @@
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aang'
     }));
 
-    // Multi-Turn Chat Memory Array
-    let chatHistory = JSON.parse(localStorage.getItem('prince_chat_history')) || [
-      {
-        role: "system",
-        content: `Namamu adalah PRINCE AI. Kamu adalah Super Assistant Multi-Agent Mogaworld ERP. 
-Kamu BISA dan SANGAT AHLI membantu:
-1. Generate & Edit Foto/Gambar AI (Model FLUX / Stable Diffusion).
-2. Analisis Foto Struk/Nota OCR & Video Document Analysis.
-3. Matematika Rumit & Akuntansi (DeepSeek R1).
-4. Coding Fullstack & Script Pemrograman (Claude 3.5 Sonnet / GPT-4o).
-5. Panduan ERP Mogaworld, AP Invoice, & Checkpoint GPS.
-Jawablah pengguna secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown formatting.`
-      }
-    ];
-
+    let chatHistory = [];
     let selectedMediaBase64 = null;
     let selectedMediaType = null;
     let isRecordingVoice = false;
@@ -588,7 +631,7 @@ Jawablah pengguna secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown
 
     const chatStream = document.getElementById('chatStream');
     const userInput = document.getElementById('userInput');
-    const heroWelcome = document.getElementById('heroWelcome');
+    const heroCenter = document.getElementById('heroCenter');
 
     marked.setOptions({
       highlight: function(code, lang) {
@@ -605,11 +648,15 @@ Jawablah pengguna secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown
       loadHistoryToUI();
     });
 
+    function toggleSidebar() {
+      document.getElementById('geminiSidebar').classList.toggle('collapsed');
+    }
+
     function updateUserNavDisplay() {
-      document.getElementById('navUserName').innerText = currentUser.name || 'User';
-      document.getElementById('navUserEmail').innerText = currentUser.email || 'user@mogaworld.xyz';
-      document.getElementById('navAvatarImg').src = currentUser.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aang';
-      document.getElementById('navAuthBtnText').innerText = currentUser.name ? currentUser.name.split(' ')[0] : 'Login';
+      const firstName = currentUser.name ? currentUser.name.split(' ')[0] : 'User';
+      document.getElementById('sidebarUserName').innerText = currentUser.name || 'User';
+      document.getElementById('sidebarAvatarImg').src = currentUser.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aang';
+      document.getElementById('heroTitle').innerText = `What can I help with, ${firstName}?`;
     }
 
     function loadHistoryToUI() {
@@ -628,14 +675,15 @@ Kamu BISA dan SANGAT AHLI membantu:
       ];
 
       // Reset UI Stream
-      document.querySelectorAll('.message-row').forEach(el => el.remove());
+      document.querySelectorAll('.msg-row').forEach(el => el.remove());
 
       if (chatHistory.length <= 1) {
-        heroWelcome.style.display = 'block';
+        heroCenter.style.display = 'block';
+        renderRecentsList();
         return;
       }
 
-      heroWelcome.style.display = 'none';
+      heroCenter.style.display = 'none';
       chatHistory.forEach(msg => {
         if (msg.role === 'user') {
           const text = typeof msg.content === 'string' ? msg.content : (msg.content[0]?.text || 'Media Attachment');
@@ -646,7 +694,24 @@ Kamu BISA dan SANGAT AHLI membantu:
         }
       });
 
+      renderRecentsList();
       chatStream.scrollTop = chatStream.scrollHeight;
+    }
+
+    function renderRecentsList() {
+      const listEl = document.getElementById('recentsChatList');
+      if (!listEl) return;
+      listEl.innerHTML = '';
+
+      const userMessages = chatHistory.filter(m => m.role === 'user');
+      userMessages.slice(-8).reverse().forEach(m => {
+        const text = typeof m.content === 'string' ? m.content : (m.content[0]?.text || 'Attachment');
+        const item = document.createElement('div');
+        item.className = 'recent-chat-item';
+        item.innerText = text;
+        item.onclick = () => sendPrompt(text);
+        listEl.appendChild(item);
+      });
     }
 
     function syncChatHistoryToGoogleDrive() {
@@ -664,42 +729,11 @@ Kamu BISA dan SANGAT AHLI membantu:
       }).catch(e => {});
     }
 
-    function processAuthSubmit() {
-      const email = document.getElementById('authEmail').value.trim();
-      const password = document.getElementById('authPassword').value.trim();
-      const name = document.getElementById('authName')?.value.trim() || email.split('@')[0];
-
-      if (!email || !password) return alert('Email dan Password wajib diisi!');
-
-      currentUser = {
-        email: email,
-        name: name,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`
-      };
-      localStorage.setItem('prince_user_session', JSON.stringify(currentUser));
-      updateUserNavDisplay();
-      if (authModalBs) authModalBs.hide();
-
-      // Load History Specific to Logged In User
-      loadHistoryToUI();
-      alert(`✅ BERHASIL LOGIN SEBAGAI: ${email}`);
-    }
-
-    function logoutUser() {
-      localStorage.removeItem('prince_user_session');
-      currentUser = {
-        email: 'guest@mogaworld.xyz',
-        name: 'Guest User',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest'
-      };
-      updateUserNavDisplay();
-
-      // Reset Chat Stream to Homepage
-      document.querySelectorAll('.message-row').forEach(el => el.remove());
-      heroWelcome.style.display = 'block';
+    function startNewChat() {
       chatHistory = [chatHistory[0]];
-
-      alert('✅ Anda telah logout dari PRINCE AI. Kembali ke Halaman Utama.');
+      syncChatHistoryToGoogleDrive();
+      document.querySelectorAll('.msg-row').forEach(el => el.remove());
+      heroCenter.style.display = 'block';
     }
 
     function handleKeyPress(e) {
@@ -761,6 +795,8 @@ Kamu BISA dan SANGAT AHLI membantu:
       localStorage.setItem('prince_user_session', JSON.stringify(currentUser));
       updateUserNavDisplay();
       if (authModalBs) authModalBs.hide();
+
+      loadHistoryToUI();
       alert(`✅ BERHASIL LOGIN SEBAGAI: ${email}`);
     }
 
@@ -772,7 +808,13 @@ Kamu BISA dan SANGAT AHLI membantu:
         avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest'
       };
       updateUserNavDisplay();
-      alert('Anda telah logout dari PRINCE AI.');
+
+      document.querySelectorAll('.msg-row').forEach(el => el.remove());
+      heroCenter.style.display = 'block';
+      chatHistory = [chatHistory[0]];
+
+      if (profileModalBs) profileModalBs.hide();
+      alert('✅ Anda telah logout dari PRINCE AI. Kembali ke Halaman Utama.');
     }
 
     // PROFILE MODAL HANDLERS
@@ -904,13 +946,13 @@ Kamu BISA dan SANGAT AHLI membantu:
       }
     }
 
-    // 2. MAIN SUBMIT MESSAGE WITH PERSISTENT MEMORY & MULTIMODAL ROUTING
+    // 2. MAIN SUBMIT MESSAGE WITH GOOGLE GEMINI SIDEBAR UI & OPENROUTER ENGINE
     async function submitUserMessage() {
       const query = userInput.value.trim();
       if ((!query && !selectedMediaBase64) || isProcessing) return;
 
-      if (heroWelcome.style.display !== 'none') {
-        heroWelcome.style.display = 'none';
+      if (heroCenter.style.display !== 'none') {
+        heroCenter.style.display = 'none';
       }
 
       const activeMedia = selectedMediaBase64;
@@ -936,6 +978,7 @@ Kamu BISA dan SANGAT AHLI membantu:
         chatHistory.push({ role: "user", content: query });
       }
       syncChatHistoryToGoogleDrive();
+      renderRecentsList();
 
       const typingId = 'typing_' + Date.now();
       appendTypingIndicator(typingId);
@@ -1027,14 +1070,14 @@ Sistem **PRINCE AI (Multi-Agent Swarm)** telah memproses konteks Anda. Silakan b
 
     function appendUserMessage(text, mediaBase64, autoScroll = true) {
       const row = document.createElement('div');
-      row.className = 'message-row user';
+      row.className = 'msg-row user';
 
       const avatar = document.createElement('div');
-      avatar.className = 'avatar user';
+      avatar.className = 'msg-avatar user';
       avatar.innerHTML = `<img src="${currentUser.avatar}" alt="User Avatar">`;
 
       const bubble = document.createElement('div');
-      bubble.className = 'bubble';
+      bubble.className = 'msg-bubble';
       
       let html = `<div class="small fw-bold mb-1 opacity-75">${currentUser.name}</div>`;
       if (mediaBase64) {
@@ -1053,14 +1096,14 @@ Sistem **PRINCE AI (Multi-Agent Swarm)** telah memproses konteks Anda. Silakan b
 
     function appendAiMessage(text, autoScroll = true) {
       const row = document.createElement('div');
-      row.className = 'message-row ai';
+      row.className = 'msg-row ai';
 
       const avatar = document.createElement('div');
-      avatar.className = 'avatar ai';
+      avatar.className = 'msg-avatar ai';
       avatar.innerHTML = '<i class="fa-solid fa-crown"></i>';
 
       const bubble = document.createElement('div');
-      bubble.className = 'bubble';
+      bubble.className = 'msg-bubble';
       bubble.innerHTML = marked.parse(text);
 
       bubble.querySelectorAll('pre').forEach((pre) => {
@@ -1084,19 +1127,19 @@ Sistem **PRINCE AI (Multi-Agent Swarm)** telah memproses konteks Anda. Silakan b
 
     function appendTypingIndicator(id) {
       const row = document.createElement('div');
-      row.className = 'message-row ai';
+      row.className = 'msg-row ai';
       row.id = id;
 
       const avatar = document.createElement('div');
-      avatar.className = 'avatar ai';
+      avatar.className = 'msg-avatar ai';
       avatar.innerHTML = '<i class="fa-solid fa-crown"></i>';
 
       const bubble = document.createElement('div');
-      bubble.className = 'bubble';
+      bubble.className = 'msg-bubble';
       bubble.innerHTML = `
         <div class="d-flex align-items-center gap-2">
           <div class="spinner-border spinner-border-sm text-cyan" role="status"></div>
-          <span class="small text-secondary font-monospace">PRINCE AI Multi-Agent sedang berpikir...</span>
+          <span class="small text-secondary font-monospace">PRINCE AI sedang memproses...</span>
         </div>
       `;
 

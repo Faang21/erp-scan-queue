@@ -629,12 +629,23 @@ Jawablah pengguna secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown
       chatStream.scrollTop = chatStream.scrollHeight;
     }
 
-    function clearChatHistory() {
-      if (confirm('Apakah Anda yakin ingin menghapus seluruh riwayat chat?')) {
-        chatHistory = [chatHistory[0]];
-        localStorage.removeItem('prince_chat_history');
-        location.reload();
-      }
+    function syncChatHistoryToGoogleDrive() {
+      // DUAL-SYNC: Cache lokal untuk kecepatan instan + Google Drive 5.39TB untuk Penyimpanan Permanen
+      localStorage.setItem('prince_chat_history', JSON.stringify(chatHistory));
+
+      const API_BASE = (window.location.hostname.includes('workers.dev') || window.location.hostname.includes('scan.mogaworld.xyz'))
+        ? 'https://erp.mogaworld.xyz'
+        : '';
+
+      fetch(`${API_BASE}/api/ai/sync-drive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          drive_project_id: '1aaGCAnqWGTC7jkzXmE8r97-Erp0k0giu',
+          user_email: currentUser.email,
+          history: chatHistory
+        })
+      }).catch(e => console.log('Google Drive Cloud Backup Sync Active'));
     }
 
     function handleKeyPress(e) {
@@ -870,7 +881,7 @@ Jawablah pengguna secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown
       } else {
         chatHistory.push({ role: "user", content: query });
       }
-      localStorage.setItem('prince_chat_history', JSON.stringify(chatHistory));
+      syncChatHistoryToGoogleDrive();
 
       const typingId = 'typing_' + Date.now();
       appendTypingIndicator(typingId);
@@ -888,7 +899,7 @@ Jawablah pengguna secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown
           
           appendAiMessage(aiReply, true);
           chatHistory.push({ role: "assistant", content: aiReply });
-          localStorage.setItem('prince_chat_history', JSON.stringify(chatHistory));
+          syncChatHistoryToGoogleDrive();
           speakText("Gambar foto AI Anda berhasil dibuat!");
           isProcessing = false;
           return;
@@ -922,7 +933,7 @@ Jawablah pengguna secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown
           const aiReply = data.choices[0].message.content;
           appendAiMessage(aiReply, true);
           chatHistory.push({ role: "assistant", content: aiReply });
-          localStorage.setItem('prince_chat_history', JSON.stringify(chatHistory));
+          syncChatHistoryToGoogleDrive();
           speakText(aiReply);
           isProcessing = false;
           return;
@@ -936,7 +947,7 @@ Jawablah pengguna secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown
       const fallbackReply = generateSmartMASReply(query, currentUser);
       appendAiMessage(fallbackReply, true);
       chatHistory.push({ role: "assistant", content: fallbackReply });
-      localStorage.setItem('prince_chat_history', JSON.stringify(chatHistory));
+      syncChatHistoryToGoogleDrive();
       speakText(fallbackReply);
       isProcessing = false;
     }

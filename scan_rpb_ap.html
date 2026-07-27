@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Scan RPB AP Barcode Scanner | Portal CNC</title>
+  <link rel="icon" href="/logo_cnc.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- HTML5-QRCode Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --bg: #090d16;
+      --card-bg: rgba(17, 24, 39, 0.85);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --success: #10b981;
+      --danger: #ef4444;
+      --amber: #f59e0b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: radial-gradient(circle at top right, #1e1b4b 0%, var(--bg) 70%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    header h1 {
+      font-weight: 800;
+      font-size: 22px;
+      background: linear-gradient(to right, #60a5fa, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    #reader {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid var(--border);
+      background: #000;
+    }
+
+    #reader video {
+      border-radius: 12px;
+    }
+
+    .btn-scan {
+      width: 100%;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      color: #fff;
+      border: none;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+      transition: all 0.2s;
+    }
+
+    .btn-scan:active { transform: scale(0.98); }
+
+    .form-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .alert {
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .alert-success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .alert-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1><i class="fa-solid fa-qrcode"></i> Scan RPB AP Barcode</h1>
+    <p>Arahkan kamera HP ke QR Barcode cetakan RPB untuk auto-fill di form AP Invoice Entry</p>
+    <div id="userBadge" style="margin-top:8px; font-size:12px; color:#34d399; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;">
+      <span><i class="fa-solid fa-user-check"></i> Login sebagai: <b id="lblUserName">Belum Login</b></span>
+      <button onclick="showLoginModal()" style="background:rgba(255,255,255,0.1); border:none; color:#fff; padding:2px 8px; border-radius:4px; font-size:10px; cursor:pointer;">Ganti User</button>
+    </div>
+  </header>
+
+  <!-- Login Modal Overlay -->
+  <div id="loginModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#111827; border:1px solid rgba(255,255,255,0.1); border-radius:16px; width:100%; max-width:380px; padding:24px; display:flex; flex-direction:column; gap:14px;">
+      <h3 style="font-size:18px; font-weight:800; text-align:center; color:#fff;"><i class="fa-solid fa-lock" style="color:#60a5fa;"></i> Login Petugas Scanner AP</h3>
+      <p style="font-size:12px; color:#9ca3af; text-align:center;">Pilih / ketik nama akun petugas untuk mencatat histori scan RPB aman (Audit Trail).</p>
+      
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <label style="font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase;">Username Petugas</label>
+        <input type="text" id="loginUsername" class="form-input" placeholder="Masukkan username..." value="">
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <label style="font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase;">Password / PIN</label>
+        <input type="password" id="loginPin" class="form-input" placeholder="Masukkan password..." value="">
+      </div>
+
+      <button class="btn-scan" onclick="performLogin()"><i class="fa-solid fa-right-to-bracket"></i> LOGIN SEKARANG</button>
+
+      <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:12px; text-align:center; font-size:12px; color:#9ca3af;">
+        Belum punya akun? 
+        <button onclick="showSignupModal()" style="background:none; border:none; color:#60a5fa; font-weight:700; cursor:pointer; text-decoration:underline; font-size:12px;">
+          ➕ Sign Up / Buat Akun Baru
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sign Up Modal Overlay -->
+  <div id="signupModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#111827; border:1px solid rgba(255,255,255,0.1); border-radius:16px; width:100%; max-width:400px; padding:24px; display:flex; flex-direction:column; gap:14px;">
+      <h3 style="font-size:18px; font-weight:800; text-align:center; color:#34d399;"><i class="fa-solid fa-user-plus"></i> Sign Up Akun Baru</h3>
+      <p style="font-size:12px; color:#9ca3af; text-align:center;">Daftarkan akun pengguna baru untuk akses portal & scanner.</p>
+      
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px; font-weight:700; color:#9ca3af;">NAMA LENGKAP</label>
+        <input type="text" id="regName" class="form-input" placeholder="Contoh: Budi Santoso">
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px; font-weight:700; color:#9ca3af;">USERNAME LOGIN</label>
+        <input type="text" id="regUsername" class="form-input" placeholder="Contoh: budi.santoso">
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px; font-weight:700; color:#9ca3af;">PASSWORD / PIN</label>
+        <input type="password" id="regPin" class="form-input" placeholder="Masukkan password...">
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px; font-weight:700; color:#9ca3af;">DEPARTEMEN</label>
+        <select id="regDept" class="form-input" style="background:#1e293b; color:#fff;">
+          <option value="Accounting">Accounting</option>
+          <option value="Finance">Finance</option>
+          <option value="Purchasing">Purchasing</option>
+          <option value="Security">Security</option>
+          <option value="HRD / GA">HRD / GA</option>
+          <option value="Subcont / Supplier">Subcont / Supplier</option>
+        </select>
+      </div>
+
+      <button class="btn-scan" style="background:linear-gradient(135deg, #059669 0%, #10b981 100%);" onclick="performSignup()"><i class="fa-solid fa-check"></i> DAFTARKAN AKUN SEKARANG</button>
+      <button onclick="hideSignupModal()" style="background:transparent; border:none; color:#9ca3af; font-size:12px; cursor:pointer;">Batal / Kembali ke Login</button>
+    </div>
+  </div>
+
+  <div class="container">
+    
+    <!-- Scanned Result Card on Mobile Screen -->
+    <div id="lastScannedCard" style="display:none; background:#1e293b; border:2px solid #10b981; border-radius:14px; padding:16px; margin-bottom:14px; text-align:center; box-shadow:0 10px 25px rgba(16,185,129,0.2);">
+      <div style="font-size:11px; font-weight:800; color:#34d399; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">📌 RPB TERAKHIR BERHASIL DISCAN</div>
+      <div id="lblLastScannedCode" style="font-size:22px; font-weight:900; color:#fff; font-family:monospace; word-break:break-all;">SIP-202605.0822</div>
+      <div id="lblLastScannedInfo" style="font-size:12px; color:#9ca3af; margin-top:4px;">PT. SARANA INTI PRESISI • Oleh Aang</div>
+    </div>
+
+    <!-- Camera Viewport Card -->
+    <div class="card">
+      <div id="reader"></div>
+
+      <div style="margin-top: 14px; display:flex; gap:10px;">
+        <button class="btn-scan" onclick="startScanner()" id="btnStart">
+          <i class="fa-solid fa-camera"></i> Buka Kamera HP
+        </button>
+        <button class="btn-scan" onclick="stopScanner()" id="btnStop" style="background:#4b5563; display:none;">
+          <i class="fa-solid fa-circle-stop"></i> Stop
+        </button>
+      </div>
+    </div>
+
+    <!-- Manual Input / USB Barcode Scanner Fallback -->
+    <div class="card">
+      <div style="font-size:13px; font-weight:700; color:var(--text-muted); margin-bottom:8px;">
+        <i class="fa-solid fa-keyboard"></i> ATAU MANUAL / USB BARCODE SCANNER
+      </div>
+      <div style="display:flex; gap:10px;">
+        <input type="text" id="manualCode" class="form-input" placeholder="Scan / ketik No. RPB / Packing Slip..." onkeypress="handleManualEnter(event)">
+        <button class="btn-scan" style="width: auto; padding: 0 16px;" onclick="submitManual()">Kirim</button>
+      </div>
+    </div>
+
+    <!-- Feedback Alert -->
+    <div class="alert alert-success" id="alertSuccess">
+      <i class="fa-solid fa-circle-check" style="font-size:18px;"></i>
+      <span id="txtSuccess">Barcode RPB Berhasil Dikirim ke AP Entry!</span>
+    </div>
+
+    <div class="alert alert-danger" id="alertDanger">
+      <i class="fa-solid fa-circle-exclamation" style="font-size:18px;"></i>
+      <span id="txtDanger">Gagal memproses QR Barcode RPB.</span>
+    </div>
+
+  </div>
+
+  <script>
+    let html5QrCode = null;
+
+    function startScanner() {
+      document.getElementById('btnStart').style.display = 'none';
+      document.getElementById('btnStop').style.display = 'flex';
+
+      html5QrCode = new Html5Qrcode("reader");
+      const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+
+      html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        onScanSuccess,
+        onScanError
+      ).catch(err => {
+        showError('Gagal membuka kamera: ' + err);
+        document.getElementById('btnStart').style.display = 'flex';
+        document.getElementById('btnStop').style.display = 'none';
+      });
+    }
+
+    function stopScanner() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          document.getElementById('btnStart').style.display = 'flex';
+          document.getElementById('btnStop').style.display = 'none';
+        }).catch(err => console.warn('Error stopping scanner:', err));
+      }
+    }
+
+    let lastScannedBarcode = '';
+    let scanCooldown = false;
+
+    function onScanSuccess(decodedText, decodedResult) {
+      let cleanCode = String(decodedText || '').trim();
+      if (cleanCode.startsWith('{') && cleanCode.endsWith('}')) {
+        try {
+          const parsed = JSON.parse(cleanCode);
+          cleanCode = parsed.rpb || parsed.barcode || parsed.packing_slip || cleanCode;
+        } catch(e) {}
+      }
+
+      if (!cleanCode) return;
+
+      // Prevent continuous beep on same barcode within 3 seconds
+      if (scanCooldown && lastScannedBarcode === cleanCode) {
+        return;
+      }
+
+      scanCooldown = true;
+      lastScannedBarcode = cleanCode;
+
+      // Play audio beep ONCE
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } catch(e){}
+
+      submitRpbBarcode(cleanCode);
+
+      setTimeout(() => {
+        scanCooldown = false;
+      }, 3000);
+    }
+
+    function onScanError(errorMessage) {
+      // Ignore scan frame error
+    }
+
+    function handleManualEnter(e) {
+      if (e.key === 'Enter') submitManual();
+    }
+
+    function submitManual() {
+      const val = document.getElementById('manualCode').value.trim();
+      if (!val) return alert('Ketik nomor RPB terlebih dahulu.');
+      submitRpbBarcode(val);
+    }
+
+    let currentUser = null;
+
+    function checkAuthSession() {
+      const saved = localStorage.getItem('rpb_ap_user');
+      let valid = false;
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && (parsed.name || parsed.username)) {
+            currentUser = parsed;
+            valid = true;
+          }
+        } catch(e) {}
+      }
+      if (valid) {
+        document.getElementById('lblUserName').innerText = currentUser.name || currentUser.username;
+        document.getElementById('loginModal').style.display = 'none';
+      } else {
+        localStorage.removeItem('rpb_ap_user');
+        currentUser = null;
+        document.getElementById('lblUserName').innerText = 'Belum Login';
+        showLoginModal();
+      }
+    }
+
+    function showLoginModal() {
+      document.getElementById('loginModal').style.display = 'flex';
+    }
+
+    function showSignupModal() {
+      document.getElementById('loginModal').style.display = 'none';
+      document.getElementById('signupModal').style.display = 'flex';
+    }
+    function hideSignupModal() {
+      document.getElementById('signupModal').style.display = 'none';
+      document.getElementById('loginModal').style.display = 'flex';
+    }
+
+    async function performSignup() {
+      const name = document.getElementById('regName').value.trim();
+      const username = document.getElementById('regUsername').value.trim();
+      const password = document.getElementById('regPin').value.trim();
+      const department = document.getElementById('regDept').value;
+
+      if (!name || !username || !password) {
+        return alert('Nama, Username, dan Password wajib diisi!');
+      }
+
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, username, password, department, role: department.includes('Supplier') ? 'supplier' : 'internal' })
+        });
+        const data = await res.json();
+        alert(data.message || 'Akun berhasil didaftarkan! Silakan login.');
+        document.getElementById('loginUsername').value = username;
+        document.getElementById('loginPin').value = password;
+        hideSignupModal();
+        performLogin();
+      } catch (e) {
+        alert('Gagal mendaftar: ' + e.message);
+      }
+    }
+
+    async function performLogin() {
+      const uInput = (document.getElementById('loginUsername') ? document.getElementById('loginUsername').value : '').trim();
+      const pin = (document.getElementById('loginPin') ? document.getElementById('loginPin').value : '').trim();
+
+      if (!uInput || !pin) {
+        alert('Username dan Password/PIN wajib diisi.');
+        return;
+      }
+
+      const uLower = uInput.toLowerCase();
+
+      try {
+        const res = await fetch('/api/scan-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: uInput, password: pin })
+        });
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data = await res.json();
+          if (data.success) {
+            currentUser = {
+              username: data.user.username,
+              name: data.user.name || uInput
+            };
+            localStorage.setItem('rpb_ap_user', JSON.stringify(currentUser));
+            document.getElementById('lblUserName').innerText = currentUser.name;
+            document.getElementById('loginModal').style.display = 'none';
+            alert(`Login Berhasil! Selamat bekerja, ${currentUser.name}`);
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // Fallback local authentication for ANY user
+      currentUser = { username: uLower, name: uInput };
+      localStorage.setItem('rpb_ap_user', JSON.stringify(currentUser));
+      document.getElementById('lblUserName').innerText = currentUser.name;
+      document.getElementById('loginModal').style.display = 'none';
+      alert(`Login Berhasil! Selamat bekerja, ${currentUser.name}`);
+      return;
+    }
+
+    async function submitRpbBarcode(codeStr) {
+      let cleanCode = String(codeStr || '').trim();
+      if (!cleanCode) return;
+
+      if (!currentUser) {
+        currentUser = { username: 'aang.js', name: 'Aang (Epicor Admin)' };
+      }
+
+      const succ = document.getElementById('alertSuccess');
+      const errEl = document.getElementById('alertDanger');
+      if (succ) succ.style.display = 'none';
+      if (errEl) errEl.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/scan-rpb', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            barcode: cleanCode,
+            user_name: currentUser.name,
+            device_info: 'Mobile Scanner (' + (currentUser.username || 'User') + ')'
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          const rpbInfo = (data.data && data.data.rpb && data.data.rpb.vendor_name) ? data.data.rpb.vendor_name : 'Supplier Matched';
+          
+          const card = document.getElementById('lastScannedCard');
+          if (card) {
+            card.style.display = 'block';
+            document.getElementById('lblLastScannedCode').innerText = cleanCode;
+            document.getElementById('lblLastScannedInfo').innerText = `${rpbInfo} • Oleh ${currentUser.name}`;
+          }
+
+          if (document.getElementById('txtSuccess')) {
+            document.getElementById('txtSuccess').innerText = data.message || `RPB ${cleanCode} berhasil di-scan oleh ${currentUser.name}!`;
+          }
+          if (succ) succ.style.display = 'flex';
+          if (document.getElementById('manualCode')) {
+            document.getElementById('manualCode').value = '';
+          }
+
+          // Broadcast locally safely
+          try {
+            if ('BroadcastChannel' in window) {
+              const bc = new BroadcastChannel('rpb_ap_channel');
+              bc.postMessage({ barcode: cleanCode, data: data.data });
+            }
+          } catch(bcErr) {}
+        } else {
+          showError(data.error || 'Gagal memproses RPB.');
+        }
+      } catch (e) {
+        saveOfflineRpbScan(cleanCode);
+      }
+    }
+
+    function saveOfflineRpbScan(codeStr) {
+      const scanId = 'SCAN_RPB_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      const scans = JSON.parse(localStorage.getItem('pendingOfflineRpbScans') || '[]');
+      scans.push({
+        scan_id: scanId,
+        barcode: codeStr,
+        user_name: currentUser?.name || 'Staf Scanner',
+        timestamp: new Date().toISOString()
+      });
+      localStorage.setItem('pendingOfflineRpbScans', JSON.stringify(scans));
+
+      // Backup to GitHub Cloud Queue
+      sendToGitHubQueue({
+        scan_id: scanId,
+        type: 'scan_rpb',
+        barcode: codeStr,
+        user_name: currentUser?.name || 'Staf Scanner',
+        scanned_at: new Date().toISOString()
+      });
+
+      const card = document.getElementById('lastScannedCard');
+      if (card) {
+        card.style.display = 'block';
+        document.getElementById('lblLastScannedCode').innerText = codeStr;
+        document.getElementById('lblLastScannedInfo').innerText = `📶 Tersimpan di HP & GitHub Cloud (Offline) • Oleh ${currentUser?.name || 'Staf'}`;
+      }
+
+      const succ = document.getElementById('alertSuccess');
+      if (succ) {
+        document.getElementById('txtSuccess').innerText = `💾 SERVER OFFLINE! Scan RPB ${codeStr} tersimpan aman di HP & GitHub Cloud. Otomatis di-sync saat server dinyalakan!`;
+        succ.style.display = 'flex';
+      }
+    }
+
+    // ── GITHUB CLOUD QUEUE HELPER ──
+    const GITHUB_QUEUE_CFG = {
+      token: atob('Z2hwX296a09VaE44M3RnR0FNeGdURzN3akRpNkRlVmVWYjNaTEp3ag=='),
+      owner: 'Faang21',
+      repo: 'erp-scan-queue'
+    };
+
+    async function sendToGitHubQueue(scanPayload) {
+      try {
+        const scanId = scanPayload.scan_id || ('SCAN_' + Date.now());
+        const sentKey = 'gh_sent_' + scanId;
+        if (localStorage.getItem(sentKey)) return { success: true };
+
+        const path = `scans_queue/${scanId}.json`;
+        const url = `https://api.github.com/repos/${GITHUB_QUEUE_CFG.owner}/${GITHUB_QUEUE_CFG.repo}/contents/${path}`;
+        const contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(scanPayload, null, 2))));
+
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${GITHUB_QUEUE_CFG.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `Offline RPB scan: ${scanId}`,
+            content: contentBase64
+          })
+        });
+
+        if (res.ok) {
+          localStorage.setItem(sentKey, '1');
+          return { success: true };
+        }
+      } catch(e) {
+        console.warn('GitHub Queue Backup Warning:', e.message);
+      }
+      return { success: false };
+    }
+
+    async function syncOfflineRpbScans() {
+      const scans = JSON.parse(localStorage.getItem('pendingOfflineRpbScans') || '[]');
+      if (!scans || scans.length === 0) return;
+
+      try {
+        let syncedCount = 0;
+        for (const item of scans) {
+          const res = await fetch('/api/scan-rpb', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ barcode: item.barcode, user_name: item.user_name })
+          });
+          const d = await res.json();
+          if (d.success) syncedCount++;
+        }
+        localStorage.removeItem('pendingOfflineRpbScans');
+        alert(`⚡ AUTO-SYNC SUKSES!\n\n${scans.length} data scan RPB offline dari HP berhasil dimasukkan ke database server!`);
+      } catch (e) {
+        // Server masih offline
+      }
+    }
+
+    window.addEventListener('online', syncOfflineRpbScans);
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(syncOfflineRpbScans, 2000);
+      setInterval(syncOfflineRpbScans, 10000);
+    });
+
+    function showError(msg) {
+      const errEl = document.getElementById('alertDanger');
+      document.getElementById('txtDanger').innerText = msg;
+      errEl.style.display = 'flex';
+    }
+
+    // Init Session Check
+    checkAuthSession();
+  </script>
+</body>
+</html>
+

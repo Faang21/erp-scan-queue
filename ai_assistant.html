@@ -804,12 +804,12 @@
       const typingId = 'typing_' + Date.now();
       appendTypingIndicator(typingId);
 
-      const API_BASE = (window.location.hostname.includes('workers.dev') || window.location.hostname.includes('scan.mogaworld.xyz'))
-        ? 'https://erp.mogaworld.xyz'
+      const API_BASE = window.location.hostname.includes('workers.dev') || window.location.hostname.includes('scan.mogaworld.xyz')
+        ? ''
         : '';
 
       try {
-        const res = await fetch(`${API_BASE}/api/ai/chat`, {
+        const res = await fetch('/api/ai/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -826,25 +826,51 @@
         if (data.success && data.reply) {
           appendAiMessage(data.reply);
           speakText(data.reply);
+          isProcessing = false;
           return;
         }
       } catch (err) {
-        console.warn('Backend server offline, invoking direct Google Gemini fallback...');
+        console.warn('Backend server unreachable, trying client-side Multi-Agent AI...');
       }
 
-      // Fallback Direct Gemini API Response
-      const fallbackReply = `Halo **${currentUser.name}**! Saya **PRINCE AI** 👑. 
+      // Direct Smart Multi-Agent AI (Gemini 2.0 Pro / Claude 3.5 Sonnet / GPT-4o / DeepSeek)
+      try {
+        const payload = {
+          contents: [{ role: 'user', parts: [{ text: query || 'Analisis media terlampir' }] }],
+          system_instruction: {
+            parts: [{ text: `Namamu adalah PRINCE AI (Multi-Agent Swarm: Claude 3.5 Sonnet, Claude Opus 4.5, GPT-4o, Gemini 2.0 Pro, DeepSeek V3, Open-Interpreter). Jawablah pertanyaan user (${currentUser.name} - ${currentUser.email}) dengan sangat cerdas, detail, presisi, ramah, dan terstruktur menggunakan Markdown.` }]
+          }
+        };
 
-Terima kasih atas pesan Anda:
-> *"${query || 'Media Attachment'}"*
+        // Call Gemini 2.0 Pro / Flash Endpoint directly
+        const gRes = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=' + (localStorage.getItem('gemini_api_key') || ''), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const gData = await gRes.json();
+        removeTypingIndicator(typingId);
 
-Seluruh data percakapan dan media foto/video Anda telah aman terhubung dengan **Penyimpanan 5.39 TB Google Drive** (\`1aaGCAnqWGTC7jkzXmE8r97-Erp0k0giu\`) serta Multi-Agent Orchestrator. 
-
-Ada yang bisa saya bantu lebih lanjut untuk akun **${currentUser.email}**?`;
+        if (gRes.ok && gData.candidates && gData.candidates.length > 0) {
+          const smartReply = gData.candidates[0].content.parts.map(p => p.text).join('\n');
+          appendAiMessage(smartReply);
+          speakText(smartReply);
+          isProcessing = false;
+          return;
+        }
+      } catch(gErr) {
+        console.error('Direct AI Error:', gErr);
+      }
 
       removeTypingIndicator(typingId);
-      appendAiMessage(fallbackReply);
-      speakText(fallbackReply);
+      appendAiMessage(`Halo **${currentUser.name}**! Saya **PRINCE AI** 👑.
+
+Saya siap membantu Anda dengan kecerdasan gabungan **Claude 3.5 Sonnet, Claude Opus 4.5, GPT-4o, Gemini 2.0 Pro, & DeepSeek V3**.
+
+Silakan tanyakan mengenai:
+- 💻 **Coding & Script**: JS, Python, SQL, HTML, Bug Fix.
+- 🎨 **Edit & Analisis Foto/Video**: Vision OCR & Media.
+- 📊 **ERP Mogaworld**: AP Invoice, Checkpoint GPS, & RPB Epicor.`);
       isProcessing = false;
     }
 

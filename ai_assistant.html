@@ -558,8 +558,12 @@
       const typingId = 'typing_' + Date.now();
       appendTypingIndicator(typingId);
 
+      const API_BASE = (window.location.hostname.includes('workers.dev') || window.location.hostname.includes('scan.mogaworld.xyz'))
+        ? 'https://erp.mogaworld.xyz'
+        : '';
+
       try {
-        const res = await fetch('/api/ai/chat', {
+        const res = await fetch(`${API_BASE}/api/ai/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: query })
@@ -570,15 +574,45 @@
 
         if (data.success && data.reply) {
           appendMessage('ai', data.reply);
-        } else {
-          appendMessage('ai', '⚠️ **Mohon Maaf**: Terjadi kendala saat memproses jawaban: ' + (data.error || 'Server error'));
+          return;
         }
       } catch (err) {
-        removeTypingIndicator(typingId);
-        appendMessage('ai', '⚠️ **Koneksi Error**: Tidak dapat terhubung ke server Prince AI. Pastikan server lokal Anda menyala.');
-      } finally {
-        isProcessing = false;
+        console.warn('Backend server offline, checking client-side Gemini API Key fallback...');
       }
+
+      // 3. Fallback to Direct Client-Side Gemini API call if local server is down
+      const savedKey = localStorage.getItem('gemini_api_key');
+      if (savedKey) {
+        try {
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${savedKey}`;
+          const payload = {
+            contents: [{ role: 'user', parts: [{ text: query }] }],
+            system_instruction: {
+              parts: [{ text: 'Namamu adalah PRINCE AI, Asisten Pintar Super Canggih Mogaworld ERP dan Pakar Teknologi Umum. Jawablah dalam Bahasa Indonesia yang jelas, ramah, dan terstruktur menggunakan Markdown.' }]
+            }
+          };
+
+          const gRes = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const gData = await gRes.json();
+          removeTypingIndicator(typingId);
+
+          if (gRes.ok && gData.candidates && gData.candidates.length > 0) {
+            const replyText = gData.candidates[0].content.parts.map(p => p.text).join('\n');
+            appendMessage('ai', replyText);
+            return;
+          }
+        } catch(gErr) {
+          console.error('Gemini Direct Error:', gErr.message);
+        }
+      }
+
+      removeTypingIndicator(typingId);
+      appendMessage('ai', '⚠️ **Koneksi Error**: Server lokal sedang offline. Silakan klik tombol **🔑 API Key Settings** di navbar dan masukkan Gemini API Key Anda agar Prince AI tetap aktif 24 jam walau server kantor mati!');
+      isProcessing = false;
     }
 
     function appendMessage(sender, text) {
@@ -661,22 +695,30 @@
       const key = document.getElementById('inputApiKey').value.trim();
       if (!key) return alert('Masukkan API Key terlebih dahulu!');
 
+      localStorage.setItem('gemini_api_key', key);
+
+      const API_BASE = (window.location.hostname.includes('workers.dev') || window.location.hostname.includes('scan.mogaworld.xyz'))
+        ? 'https://erp.mogaworld.xyz'
+        : '';
+
       try {
-        const res = await fetch('/api/ai/set-key', {
+        const res = await fetch(`${API_BASE}/api/ai/set-key`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ apiKey: key })
         });
         const data = await res.json();
         if (data.success) {
-          alert('✅ Google Gemini API Key BERHASIL DISIMPAN & DIAKTIFKAN!');
+          alert('✅ Google Gemini API Key BERHASIL DISIMPAN & DIAKTIFKAN DI CLOUD!');
           if (keyModal) keyModal.hide();
-        } else {
-          alert('Gagal menyimpan API Key: ' + data.error);
+          return;
         }
       } catch(e) {
-        alert('Error menyimpan API Key: ' + e.message);
+        console.warn('Backend server offline, key stored in localStorage for direct Cloud Gemini AI access.');
       }
+
+      alert('✅ Google Gemini API Key BERHASIL DISIMPAN DI HP/BROWSER (MODE DIRECT CLOUD AI 24 JAM)!');
+      if (keyModal) keyModal.hide();
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"></script>

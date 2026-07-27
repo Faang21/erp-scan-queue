@@ -664,12 +664,27 @@
 
     let activeTab = 'chats';
 
+    function clearChatHistory() {
+      if (confirm('Apakah Anda yakin ingin menghapus seluruh riwayat chat?')) {
+        const userKey = `prince_chat_history_${currentUser.email}`;
+        localStorage.removeItem(userKey);
+        chatHistory = [chatHistory[0]];
+        document.querySelectorAll('.msg-row').forEach(el => el.remove());
+        heroCenter.style.display = 'block';
+        renderRecentsList();
+        alert('✅ Riwayat chat telah berhasil dihapus!');
+      }
+    }
+
     function selectTab(tabName) {
       activeTab = tabName;
 
       document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
       const activeEl = document.getElementById(tabName === 'chats' ? 'tabChats' : (tabName === 'images' ? 'tabImages' : 'tabVideos'));
       if (activeEl) activeEl.classList.add('active');
+
+      // Clear current chat messages from stream for fresh clean studio screen
+      document.querySelectorAll('.msg-row').forEach(el => el.remove());
 
       if (tabName === 'images') {
         heroCenter.style.display = 'block';

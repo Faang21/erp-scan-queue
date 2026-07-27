@@ -487,26 +487,33 @@
           <i class="bi bi-film"></i>
           <span class="sidebar-text">Videos</span>
         </a>
-        <a href="/ap_dashboard.html" class="sidebar-item">
+        <a href="#" class="sidebar-item" onclick="alert('Mogaworld ERP Dashboard Integrated')">
           <i class="bi bi-grid-fill"></i>
           <span class="sidebar-text">ERP Dashboard</span>
         </a>
       </div>
 
-      <!-- RECENTS LIST -->
+      <!-- RECENTS LIST WITH CLEAR BUTTON -->
       <div class="recents-section">
-        <div class="recents-title">Recents</div>
+        <div class="d-flex align-items-center justify-content-between recents-title pe-2">
+          <span>Recents</span>
+          <button class="btn btn-link text-danger text-decoration-none p-0" style="font-size: 10px;" onclick="clearChatHistory()" title="Hapus Riwayat Chat">
+            <i class="bi bi-trash3-fill"></i> Hapus
+          </button>
+        </div>
         <div id="recentsChatList"></div>
       </div>
     </div>
 
-    <!-- SIDEBAR FOOTER (USER PROFILE & SETTINGS) -->
+    <!-- SIDEBAR FOOTER (USER PROFILE & GOOGLE DRIVE 5.39TB LINK) -->
     <div class="sidebar-footer">
       <div class="user-badge" onclick="openProfileModal()">
         <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Aang" alt="Avatar" class="user-avatar" id="sidebarAvatarImg">
         <div class="user-info" style="line-height: 1.2;">
           <div class="fw-bold text-white small" id="sidebarUserName">Aang Crypto</div>
-          <div class="text-info" style="font-size: 10px;">Pro Plan</div>
+          <a href="https://drive.google.com/drive/project/1aaGCAnqWGTC7jkzXmE8r97-Erp0k0giu?hl=ID" target="_blank" class="text-info text-decoration-none" style="font-size: 10px;">
+            <i class="bi bi-cloud-check-fill text-success"></i> Drive 5.39 TB
+          </a>
         </div>
       </div>
       <button class="sidebar-toggle-btn text-secondary" title="Settings / Login" onclick="openAuthModal('login')">
@@ -1073,7 +1080,7 @@ Kamu BISA dan SANGAT AHLI membantu:
             'X-Title': 'Prince AI Platform'
           },
           body: JSON.stringify({
-            model: 'openrouter/auto',
+            model: 'google/gemini-2.0-flash-001',
             messages: chatHistory
           })
         });

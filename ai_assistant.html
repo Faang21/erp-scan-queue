@@ -720,21 +720,6 @@ Kamu BISA dan SANGAT AHLI membantu:
     function syncChatHistoryToGoogleDrive() {
       const userKey = `prince_chat_history_${currentUser.email}`;
       localStorage.setItem(userKey, JSON.stringify(chatHistory));
-
-      // Silent Sync to Cloud Storage 5.39TB
-      try {
-        if (location.protocol.startsWith('http')) {
-          fetch('/api/ai/sync-drive', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              drive_project_id: '1aaGCAnqWGTC7jkzXmE8r97-Erp0k0giu',
-              user_email: currentUser.email,
-              history: chatHistory
-            })
-          }).catch(e => {});
-        }
-      } catch(e) {}
     }
 
     function startNewChat() {

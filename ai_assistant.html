@@ -804,71 +804,48 @@
       const typingId = 'typing_' + Date.now();
       appendTypingIndicator(typingId);
 
-      const DEFAULT_API_KEY = atob('QVEuQWI4Uk42aWVnOHo4TXRNMUR5VDZXZmcyMlhIUWFBZVJ3UzRhdng2LW56V3NMckg4Y3c=');
-      const activeKey = localStorage.getItem('gemini_api_key') || DEFAULT_API_KEY;
+      const OPENROUTER_KEY = atob('c2stb3ItdjEtOTc1N2MxZDU3ZjNmNzI5ZDg5NjMxZDhhNmNmYjMwNTNhMDgwMWFmNGVlMmIwNmJjMjdhMmM2MjRiYTg5NWM3Mw==');
 
-      // Try Backend Server First if reachable
+      // Direct Live OpenRouter Super AI (Claude 3.5 / Gemini / GPT-4o / DeepSeek Swarm)
       try {
-        const res = await fetch('/api/ai/chat', {
+        const payload = {
+          model: 'openrouter/auto',
+          messages: [
+            {
+              role: 'system',
+              content: `Namamu adalah PRINCE AI. Kamu adalah Asisten Super AI Mogaworld ERP dan Pakar Teknologi Umum (Powered by Claude 3.5 Sonnet, Claude Opus 4.5, GPT-4o, Gemini 3.6 Flash, & DeepSeek V3).
+Jawablah pertanyaan user (${currentUser.name}) secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown formatting. DILARANG mencetak pesan template pengenalan berulang-ulang!`
+            },
+            {
+              role: 'user',
+              content: query || 'Halo Prince AI'
+            }
+          ]
+        };
+
+        const oRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: query,
-            imageBase64: activeMedia,
-            mimeType: activeMime,
-            user_email: currentUser.email
-          })
+          headers: {
+            'Authorization': 'Bearer ' + OPENROUTER_KEY,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://scan.mogaworld.xyz',
+            'X-Title': 'Prince AI Platform'
+          },
+          body: JSON.stringify(payload)
         });
 
-        const data = await res.json();
-        if (res.ok && data.success && data.reply) {
-          removeTypingIndicator(typingId);
-          appendAiMessage(data.reply);
-          speakText(data.reply);
+        const oData = await oRes.json();
+        removeTypingIndicator(typingId);
+
+        if (oRes.ok && oData.choices && oData.choices.length > 0 && oData.choices[0].message) {
+          const smartReply = oData.choices[0].message.content;
+          appendAiMessage(smartReply);
+          speakText(smartReply);
           isProcessing = false;
           return;
         }
-      } catch (err) {
-        console.warn('Backend server route bypassed, invoking direct Cloud AI Engine...');
-      }
-
-      // Direct Live AI Engine (Claude 3.5 Sonnet / Opus 4.5 / Gemini 2.0 Pro / GPT-4o Swarm)
-      try {
-        if (activeKey && activeKey.startsWith('AIzaSy')) {
-          const payload = {
-            contents: [{
-              role: 'user',
-              parts: [{ text: query || 'Analisis foto/media terlampir' }]
-            }],
-            system_instruction: {
-              parts: [{
-                text: `Namamu adalah PRINCE AI. Kamu adalah Asisten AI Super Canggih dengan kecerdasan gabungan Claude 3.5 Sonnet, Claude Opus 4.5, GPT-4o, Gemini 2.0 Pro, & DeepSeek V3.
-Aturan Penting:
-1. Jawablah pertanyaan user (${currentUser.name}) secara LANGSUNG, ALAMI, SANTAI/PROFESIONAL, dan BERVARIASI sesuai pertanyaan (bisa basa-basi, menjawab ramah, membantu coding, analisis foto/video, maupun tugas ERP).
-2. DILARANG KERAS mencetak pesan template pengenalan berulang-ulang!
-3. Jawablah pertanyaan persis sesuai konteks yang ditanyakan user!`
-              }]
-            }
-          };
-
-          const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          const gData = await gRes.json();
-
-          if (gRes.ok && gData.candidates && gData.candidates.length > 0) {
-            removeTypingIndicator(typingId);
-            const smartReply = gData.candidates[0].content.parts.map(p => p.text).join('\n');
-            appendAiMessage(smartReply);
-            speakText(smartReply);
-            isProcessing = false;
-            return;
-          }
-        }
-      } catch(gErr) {
-        console.warn('Direct API call bypassed, activating MAS Smart Fallback Response Engine...');
+      } catch (oErr) {
+        console.error('OpenRouter Live Call Error:', oErr);
       }
 
       // Smart MAS Natural Response Engine (Bulletproof 100%)

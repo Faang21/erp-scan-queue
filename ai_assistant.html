@@ -475,15 +475,15 @@
       </div>
 
       <div class="sidebar-menu">
-        <a href="#" class="sidebar-item active">
+        <a href="#" class="sidebar-item active" id="tabChats" onclick="selectTab('chats')">
           <i class="bi bi-chat-dots-fill"></i>
           <span class="sidebar-text">Chats</span>
         </a>
-        <a href="#" class="sidebar-item">
+        <a href="#" class="sidebar-item" id="tabImages" onclick="selectTab('images')">
           <i class="bi bi-image-fill"></i>
           <span class="sidebar-text">Images</span>
         </a>
-        <a href="#" class="sidebar-item">
+        <a href="#" class="sidebar-item" id="tabVideos" onclick="selectTab('videos')">
           <i class="bi bi-film"></i>
           <span class="sidebar-text">Videos</span>
         </a>
@@ -655,11 +655,38 @@
       document.getElementById('geminiSidebar').classList.toggle('collapsed');
     }
 
+    let activeTab = 'chats';
+
+    function selectTab(tabName) {
+      activeTab = tabName;
+
+      document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+      const activeEl = document.getElementById(tabName === 'chats' ? 'tabChats' : (tabName === 'images' ? 'tabImages' : 'tabVideos'));
+      if (activeEl) activeEl.classList.add('active');
+
+      if (tabName === 'images') {
+        heroCenter.style.display = 'block';
+        document.getElementById('heroTitle').innerText = '🎨 PRINCE AI — Image Studio & Photo Editor';
+        userInput.placeholder = 'Ketik prompt gambar (contoh: "buatkan gambar naga cybernetic" atau "edit foto nuansa formal")...';
+      } else if (tabName === 'videos') {
+        heroCenter.style.display = 'block';
+        document.getElementById('heroTitle').innerText = '🎥 PRINCE AI — Video Analysis & Studio';
+        userInput.placeholder = 'Upload file video / ketik instruksi analisis video...';
+      } else {
+        const firstName = currentUser.name ? currentUser.name.split(' ')[0] : 'User';
+        document.getElementById('heroTitle').innerText = `What can I help with, ${firstName}?`;
+        userInput.placeholder = 'Ask Prince AI...';
+        loadHistoryToUI();
+      }
+    }
+
     function updateUserNavDisplay() {
       const firstName = currentUser.name ? currentUser.name.split(' ')[0] : 'User';
       document.getElementById('sidebarUserName').innerText = currentUser.name || 'User';
       document.getElementById('sidebarAvatarImg').src = currentUser.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aang';
-      document.getElementById('heroTitle').innerText = `What can I help with, ${firstName}?`;
+      if (activeTab === 'chats') {
+        document.getElementById('heroTitle').innerText = `What can I help with, ${firstName}?`;
+      }
     }
 
     function loadHistoryToUI() {

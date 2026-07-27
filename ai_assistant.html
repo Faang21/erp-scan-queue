@@ -850,9 +850,19 @@ Aturan Penting:
           }
         };
 
-        const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`, {
+        const isStandardKey = activeKey.startsWith('AIzaSy');
+        const fetchUrl = isStandardKey
+          ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`
+          : `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+
+        const reqHeaders = { 'Content-Type': 'application/json' };
+        if (!isStandardKey) {
+          reqHeaders['Authorization'] = `Bearer ${activeKey}`;
+        }
+
+        const gRes = await fetch(fetchUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: reqHeaders,
           body: JSON.stringify(payload)
         });
         const gData = await gRes.json();

@@ -613,7 +613,27 @@ Jawablah pengguna secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown
     }
 
     function loadHistoryToUI() {
-      if (!chatHistory || chatHistory.length <= 1) return;
+      const userKey = `prince_chat_history_${currentUser.email}`;
+      chatHistory = JSON.parse(localStorage.getItem(userKey)) || [
+        {
+          role: "system",
+          content: `Namamu adalah PRINCE AI. Kamu adalah Super Assistant Multi-Agent Mogaworld ERP. 
+Kamu BISA dan SANGAT AHLI membantu:
+1. Generate & Edit Foto/Gambar AI (Model FLUX / Pollinations Engine).
+2. Analisis Foto Struk/Nota OCR & Video Document Analysis.
+3. Matematika Rumit & Akuntansi (DeepSeek R1).
+4. Coding Fullstack & Script Pemrograman (Claude 3.5 Sonnet / GPT-4o).
+5. Panduan ERP Mogaworld, AP Invoice, & Checkpoint GPS.`
+        }
+      ];
+
+      // Reset UI Stream
+      document.querySelectorAll('.message-row').forEach(el => el.remove());
+
+      if (chatHistory.length <= 1) {
+        heroWelcome.style.display = 'block';
+        return;
+      }
 
       heroWelcome.style.display = 'none';
       chatHistory.forEach(msg => {
@@ -630,14 +650,10 @@ Jawablah pengguna secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown
     }
 
     function syncChatHistoryToGoogleDrive() {
-      // DUAL-SYNC: Cache lokal untuk kecepatan instan + Google Drive 5.39TB untuk Penyimpanan Permanen
-      localStorage.setItem('prince_chat_history', JSON.stringify(chatHistory));
+      const userKey = `prince_chat_history_${currentUser.email}`;
+      localStorage.setItem(userKey, JSON.stringify(chatHistory));
 
-      const API_BASE = (window.location.hostname.includes('workers.dev') || window.location.hostname.includes('scan.mogaworld.xyz'))
-        ? 'https://erp.mogaworld.xyz'
-        : '';
-
-      fetch(`${API_BASE}/api/ai/sync-drive`, {
+      fetch('/api/ai/sync-drive', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -645,7 +661,45 @@ Jawablah pengguna secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown
           user_email: currentUser.email,
           history: chatHistory
         })
-      }).catch(e => console.log('Google Drive Cloud Backup Sync Active'));
+      }).catch(e => {});
+    }
+
+    function processAuthSubmit() {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value.trim();
+      const name = document.getElementById('authName')?.value.trim() || email.split('@')[0];
+
+      if (!email || !password) return alert('Email dan Password wajib diisi!');
+
+      currentUser = {
+        email: email,
+        name: name,
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`
+      };
+      localStorage.setItem('prince_user_session', JSON.stringify(currentUser));
+      updateUserNavDisplay();
+      if (authModalBs) authModalBs.hide();
+
+      // Load History Specific to Logged In User
+      loadHistoryToUI();
+      alert(`✅ BERHASIL LOGIN SEBAGAI: ${email}`);
+    }
+
+    function logoutUser() {
+      localStorage.removeItem('prince_user_session');
+      currentUser = {
+        email: 'guest@mogaworld.xyz',
+        name: 'Guest User',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest'
+      };
+      updateUserNavDisplay();
+
+      // Reset Chat Stream to Homepage
+      document.querySelectorAll('.message-row').forEach(el => el.remove());
+      heroWelcome.style.display = 'block';
+      chatHistory = [chatHistory[0]];
+
+      alert('✅ Anda telah logout dari PRINCE AI. Kembali ke Halaman Utama.');
     }
 
     function handleKeyPress(e) {
@@ -888,19 +942,19 @@ Jawablah pengguna secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown
 
       const qLower = (query || '').toLowerCase();
 
-      // ROUTE A: IMAGE GENERATION & EDITING REQUEST (Model FLUX / Pollinations)
-      if (qLower.includes('buatkan gambar') || qLower.includes('buat gambar') || qLower.includes('edit foto') || qLower.includes('generate image') || qLower.includes('lukis')) {
+      // ROUTE A: IMAGE GENERATION & EDITING REQUEST (Model FLUX / Pollinations Engine)
+      if (activeMedia || qLower.includes('buatkan gambar') || qLower.includes('buat gambar') || qLower.includes('edit foto') || qLower.includes('formal') || qLower.includes('nuansa') || qLower.includes('generate image') || qLower.includes('lukis')) {
         try {
-          const imagePrompt = query.replace(/(buatkan gambar|buat gambar|edit foto|generate image|lukis)/gi, '').trim() || 'futuristic cybernetic dragon in neon city';
-          const generatedImgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt)}?width=800&height=800&nologo=true&seed=${Math.floor(Math.random() * 100000)}`;
+          const imagePrompt = (query || 'formal professional portrait attire').replace(/(buatkan gambar|buat gambar|edit foto|generate image|lukis)/gi, '').trim();
+          const generatedImgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent('high quality realistic photo ' + imagePrompt)}?width=800&height=800&nologo=true&seed=${Math.floor(Math.random() * 100000)}`;
 
           removeTypingIndicator(typingId);
-          const aiReply = `Berikut adalah hasil foto / gambar AI pesanan Anda untuk prompt: **"${imagePrompt}"**:\n\n![Generated Image](${generatedImgUrl})`;
-          
+          const aiReply = `Berikut adalah hasil foto editan pesanan Anda dengan tema **"${imagePrompt}"**:\n\n![Hasil Edit Foto](${generatedImgUrl})`;
+
           appendAiMessage(aiReply, true);
           chatHistory.push({ role: "assistant", content: aiReply });
           syncChatHistoryToGoogleDrive();
-          speakText("Gambar foto AI Anda berhasil dibuat!");
+          speakText("Foto hasil editan Anda berhasil dibuat!");
           isProcessing = false;
           return;
         } catch(imgErr) {

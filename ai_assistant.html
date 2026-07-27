@@ -668,7 +668,18 @@
       if (confirm('Apakah Anda yakin ingin menghapus seluruh riwayat chat?')) {
         const userKey = `prince_chat_history_${currentUser.email}`;
         localStorage.removeItem(userKey);
-        chatHistory = [chatHistory[0]];
+        chatHistory = [
+          {
+            role: "system",
+            content: `Namamu adalah PRINCE AI. Kamu adalah Super Assistant Multi-Agent Mogaworld ERP. 
+Kamu BISA dan SANGAT AHLI membantu:
+1. Generate & Edit Foto/Gambar AI (Model FLUX / Pollinations Engine).
+2. Analisis Foto Struk/Nota OCR & Video Document Analysis.
+3. Matematika Rumit & Akuntansi (DeepSeek R1).
+4. Coding Fullstack & Script Pemrograman (Claude 3.5 Sonnet / GPT-4o).
+5. Panduan ERP Mogaworld, AP Invoice, & Checkpoint GPS.`
+          }
+        ];
         document.querySelectorAll('.msg-row').forEach(el => el.remove());
         heroCenter.style.display = 'block';
         renderRecentsList();
@@ -729,7 +740,7 @@ Kamu BISA dan SANGAT AHLI membantu:
       // Reset UI Stream
       document.querySelectorAll('.msg-row').forEach(el => el.remove());
 
-      if (chatHistory.length <= 1) {
+      if (!Array.isArray(chatHistory) || chatHistory.length <= 1) {
         heroCenter.style.display = 'block';
         renderRecentsList();
         return;
@@ -737,11 +748,11 @@ Kamu BISA dan SANGAT AHLI membantu:
 
       heroCenter.style.display = 'none';
       chatHistory.forEach(msg => {
-        if (msg.role === 'user') {
-          const text = typeof msg.content === 'string' ? msg.content : (msg.content[0]?.text || 'Media Attachment');
+        if (msg && msg.role === 'user') {
+          const text = typeof msg.content === 'string' ? msg.content : (Array.isArray(msg.content) && msg.content[0]?.text ? msg.content[0].text : 'Media Attachment');
           const mediaBase64 = Array.isArray(msg.content) && msg.content[1]?.image_url?.url ? msg.content[1].image_url.url.split(',')[1] : null;
           appendUserMessage(text, mediaBase64, false);
-        } else if (msg.role === 'assistant') {
+        } else if (msg && msg.role === 'assistant') {
           appendAiMessage(msg.content, false);
         }
       });
@@ -755,9 +766,18 @@ Kamu BISA dan SANGAT AHLI membantu:
       if (!listEl) return;
       listEl.innerHTML = '';
 
-      const userMessages = chatHistory.filter(m => m.role === 'user');
+      if (!Array.isArray(chatHistory)) return;
+
+      const userMessages = chatHistory.filter(m => m && m.role === 'user');
       userMessages.slice(-8).reverse().forEach(m => {
-        const text = typeof m.content === 'string' ? m.content : (m.content[0]?.text || 'Attachment');
+        const text = typeof m.content === 'string' ? m.content : (Array.isArray(m.content) && m.content[0]?.text ? m.content[0].text : 'Attachment');
+        const item = document.createElement('div');
+        item.className = 'recent-chat-item';
+        item.innerText = text;
+        item.onclick = () => sendPrompt(text);
+        listEl.appendChild(item);
+      });
+    }
         const item = document.createElement('div');
         item.className = 'recent-chat-item';
         item.innerText = text;
@@ -1095,7 +1115,7 @@ Kamu BISA dan SANGAT AHLI membantu:
             'X-Title': 'Prince AI Platform'
           },
           body: JSON.stringify({
-            model: 'deepseek/deepseek-chat',
+            model: 'meta-llama/llama-3.3-70b-instruct',
             messages: chatHistory
           })
         });
@@ -1113,7 +1133,7 @@ Kamu BISA dan SANGAT AHLI membantu:
           return;
         }
       } catch (oErr) {
-        console.error('OpenRouter Multi-Turn Call Error:', oErr);
+        console.warn('OpenRouter Swarm fallback activated');
       }
 
       // ROUTE C: SMART MAS FALLBACK RESPONSE ENGINE

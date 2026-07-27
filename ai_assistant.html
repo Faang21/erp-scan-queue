@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRINCE AI — Super AI Assistant Mogaworld</title>
+  
+  <!-- Bootstrap 5 CSS & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Fonts: Outfit & Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Marked.js for Markdown & Highlight.js for Syntax Highlighting -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #0a0c16;
+      --bg-card: rgba(21, 26, 48, 0.7);
+      --bg-card-hover: rgba(32, 40, 72, 0.8);
+      --accent-purple: #7928ca;
+      --accent-cyan: #00dfd8;
+      --accent-pink: #ff0080;
+      --border-glow: rgba(121, 40, 202, 0.3);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(121, 40, 202, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(0, 223, 216, 0.15) 0%, transparent 40%);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* GLASSMORPHISM NAVBAR */
+    .navbar-glass {
+      background: rgba(13, 16, 32, 0.8);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+    }
+
+    .brand-logo {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      background: linear-gradient(135deg, #00dfd8 0%, #7928ca 50%, #ff0080 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .brand-badge {
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(121, 40, 202, 0.25);
+      border: 1px solid rgba(121, 40, 202, 0.5);
+      color: #d8b4fe;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* MAIN CONTAINER */
+    .app-layout {
+      flex: 1;
+      display: flex;
+      height: calc(100vh - 65px);
+      overflow: hidden;
+    }
+
+    /* CHAT WRAPPER */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      max-width: 1000px;
+      margin: 0 auto;
+      width: 100%;
+      height: 100%;
+      padding: 0 16px;
+    }
+
+    /* CHAT STREAM LIST */
+    .chat-stream {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      scroll-behavior: smooth;
+    }
+
+    .chat-stream::-webkit-scrollbar {
+      width: 6px;
+    }
+    .chat-stream::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+
+    /* MESSAGE BUBBLES */
+    .message-row {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message-row.user {
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .avatar.ai {
+      background: linear-gradient(135deg, #7928ca 0%, #00dfd8 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(121, 40, 202, 0.4);
+    }
+
+    .avatar.user {
+      background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+      color: #fff;
+    }
+
+    .bubble {
+      max-width: 82%;
+      padding: 16px 20px;
+      border-radius: 18px;
+      font-size: 0.96rem;
+      line-height: 1.6;
+      position: relative;
+    }
+
+    .message-row.ai .bubble {
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      border-top-left-radius: 4px;
+      color: var(--text-main);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .message-row.user .bubble {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: #fff;
+      border-top-right-radius: 4px;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    }
+
+    /* MARKDOWN STYLING INSIDE BUBBLES */
+    .bubble p:last-child {
+      margin-bottom: 0;
+    }
+    .bubble pre {
+      background: #1e1e2e;
+      border-radius: 10px;
+      padding: 14px;
+      overflow-x: auto;
+      margin: 12px 0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+    }
+    .bubble code {
+      font-family: 'Consolas', 'Fira Code', monospace;
+      font-size: 0.88rem;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* HERO WELCOME CARD */
+    .hero-welcome {
+      text-align: center;
+      margin: auto 0;
+      padding: 30px 20px;
+    }
+
+    .hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 600px;
+      margin: 0 auto 30px auto;
+    }
+
+    .prompt-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .prompt-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .prompt-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(121, 40, 202, 0.5);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(121, 40, 202, 0.2);
+    }
+
+    .prompt-card i {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+
+    .prompt-card.icon-purple i { color: #c084fc; }
+    .prompt-card.icon-cyan i { color: #38bdf8; }
+    .prompt-card.icon-pink i { color: #f472b6; }
+    .prompt-card.icon-green i { color: #4ade80; }
+
+    .prompt-card-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+
+    .prompt-card-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* INPUT CONTAINER */
+    .input-area {
+      padding: 16px 0 24px 0;
+    }
+
+    .input-wrapper {
+      background: rgba(21, 26, 48, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      transition: border-color 0.2s;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: rgba(121, 40, 202, 0.7);
+      box-shadow: 0 10px 35px rgba(121, 40, 202, 0.3);
+    }
+
+    .chat-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 1rem;
+      padding: 10px 8px;
+      outline: none;
+      resize: none;
+      max-height: 120px;
+    }
+
+    .chat-input::placeholder {
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .btn-action {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-send {
+      background: linear-gradient(135deg, #7928ca 0%, #00dfd8 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(121, 40, 202, 0.4);
+    }
+
+    .btn-send:hover {
+      opacity: 0.9;
+      transform: scale(1.05);
+    }
+
+    .btn-icon {
+      background: transparent;
+      color: var(--text-muted);
+    }
+
+    .btn-icon:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* TYPING INDICATOR */
+    .typing-indicator {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      padding: 6px 0;
+    }
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      background: #a5b4fc;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar-glass">
+    <a href="/ap_dashboard.html" class="brand-logo">
+      <i class="fa-solid fa-crown text-warning"></i> PRINCE AI
+      <span class="brand-badge">FASE 1 • GOOGLE CLOUD ENGINE</span>
+    </a>
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-sm btn-outline-warning rounded-pill px-3" onclick="openKeyModal()">
+        <i class="bi bi-key-fill me-1"></i> API Key Settings
+      </button>
+      <a href="/ap_dashboard.html" class="btn btn-sm btn-outline-light rounded-pill px-3">
+        <i class="bi bi-arrow-left me-1"></i> Kembali ke ERP
+      </a>
+      <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="clearChat()">
+        <i class="bi bi-trash me-1"></i> Clear
+      </button>
+    </div>
+  </header>
+
+  <!-- MODAL SETTING API KEY -->
+  <div class="modal fade" id="keyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content text-white" style="background: rgba(13, 16, 32, 0.95); border: 1px solid rgba(121, 40, 202, 0.4); backdrop-filter: blur(20px);">
+        <div class="modal-header border-bottom border-secondary">
+          <h5 class="modal-title font-monospace"><i class="bi bi-key-fill text-warning me-2"></i> Setting Google Gemini API Key</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-secondary mb-3">Masukkan API Key berawalan <code>AIzaSy...</code> dari Google Cloud Console Anda untuk mengaktifkan Google Gemini Multimodal Engine 24 Jam.</p>
+          <label class="form-label font-monospace small">Gemini API Key:</label>
+          <input type="text" id="inputApiKey" class="form-bg-dark form-control text-warning font-monospace" placeholder="AIzaSy..." style="background: #111528; border: 1px solid #334155; color: #facc15;">
+        </div>
+        <div class="modal-footer border-top border-secondary">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-warning btn-sm fw-bold px-4" onclick="saveApiKey()">
+            <i class="bi bi-check-circle-fill me-1"></i> Simpan & Aktifkan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP LAYOUT -->
+  <div class="app-layout">
+    <div class="chat-container">
+      
+      <!-- CHAT STREAM / HERO WELCOME -->
+      <div class="chat-stream" id="chatStream">
+        
+        <div class="hero-welcome" id="heroWelcome">
+          <div class="avatar ai mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.8rem;">
+            <i class="fa-solid fa-crown"></i>
+          </div>
+          <h1 class="hero-title">Halo! Saya PRINCE AI</h1>
+          <p class="hero-subtitle">Asisten Pintar ERP Mogaworld & General Super AI. Tanya saya seputar penggunaan aplikasi ERP, pembuatan kode, atau topik umum lainnya!</p>
+
+          <div class="prompt-grid">
+            <div class="prompt-card icon-purple" onclick="sendPrompt('Bagaimana cara membuat Tiket Tugas Luar dan scan checkpoint?')">
+              <i class="fa-solid fa-map-location-dot"></i>
+              <div class="prompt-card-title">Panduan Tugas Luar</div>
+              <div class="prompt-card-desc">Cara isi tiket, checkpoint GPS, & stamp security.</div>
+            </div>
+
+            <div class="prompt-card icon-cyan" onclick="sendPrompt('Jelaskan bagaimana sistem scan RPB dan Invoice AP bekerja di Mogaworld ERP.')">
+              <i class="fa-solid fa-file-invoice-dollar"></i>
+              <div class="prompt-card-title">Sistem AP & RPB</div>
+              <div class="prompt-card-desc">Penjelasan alur pencatatan tanda terima & RPB.</div>
+            </div>
+
+            <div class="prompt-card icon-pink" onclick="sendPrompt('Tuliskan fungsi JavaScript untuk memfilter array data invoice berdasarkan status LUNAS.')">
+              <i class="fa-solid fa-code"></i>
+              <div class="prompt-card-title">Tulis Script Kode</div>
+              <div class="prompt-card-desc">Bantu coding JS, SQL Query, Python, & HTML.</div>
+            </div>
+
+            <div class="prompt-card icon-green" onclick="sendPrompt('Buatkan draf pesan balasan profesional untuk supplier mengenai konfirmasi pembayaran invoice.')">
+              <i class="fa-solid fa-pen-nib"></i>
+              <div class="prompt-card-title">Draf Pesan & Email</div>
+              <div class="prompt-card-desc">Membuat surat profesional & draf komunikasi.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- INPUT AREA -->
+      <div class="input-area">
+        <div class="input-wrapper">
+          <button class="btn-action btn-icon" title="Upload Media (Fase 3)" onclick="alert('Fitur Upload Media & Vision akan aktif di Fase 3!')">
+            <i class="bi bi-paperclip"></i>
+          </button>
+          
+          <input type="text" class="chat-input" id="userInput" placeholder="Tanyakan apa saja kepada PRINCE AI..." onkeydown="handleKeyPress(event)" autocomplete="off">
+
+          <button class="btn-action btn-icon text-info" title="Voice Mode (Fase 3)" onclick="alert('Fitur Voice Percakapan Suara akan aktif di Fase 3!')">
+            <i class="bi bi-mic-fill"></i>
+          </button>
+
+          <button class="btn-action btn-send" onclick="submitUserMessage()" id="btnSend">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+        <div class="text-center mt-2" style="font-size: 11px; color: var(--text-muted);">
+          PRINCE AI dapat membantu menjawab seputar ERP Mogaworld, coding, dan pengetahuan umum.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const chatStream = document.getElementById('chatStream');
+    const userInput = document.getElementById('userInput');
+    const heroWelcome = document.getElementById('heroWelcome');
+    let isProcessing = false;
+
+    // Configure Marked options
+    marked.setOptions({
+      highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang }).value;
+        }
+        return hljs.highlightAuto(code).value;
+      },
+      breaks: true
+    });
+
+    function handleKeyPress(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitUserMessage();
+      }
+    }
+
+    function sendPrompt(text) {
+      userInput.value = text;
+      submitUserMessage();
+    }
+
+    function clearChat() {
+      chatStream.innerHTML = '';
+      chatStream.appendChild(heroWelcome);
+      heroWelcome.style.display = 'block';
+    }
+
+    async function submitUserMessage() {
+      const query = userInput.value.trim();
+      if (!query || isProcessing) return;
+
+      if (heroWelcome.style.display !== 'none') {
+        heroWelcome.style.display = 'none';
+      }
+
+      // 1. Render User Message
+      appendMessage('user', query);
+      userInput.value = '';
+      isProcessing = true;
+
+      // 2. Render Temporary AI Typing Message
+      const typingId = 'typing_' + Date.now();
+      appendTypingIndicator(typingId);
+
+      try {
+        const res = await fetch('/api/ai/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: query })
+        });
+
+        const data = await res.json();
+        removeTypingIndicator(typingId);
+
+        if (data.success && data.reply) {
+          appendMessage('ai', data.reply);
+        } else {
+          appendMessage('ai', '⚠️ **Mohon Maaf**: Terjadi kendala saat memproses jawaban: ' + (data.error || 'Server error'));
+        }
+      } catch (err) {
+        removeTypingIndicator(typingId);
+        appendMessage('ai', '⚠️ **Koneksi Error**: Tidak dapat terhubung ke server Prince AI. Pastikan server lokal Anda menyala.');
+      } finally {
+        isProcessing = false;
+      }
+    }
+
+    function appendMessage(sender, text) {
+      const row = document.createElement('div');
+      row.className = `message-row ${sender}`;
+
+      const avatar = document.createElement('div');
+      avatar.className = `avatar ${sender}`;
+      avatar.innerHTML = sender === 'ai' ? '<i class="fa-solid fa-crown"></i>' : '<i class="bi bi-person-fill"></i>';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+
+      if (sender === 'ai') {
+        // Render Markdown
+        bubble.innerHTML = marked.parse(text);
+        
+        // Add copy buttons to code blocks
+        bubble.querySelectorAll('pre').forEach((pre) => {
+          const btn = document.createElement('button');
+          btn.className = 'copy-btn';
+          btn.innerHTML = '<i class="bi bi-clipboard me-1"></i> Copy';
+          btn.onclick = () => {
+            const code = pre.querySelector('code')?.innerText || pre.innerText;
+            navigator.clipboard.writeText(code);
+            btn.innerHTML = '<i class="bi bi-check me-1"></i> Copied!';
+            setTimeout(() => btn.innerHTML = '<i class="bi bi-clipboard me-1"></i> Copy', 2000);
+          };
+          pre.appendChild(btn);
+        });
+      } else {
+        bubble.innerText = text;
+      }
+
+      row.appendChild(avatar);
+      row.appendChild(bubble);
+      chatStream.appendChild(row);
+      chatStream.scrollTop = chatStream.scrollHeight;
+    }
+
+    function appendTypingIndicator(id) {
+      const row = document.createElement('div');
+      row.className = 'message-row ai';
+      row.id = id;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar ai';
+      avatar.innerHTML = '<i class="fa-solid fa-crown"></i>';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.innerHTML = `
+        <div class="typing-indicator">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+      `;
+
+      row.appendChild(avatar);
+      row.appendChild(bubble);
+      chatStream.appendChild(row);
+      chatStream.scrollTop = chatStream.scrollHeight;
+    }
+
+    function removeTypingIndicator(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }
+
+    let keyModal;
+    function openKeyModal() {
+      if (!keyModal) {
+        keyModal = new bootstrap.Modal(document.getElementById('keyModal'));
+      }
+      keyModal.show();
+    }
+
+    async function saveApiKey() {
+      const key = document.getElementById('inputApiKey').value.trim();
+      if (!key) return alert('Masukkan API Key terlebih dahulu!');
+
+      try {
+        const res = await fetch('/api/ai/set-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey: key })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Google Gemini API Key BERHASIL DISIMPAN & DIAKTIFKAN!');
+          if (keyModal) keyModal.hide();
+        } else {
+          alert('Gagal menyimpan API Key: ' + data.error);
+        }
+      } catch(e) {
+        alert('Error menyimpan API Key: ' + e.message);
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

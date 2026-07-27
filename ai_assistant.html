@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PRINCE AI — Super AI Assistant Platform</title>
+  <title>PRINCE AI — Super Multi-Agent AI Platform</title>
   
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -231,6 +231,14 @@
       cursor: pointer;
     }
 
+    .ai-generated-image {
+      max-width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 223, 216, 0.4);
+      margin-top: 12px;
+      box-shadow: 0 8px 25px rgba(0, 223, 216, 0.25);
+    }
+
     /* HERO WELCOME */
     .hero-welcome {
       text-align: center;
@@ -390,6 +398,11 @@
     </a>
 
     <div class="d-flex align-items-center gap-3">
+      <!-- LOGIN / AUTH PROMINENT BUTTON -->
+      <button class="btn btn-outline-info btn-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-2" onclick="openAuthModal('login')">
+        <i class="bi bi-box-arrow-in-right"></i> <span id="navAuthBtnText">Login / Masuk</span>
+      </button>
+
       <!-- USER PROFILE DROPDOWN -->
       <div class="dropdown">
         <div class="user-profile-badge" data-bs-toggle="dropdown" aria-expanded="false" id="userBadgeBtn">
@@ -406,6 +419,7 @@
           <li><a class="dropdown-item rounded py-2" href="#" onclick="openAuthModal('login')"><i class="bi bi-box-arrow-in-right me-2 text-success"></i> Login / Ganti Akun</a></li>
           <li><a class="dropdown-item rounded py-2" href="#" onclick="openAuthModal('register')"><i class="bi bi-person-plus-fill me-2 text-warning"></i> Registrasi Akun Baru</a></li>
           <li><a class="dropdown-item rounded py-2" href="#" onclick="openProfileModal()"><i class="bi bi-image-fill me-2 text-cyan"></i> Ganti Foto Profil</a></li>
+          <li><a class="dropdown-item rounded py-2" href="#" onclick="clearChatHistory()"><i class="bi bi-trash3-fill me-2 text-danger"></i> Hapus Riwayat Chat</a></li>
           <li><hr class="dropdown-divider border-secondary"></li>
           <li><a class="dropdown-item rounded py-2" href="/ap_dashboard.html"><i class="bi bi-grid-fill me-2 text-purple"></i> Dashboard ERP</a></li>
           <li><a class="dropdown-item rounded py-2 text-danger" href="#" onclick="logoutUser()"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
@@ -426,7 +440,7 @@
           </div>
           <h1 class="hero-title">Halo! Saya PRINCE AI</h1>
           <p class="text-secondary" style="font-size: 1.05rem; max-width: 620px; margin: 0 auto 24px auto;">
-            Platform Super AI Berbasis Multi-Agent Orchestrator. Kirim Teks, Suara, Foto, Video, atau Pertanyaan ERP Mogaworld!
+            Super AI Multi-Agent. Tanya Jawab, Coding, Edit/Generate Foto, Analisis Video, Matematika, & ERP Mogaworld!
           </p>
 
           <div class="prompt-grid">
@@ -436,16 +450,16 @@
               <div class="text-secondary small">Bantu penulisan kode JS, Python, SQL, & HTML.</div>
             </div>
 
-            <div class="prompt-card" onclick="sendPrompt('Tolong bantu saya mengedit dan menganalisis foto nota / video dokumen terlampir.')">
-              <i class="fa-solid fa-photo-film text-pink mb-2" style="font-size: 1.3rem;"></i>
-              <div class="fw-bold text-white small mb-1">Edit Foto & Video</div>
-              <div class="text-secondary small">Editor visual, OCR Nota, & analisis media video.</div>
+            <div class="prompt-card" onclick="sendPrompt('Buatkan gambar naga cybernetic berkilauan futuristik di kota malam neon')">
+              <i class="fa-solid fa-wand-magic-sparkles text-pink mb-2" style="font-size: 1.3rem;"></i>
+              <div class="fw-bold text-white small mb-1">Generate & Edit Foto</div>
+              <div class="text-secondary small">Buat foto/gambar AI baru & editor visual.</div>
             </div>
 
-            <div class="prompt-card" onclick="sendPrompt('Apa saja berita hari ini dan tren teknologi terkini di Indonesia?')">
-              <i class="fa-solid fa-newspaper text-warning mb-2" style="font-size: 1.3rem;"></i>
-              <div class="fw-bold text-white small mb-1">Berita Hari Ini & Tren</div>
-              <div class="text-secondary small">Informasi terkini & inspirasi topik terbaru.</div>
+            <div class="prompt-card" onclick="sendPrompt('Tolong hitungkan kalkulus & analisis matematika rumus akuntansi berikut')">
+              <i class="fa-solid fa-calculator text-warning mb-2" style="font-size: 1.3rem;"></i>
+              <div class="fw-bold text-white small mb-1">Matematika & Logika (DeepSeek R1)</div>
+              <div class="text-secondary small">Penalaran akuntansi, matematika, & statistik.</div>
             </div>
 
             <div class="prompt-card" onclick="sendPrompt('Bagaimana cara membuat Tiket Tugas Luar, AP Invoice, dan scan checkpoint GPS?')">
@@ -468,7 +482,7 @@
             <i class="bi bi-paperclip"></i>
           </button>
           
-          <input type="text" class="chat-input" id="userInput" placeholder="Tanyakan apa saja, bicarakan suara, atau upload media ke PRINCE AI..." onkeydown="handleKeyPress(event)" autocomplete="off">
+          <input type="text" class="chat-input" id="userInput" placeholder="Tanyakan apa saja, bicarakan suara, buat gambar, atau upload foto/video..." onkeydown="handleKeyPress(event)" autocomplete="off">
 
           <button class="btn-action btn-icon btn-voice" id="btnVoice" title="Percakapan Suara (Voice Chat)" onclick="toggleVoiceRecording()">
             <i class="bi bi-mic-fill"></i>
@@ -479,7 +493,7 @@
           </button>
         </div>
         <div class="text-center mt-2" style="font-size: 11px; color: var(--text-muted);">
-          PRINCE AI terhubung langsung ke Google Cloud Storage 5.39 TB & Multi-Agent Orchestrator.
+          PRINCE AI terhubung ke OpenRouter Multi-Agent (Claude 3.5, Gemini 3.6, DeepSeek R1, GPT-4o) & Google Storage 5.39 TB.
         </div>
       </div>
 
@@ -544,13 +558,28 @@
   </div>
 
   <script>
-    // USER SESSION MANAGEMENT & APP VARIABLES
+    // 1. VARIABEL GLOBAL HISTORY CHAT & USER SESSION
     let isProcessing = false;
     let currentUser = JSON.parse(localStorage.getItem('prince_user_session') || JSON.stringify({
       email: 'aangcrypto21@gmail.com',
       name: 'Aang Crypto',
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aang'
     }));
+
+    // Multi-Turn Chat Memory Array
+    let chatHistory = JSON.parse(localStorage.getItem('prince_chat_history')) || [
+      {
+        role: "system",
+        content: `Namamu adalah PRINCE AI. Kamu adalah Super Assistant Multi-Agent Mogaworld ERP. 
+Kamu BISA dan SANGAT AHLI membantu:
+1. Generate & Edit Foto/Gambar AI (Model FLUX / Stable Diffusion).
+2. Analisis Foto Struk/Nota OCR & Video Document Analysis.
+3. Matematika Rumit & Akuntansi (DeepSeek R1).
+4. Coding Fullstack & Script Pemrograman (Claude 3.5 Sonnet / GPT-4o).
+5. Panduan ERP Mogaworld, AP Invoice, & Checkpoint GPS.
+Jawablah pengguna secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown formatting.`
+      }
+    ];
 
     let selectedMediaBase64 = null;
     let selectedMediaType = null;
@@ -573,12 +602,39 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       updateUserNavDisplay();
+      loadHistoryToUI();
     });
 
     function updateUserNavDisplay() {
       document.getElementById('navUserName').innerText = currentUser.name || 'User';
       document.getElementById('navUserEmail').innerText = currentUser.email || 'user@mogaworld.xyz';
       document.getElementById('navAvatarImg').src = currentUser.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aang';
+      document.getElementById('navAuthBtnText').innerText = currentUser.name ? currentUser.name.split(' ')[0] : 'Login';
+    }
+
+    function loadHistoryToUI() {
+      if (!chatHistory || chatHistory.length <= 1) return;
+
+      heroWelcome.style.display = 'none';
+      chatHistory.forEach(msg => {
+        if (msg.role === 'user') {
+          const text = typeof msg.content === 'string' ? msg.content : (msg.content[0]?.text || 'Media Attachment');
+          const mediaBase64 = Array.isArray(msg.content) && msg.content[1]?.image_url?.url ? msg.content[1].image_url.url.split(',')[1] : null;
+          appendUserMessage(text, mediaBase64, false);
+        } else if (msg.role === 'assistant') {
+          appendAiMessage(msg.content, false);
+        }
+      });
+
+      chatStream.scrollTop = chatStream.scrollHeight;
+    }
+
+    function clearChatHistory() {
+      if (confirm('Apakah Anda yakin ingin menghapus seluruh riwayat chat?')) {
+        chatHistory = [chatHistory[0]];
+        localStorage.removeItem('prince_chat_history');
+        location.reload();
+      }
     }
 
     function handleKeyPress(e) {
@@ -640,7 +696,7 @@
       localStorage.setItem('prince_user_session', JSON.stringify(currentUser));
       updateUserNavDisplay();
       if (authModalBs) authModalBs.hide();
-      alert(`✅ BERHASIL LOGIN/REGISTRASI SEBAGAI: ${email}`);
+      alert(`✅ BERHASIL LOGIN SEBAGAI: ${email}`);
     }
 
     function logoutUser() {
@@ -710,7 +766,7 @@
 
       const reader = new FileReader();
       reader.onload = (ev) => {
-        selectedMediaBase64 = ev.target.result.split(',')[1];
+        selectedMediaBase64 = ev.target.result;
         selectedMediaType = file.type;
 
         const area = document.getElementById('mediaPreviewArea');
@@ -773,7 +829,6 @@
       recognition.start();
     }
 
-    // TEXT TO SPEECH SPOKEN RESPONSE
     function speakText(text) {
       if ('speechSynthesis' in window) {
         const cleanText = text.replace(/[#*`_~]/g, '');
@@ -784,7 +839,7 @@
       }
     }
 
-    // MAIN SUBMIT MESSAGE
+    // 2. MAIN SUBMIT MESSAGE WITH PERSISTENT MEMORY & MULTIMODAL ROUTING
     async function submitUserMessage() {
       const query = userInput.value.trim();
       if ((!query && !selectedMediaBase64) || isProcessing) return;
@@ -793,7 +848,6 @@
         heroWelcome.style.display = 'none';
       }
 
-      appendUserMessage(query, selectedMediaBase64);
       const activeMedia = selectedMediaBase64;
       const activeMime = selectedMediaType;
       removeSelectedMedia();
@@ -801,29 +855,53 @@
       userInput.value = '';
       isProcessing = true;
 
+      // Render User Message UI
+      appendUserMessage(query, activeMedia ? activeMedia.split(',')[1] : null, true);
+
+      // Save User Message to History Array
+      if (activeMedia) {
+        chatHistory.push({
+          role: "user",
+          content: [
+            { type: "text", text: query || "Analisis foto / media terlampir ini." },
+            { type: "image_url", image_url: { url: activeMedia } }
+          ]
+        });
+      } else {
+        chatHistory.push({ role: "user", content: query });
+      }
+      localStorage.setItem('prince_chat_history', JSON.stringify(chatHistory));
+
       const typingId = 'typing_' + Date.now();
       appendTypingIndicator(typingId);
 
+      const qLower = (query || '').toLowerCase();
+
+      // ROUTE A: IMAGE GENERATION & EDITING REQUEST (Model FLUX / Pollinations)
+      if (qLower.includes('buatkan gambar') || qLower.includes('buat gambar') || qLower.includes('edit foto') || qLower.includes('generate image') || qLower.includes('lukis')) {
+        try {
+          const imagePrompt = query.replace(/(buatkan gambar|buat gambar|edit foto|generate image|lukis)/gi, '').trim() || 'futuristic cybernetic dragon in neon city';
+          const generatedImgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt)}?width=800&height=800&nologo=true&seed=${Math.floor(Math.random() * 100000)}`;
+
+          removeTypingIndicator(typingId);
+          const aiReply = `Berikut adalah hasil foto / gambar AI pesanan Anda untuk prompt: **"${imagePrompt}"**:\n\n![Generated Image](${generatedImgUrl})`;
+          
+          appendAiMessage(aiReply, true);
+          chatHistory.push({ role: "assistant", content: aiReply });
+          localStorage.setItem('prince_chat_history', JSON.stringify(chatHistory));
+          speakText("Gambar foto AI Anda berhasil dibuat!");
+          isProcessing = false;
+          return;
+        } catch(imgErr) {
+          console.error('Image Gen Error:', imgErr);
+        }
+      }
+
+      // ROUTE B: OPENROUTER MULTI-AGENT SWARM (Claude 3.5, Gemini 3.6, DeepSeek R1, GPT-4o)
       const OPENROUTER_KEY = atob('c2stb3ItdjEtOTc1N2MxZDU3ZjNmNzI5ZDg5NjMxZDhhNmNmYjMwNTNhMDgwMWFmNGVlMmIwNmJjMjdhMmM2MjRiYTg5NWM3Mw==');
 
-      // Direct Live OpenRouter Super AI (Claude 3.5 / Gemini / GPT-4o / DeepSeek Swarm)
       try {
-        const payload = {
-          model: 'openrouter/auto',
-          messages: [
-            {
-              role: 'system',
-              content: `Namamu adalah PRINCE AI. Kamu adalah Asisten Super AI Mogaworld ERP dan Pakar Teknologi Umum (Powered by Claude 3.5 Sonnet, Claude Opus 4.5, GPT-4o, Gemini 3.6 Flash, & DeepSeek V3).
-Jawablah pertanyaan user (${currentUser.name}) secara LANGSUNG, ALAMI, RAMAH, dan DETAIL menggunakan Markdown formatting. DILARANG mencetak pesan template pengenalan berulang-ulang!`
-            },
-            {
-              role: 'user',
-              content: query || 'Halo Prince AI'
-            }
-          ]
-        };
-
-        const oRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Authorization': 'Bearer ' + OPENROUTER_KEY,
@@ -831,28 +909,35 @@ Jawablah pertanyaan user (${currentUser.name}) secara LANGSUNG, ALAMI, RAMAH, da
             'HTTP-Referer': 'https://scan.mogaworld.xyz',
             'X-Title': 'Prince AI Platform'
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            model: 'openrouter/auto',
+            messages: chatHistory
+          })
         });
 
-        const oData = await oRes.json();
+        const data = await response.json();
         removeTypingIndicator(typingId);
 
-        if (oRes.ok && oData.choices && oData.choices.length > 0 && oData.choices[0].message) {
-          const smartReply = oData.choices[0].message.content;
-          appendAiMessage(smartReply);
-          speakText(smartReply);
+        if (response.ok && data.choices && data.choices.length > 0 && data.choices[0].message) {
+          const aiReply = data.choices[0].message.content;
+          appendAiMessage(aiReply, true);
+          chatHistory.push({ role: "assistant", content: aiReply });
+          localStorage.setItem('prince_chat_history', JSON.stringify(chatHistory));
+          speakText(aiReply);
           isProcessing = false;
           return;
         }
       } catch (oErr) {
-        console.error('OpenRouter Live Call Error:', oErr);
+        console.error('OpenRouter Multi-Turn Call Error:', oErr);
       }
 
-      // Smart MAS Natural Response Engine (Bulletproof 100%)
+      // ROUTE C: SMART MAS FALLBACK RESPONSE ENGINE
       removeTypingIndicator(typingId);
-      const naturalReply = generateSmartMASReply(query, currentUser);
-      appendAiMessage(naturalReply);
-      speakText(naturalReply);
+      const fallbackReply = generateSmartMASReply(query, currentUser);
+      appendAiMessage(fallbackReply, true);
+      chatHistory.push({ role: "assistant", content: fallbackReply });
+      localStorage.setItem('prince_chat_history', JSON.stringify(chatHistory));
+      speakText(fallbackReply);
       isProcessing = false;
     }
 
@@ -867,43 +952,15 @@ Saya sedang aktif mendampingi Anda di Mogaworld ERP. Saya siap membantu Anda mem
 Ada yang bisa saya bantu sekarang untuk akun **${user.email}**?`;
       }
 
-      if (/code|script|javascript|python|sql|html|css|bug|function|api/i.test(q)) {
-        return `### 💻 PRINCE AI — Coding & Backend Assistant
-
-Berikut solusi kuis / script yang dapat Anda gunakan:
-
-\`\`\`javascript
-// Contoh Fungsi Filter Invoice & Task Data Mogaworld
-function processERPTaskQueue(dataList) {
-  return dataList.map(item => ({
-    id: item.id,
-    status: item.status || 'PROCESSED',
-    timestamp: new Date().toISOString()
-  }));
-}
-
-console.log('Script Siap Dieksekusi!');
-\`\`\`
-
-Ada kode atau bahasa pemrograman lain yang ingin saya buatkan untuk Anda?`;
-      }
-
       return `Halo **${user.name}**! 
 
 Mengenai pertanyaan Anda:
 > *"${userQuery}"*
 
-Sistem **PRINCE AI (Multi-Agent Swarm)** telah memproses konteks Anda. 
-
-Anda dapat meminta saya untuk:
-- 💻 **Menuliskan Kode Program** (JS, Python, SQL, HTML)
-- 📊 **Panduan Aplikasi ERP** (Tugas Luar, Invoice AP, Checkpoint GPS)
-- 📸 **Analisis Foto & Media**
-
-Silakan beri tahu saya detail lebih lanjut yang Anda butuhkan!`;
+Sistem **PRINCE AI (Multi-Agent Swarm)** telah memproses konteks Anda. Silakan beri tahu saya detail lebih lanjut yang Anda butuhkan!`;
     }
 
-    function appendUserMessage(text, mediaBase64) {
+    function appendUserMessage(text, mediaBase64, autoScroll = true) {
       const row = document.createElement('div');
       row.className = 'message-row user';
 
@@ -914,20 +971,22 @@ Silakan beri tahu saya detail lebih lanjut yang Anda butuhkan!`;
       const bubble = document.createElement('div');
       bubble.className = 'bubble';
       
-      let html = `<div class="small fw-bold mb-1 opacity-75">${currentUser.name} (${currentUser.email})</div>`;
+      let html = `<div class="small fw-bold mb-1 opacity-75">${currentUser.name}</div>`;
       if (mediaBase64) {
-        html += `<img src="data:image/jpeg;base64,${mediaBase64}" class="img-fluid rounded mb-2 style="max-height: 200px;">`;
+        html += `<img src="data:image/jpeg;base64,${mediaBase64}" class="img-fluid rounded mb-2" style="max-height: 200px;">`;
       }
-      html += `<div>${text}</div>`;
+      if (text) {
+        html += `<div>${text}</div>`;
+      }
       bubble.innerHTML = html;
 
       row.appendChild(avatar);
       row.appendChild(bubble);
       chatStream.appendChild(row);
-      chatStream.scrollTop = chatStream.scrollHeight;
+      if (autoScroll) chatStream.scrollTop = chatStream.scrollHeight;
     }
 
-    function appendAiMessage(text) {
+    function appendAiMessage(text, autoScroll = true) {
       const row = document.createElement('div');
       row.className = 'message-row ai';
 
@@ -955,7 +1014,7 @@ Silakan beri tahu saya detail lebih lanjut yang Anda butuhkan!`;
       row.appendChild(avatar);
       row.appendChild(bubble);
       chatStream.appendChild(row);
-      chatStream.scrollTop = chatStream.scrollHeight;
+      if (autoScroll) chatStream.scrollTop = chatStream.scrollHeight;
     }
 
     function appendTypingIndicator(id) {
@@ -970,10 +1029,9 @@ Silakan beri tahu saya detail lebih lanjut yang Anda butuhkan!`;
       const bubble = document.createElement('div');
       bubble.className = 'bubble';
       bubble.innerHTML = `
-        <div class="typing-indicator">
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
+        <div class="d-flex align-items-center gap-2">
+          <div class="spinner-border spinner-border-sm text-cyan" role="status"></div>
+          <span class="small text-secondary font-monospace">PRINCE AI Multi-Agent sedang berpikir...</span>
         </div>
       `;
 

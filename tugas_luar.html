@@ -1,0 +1,2708 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Tugas Luar | ERP Mogaworld</title>
+  
+  <!-- CSS Dependencies -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+  
+  <!-- JS Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --card-bg: #1e293b;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --border-color: #334155;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-dark);
+      color: #f8fafc;
+      min-height: 100vh;
+      padding-bottom: 50px;
+    }
+
+    .card-custom {
+      background: #1e293b !important;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+    }
+
+    .form-label-bright {
+      color: #f8fafc !important;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .form-control-bright, .form-select-bright {
+      background-color: #0f172a !important;
+      color: #ffffff !important;
+      border: 1px solid #475569 !important;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-weight: 600;
+    }
+
+    .form-control-bright:focus, .form-select-bright:focus {
+      border-color: #3b82f6 !important;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+    }
+
+    .badge-status-draft { background: rgba(234, 179, 8, 0.25); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.5); font-weight: 700; }
+    .badge-status-wait-exit { background: rgba(249, 115, 22, 0.25); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.5); font-weight: 700; }
+    .badge-status-berangkat { background: rgba(59, 130, 246, 0.25); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.5); font-weight: 700; }
+    .badge-status-wait-in { background: rgba(6, 182, 212, 0.25); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.5); font-weight: 700; }
+    .badge-status-selesai { background: rgba(16, 185, 129, 0.25); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.5); font-weight: 700; }
+
+    .qr-container-lg {
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 24px;
+      display: inline-block;
+    }
+
+    .qr-container-sm {
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 16px;
+      display: inline-block;
+    }
+
+    /* STEMPEL SECURITY (UKURAN PRESISI SERASI DENGAN KOLOM TANDA TANGAN & TRANSPARAN MURNI) */
+    .stamp-overlay-img {
+      height: 55px !important;
+      width: 55px !important;
+      object-fit: contain;
+      background: transparent !important;
+      padding: 0 !important;
+      border: none !important;
+      mix-blend-mode: multiply;
+      filter: contrast(2.5) brightness(1.05);
+      box-shadow: none !important;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    #interactiveReaderBox, #interactiveReaderBoxSec, #interactiveReaderBoxAdmin {
+      width: 100%;
+      min-height: 250px;
+      background: #000000;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px dashed #3b82f6;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #printablePosterArea, #printablePosterArea * {
+        visibility: visible !important;
+      }
+      #printablePosterArea {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 40px 30px !important;
+        margin: 0 !important;
+        border: 6px solid #000000 !important;
+        border-radius: 20px !important;
+        box-shadow: none !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR HEADER (HANYA MUNCUL JIKA SUDAH LOGIN) -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary mb-4 no-print" id="mainHeaderNavbar">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="#">
+        <img src="/logo_cnc.png" alt="CNC Logo" height="32" onerror="this.style.display='none'">
+        <span>PT. CHANDRA NUGERAH CIPTA - POS SECURITY & TUGAS LUAR ERP</span>
+      </a>
+      
+      <div class="ms-auto d-flex align-items-center gap-2 flex-wrap d-none" id="navUserBar">
+        <span class="badge bg-success text-white fs-6 px-3 py-2" id="navUserSessionBadge">Login: -</span>
+        <a class="btn btn-sm btn-primary fw-bold text-white shadow-sm" href="/ai_assistant.html" target="_blank" style="background: linear-gradient(135deg, #7928ca 0%, #00dfd8 100%); border: none;">
+          <i class="fa-solid fa-crown text-warning me-1"></i> PRINCE AI
+        </a>
+        <button class="btn btn-sm btn-info fw-bold text-dark" onclick="window.open('/api/tugas-luar/user-manual-pdf', '_blank')">
+          <i class="bi bi-book-fill me-1"></i> 📘 Panduan & SOP (PDF)
+        </button>
+        <button class="btn btn-sm btn-warning fw-bold text-dark" id="btnNavPrintPoster" onclick="triggerPrintPoster()" style="display: none;">
+          <i class="bi bi-printer-fill me-1"></i> Cetak Poster 2 QR
+        </button>
+        <button class="btn btn-sm btn-outline-success text-white border-success fw-bold" onclick="exportExcelBulanan()">
+          <i class="bi bi-file-earmark-excel-fill me-1 text-success"></i> Export Excel Bulanan
+        </button>
+        <button class="btn btn-sm btn-danger fw-bold ms-2 px-3" onclick="userLogout()">
+          <i class="bi bi-box-arrow-right me-1"></i> Logout
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <div class="container px-3 px-md-4">
+
+    <!-- AUTO SCAN BANNER (TRIGGERED BY QR 1) -->
+    <div id="autoScanBanner" class="alert alert-warning d-none align-items-center shadow-lg border-2 border-warning mb-4 no-print" role="alert">
+      <i class="bi bi-lightning-charge-fill fs-3 me-3 text-warning"></i>
+      <div>
+        <h5 class="alert-heading mb-1 fw-bold text-warning" id="autoScanTitle">Pindai QR Barcode Transaksi Terdeteksi!</h5>
+        <p class="mb-0 small text-white" id="autoScanDesc">Merekam Jam Keluar / Kepulangan & Koordinat GPS...</p>
+      </div>
+    </div>
+
+    <!-- ALERT GPS GUARD -->
+    <div id="gpsWarningAlert" class="alert alert-warning alert-dismissible fade show d-none shadow-lg border-2 border-warning mb-4 no-print" role="alert">
+      <div class="d-flex align-items-start gap-3">
+        <i class="bi bi-geo-alt-fill fs-3 text-warning mt-1"></i>
+        <div class="flex-grow-1">
+          <h5 class="alert-heading mb-1 fw-bold text-warning">Akses Lokasi GPS</h5>
+          <p class="mb-2 small text-white">
+            Silakan pilih <b>"ALLOW / IZINKAN"</b> pada pop-up browser untuk mencatat koordinat lokasi tugas luar secara presisi.
+          </p>
+          <div class="d-flex gap-2 flex-wrap mt-2">
+            <button class="btn btn-sm btn-warning fw-bold text-dark" onclick="initGpsLocation()">
+              <i class="bi bi-arrow-clockwise me-1"></i> Minta Pop-up Izinkan Lokasi Lagi
+            </button>
+            <button class="btn btn-sm btn-outline-light fw-bold" onclick="bypassGpsWarning()">
+              Lanjutkan Tanpa GPS
+            </button>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" onclick="bypassGpsWarning()" aria-label="Close"></button>
+      </div>
+    </div>
+
+    <!-- 0. SINGLE UNIFIED STANDALONE LOGIN FORM -->
+    <div id="screenLoginGate" class="row justify-content-center my-4">
+      <div class="col-md-7 col-lg-5">
+        <div class="card card-custom p-4 text-center shadow-lg border-2 border-primary">
+          <div class="mb-3">
+            <img src="/logo_cnc.png" height="54" class="mb-2" onerror="this.style.display='none'">
+            <h4 class="fw-bold text-white mb-1">LOGIN ERP TUGAS LUAR</h4>
+            <p class="text-secondary small mb-0">Masukkan Username & Password Pengguna Anda:</p>
+          </div>
+
+          <form id="formUnifiedLogin" onsubmit="handleUnifiedLoginSubmit(event)" class="text-start">
+            <div class="mb-3">
+              <label class="form-label-bright text-warning">
+                <i class="bi bi-person-fill me-1"></i> Username
+              </label>
+              <input type="text" class="form-control form-control-bright" id="loginUnifiedUser" placeholder="Ketik Sandri, NIK Security, atau Aang.js" required autocomplete="username">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label-bright text-info">
+                <i class="bi bi-lock-fill me-1"></i> Password
+              </label>
+              <input type="password" class="form-control form-control-bright" id="loginUnifiedPass" placeholder="Masukkan Password Anda" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-6 mt-2 shadow-lg">
+              <i class="bi bi-box-arrow-in-right me-2 fs-5"></i> 🔐 MASUK APLIKASI
+            </button>
+          </form>
+
+          <div class="mt-4 pt-3 border-top border-secondary text-center">
+            <span class="text-secondary small">Belum punya akun user?</span>
+            <button type="button" class="btn btn-link text-info fw-bold p-0 ms-1 text-decoration-none" onclick="openSignupModal()">
+              <i class="bi bi-person-plus-fill me-1"></i> Buat Akun Baru / Sign Up
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. SCREEN 1: HALAMAN SANDRI (ISOLATED) -->
+    <div id="screenSandriView" class="row justify-content-center mb-5 d-none">
+      <div class="col-lg-8 col-xl-7">
+        
+        <!-- CARD DAFTAR TIKET AKTIF UNTUK SANDRI (TERMASUK YANG DIBUATKAN ADMIN) -->
+        <div class="card card-custom p-4 mb-4 border border-2 border-info">
+          <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary pb-2">
+            <h5 class="fw-bold mb-0 text-info"><i class="bi bi-list-task me-2"></i>Daftar Tiket Tugas Luar Sandri Hari Ini</h5>
+            <button class="btn btn-sm btn-outline-light" onclick="loadSandriActiveTickets()">
+              <i class="bi bi-arrow-repeat me-1"></i> Refresh Data
+            </button>
+          </div>
+
+          <div id="sandriActiveTicketsContainer">
+            <div class="text-center py-3 text-secondary">Memuat daftar tiket tugas luar...</div>
+          </div>
+        </div>
+
+        <!-- CARD 1: FORM BUAT TIKET TUGAS LUAR (INPUT SANDRI) -->
+        <div class="card card-custom p-4 mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary pb-2">
+            <h5 class="fw-bold mb-0 text-info"><i class="bi bi-pencil-square me-2"></i>Langkah 1: Buat Tiket Tugas Luar Mandiri (Sandri)</h5>
+            <span class="badge bg-primary text-white fs-6">PIC SANDRI</span>
+          </div>
+
+          <form id="formTugasLuar" onsubmit="handleCreateTicketDraft(event)">
+            
+            <div class="mb-3">
+              <label class="form-label-bright text-warning">
+                <i class="bi bi-calendar-event me-1"></i> 1. Tanggal Tugas
+              </label>
+              <input type="date" class="form-control form-control-bright" id="inputTanggal" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label-bright text-info">
+                <i class="bi bi-person-circle me-1"></i> 2. Nama PIC Utama & Departemen
+              </label>
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <input type="text" class="form-control form-control-bright" id="inputPic" list="allEmployeesList" placeholder="Ketik Nama Karyawan (Contoh: Budi)" required>
+                  <datalist id="allEmployeesList">
+                    <option value="Sandri"></option>
+                    <option value="Budi"></option>
+                    <option value="Siti"></option>
+                    <option value="Ahmad"></option>
+                    <option value="Sukanta"></option>
+                    <option value="Naim"></option>
+                    <option value="Hafidzi"></option>
+                  </datalist>
+                </div>
+                <div class="col-md-6">
+                  <select class="form-select form-select-bright" id="inputDepartemen">
+                    <option value="Purchasing / Umum" selected>Purchasing / Umum</option>
+                    <option value="Finance / Accounting">Finance / Accounting</option>
+                    <option value="HRD / GA">HRD / GA</option>
+                    <option value="Maintenance / Utility">Maintenance / Utility</option>
+                    <option value="Production / Plant">Production / Plant</option>
+                    <option value="IT / EDP">IT / EDP</option>
+                    <option value="Quality Control">Quality Control</option>
+                    <option value="Sales / Marketing">Sales / Marketing</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label-bright text-info">
+                <i class="bi bi-person-check-fill me-1"></i> 3. Atasan Yang Menyetujui (DISETUJUI OLEH di PDF)
+              </label>
+              <input type="text" class="form-control form-control-bright" id="inputDisetujuiOleh" list="approversList" placeholder="Pilih atau Ketik Nama Atasan" value="Pak Herry (Section Head)" required>
+              <datalist id="approversList">
+                <option value="Pak Herry (Section Head)"></option>
+                <option value="Pak Handoko (Finance / Accounting)"></option>
+                <option value="Pak Aang.js (Admin / IT)"></option>
+                <option value="Pak Sandri (Purchasing)"></option>
+                <option value="Pak Budi (HRD / GA)"></option>
+                <option value="Pak Sukanta (Security)"></option>
+              </datalist>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label-bright text-success fw-bold">
+                <i class="bi bi-geo-alt-fill me-1"></i> 3. Lokasi Tujuan Checkpoint & Keperluan per Line (Maksimal 5 Tujuan)
+              </label>
+              
+              <div class="row g-2 mb-2">
+                <div class="col-md-6 col-12">
+                  <div class="input-group">
+                    <span class="input-group-text bg-dark text-info border-secondary fw-bold" style="width: 90px;">Tujuan 1</span>
+                    <input type="text" class="form-control form-control-bright" id="inputTujuan1" placeholder="Ketik Tempat / PT (Wajib)" required>
+                  </div>
+                </div>
+                <div class="col-md-6 col-12">
+                  <div class="input-group">
+                    <span class="input-group-text bg-dark text-warning border-secondary fw-bold" style="width: 105px;">Keperluan 1</span>
+                    <input type="text" class="form-control form-control-bright" id="inputKeperluan1" placeholder="Contoh: Setor Tunai (Wajib)" required>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row g-2 mb-2">
+                <div class="col-md-6 col-12">
+                  <div class="input-group">
+                    <span class="input-group-text bg-dark text-info border-secondary fw-bold" style="width: 90px;">Tujuan 2</span>
+                    <input type="text" class="form-control form-control-bright" id="inputTujuan2" placeholder="Tujuan 2 (Opsional)">
+                  </div>
+                </div>
+                <div class="col-md-6 col-12">
+                  <div class="input-group">
+                    <span class="input-group-text bg-dark text-warning border-secondary fw-bold" style="width: 105px;">Keperluan 2</span>
+                    <input type="text" class="form-control form-control-bright" id="inputKeperluan2" placeholder="Keperluan 2 (Opsional)">
+                  </div>
+                </div>
+              </div>
+
+              <div class="row g-2 mb-2">
+                <div class="col-md-6 col-12">
+                  <div class="input-group">
+                    <span class="input-group-text bg-dark text-info border-secondary fw-bold" style="width: 90px;">Tujuan 3</span>
+                    <input type="text" class="form-control form-control-bright" id="inputTujuan3" placeholder="Tujuan 3 (Opsional)">
+                  </div>
+                </div>
+                <div class="col-md-6 col-12">
+                  <div class="input-group">
+                    <span class="input-group-text bg-dark text-warning border-secondary fw-bold" style="width: 105px;">Keperluan 3</span>
+                    <input type="text" class="form-control form-control-bright" id="inputKeperluan3" placeholder="Keperluan 3 (Opsional)">
+                  </div>
+                </div>
+              </div>
+
+              <div class="row g-2 mb-2">
+                <div class="col-md-6 col-12">
+                  <div class="input-group">
+                    <span class="input-group-text bg-dark text-info border-secondary fw-bold" style="width: 90px;">Tujuan 4</span>
+                    <input type="text" class="form-control form-control-bright" id="inputTujuan4" placeholder="Tujuan 4 (Opsional)">
+                  </div>
+                </div>
+                <div class="col-md-6 col-12">
+                  <div class="input-group">
+                    <span class="input-group-text bg-dark text-warning border-secondary fw-bold" style="width: 105px;">Keperluan 4</span>
+                    <input type="text" class="form-control form-control-bright" id="inputKeperluan4" placeholder="Keperluan 4 (Opsional)">
+                  </div>
+                </div>
+              </div>
+
+              <div class="row g-2 mb-2">
+                <div class="col-md-6 col-12">
+                  <div class="input-group">
+                    <span class="input-group-text bg-dark text-info border-secondary fw-bold" style="width: 90px;">Tujuan 5</span>
+                    <input type="text" class="form-control form-control-bright" id="inputTujuan5" placeholder="Tujuan 5 (Opsional)">
+                  </div>
+                </div>
+                <div class="col-md-6 col-12">
+                  <div class="input-group">
+                    <span class="input-group-text bg-dark text-warning border-secondary fw-bold" style="width: 105px;">Keperluan 5</span>
+                    <input type="text" class="form-control form-control-bright" id="inputKeperluan5" placeholder="Keperluan 5 (Opsional)">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-5 mt-2 shadow-lg" id="btnSubmitDraft">
+              <i class="bi bi-save-fill me-2 fs-4"></i> 💾 BUAT TIKET TUGAS LUAR (SIMPAN DRAFT)
+            </button>
+          </form>
+        </div>
+
+        <!-- CARD 2: KAMERA BARCODE SCANNER HP SANDRI -->
+        <div class="card card-custom p-4 border border-2 border-warning">
+          <div class="d-flex justify-content-between align-items-center mb-2 border-bottom border-secondary pb-2">
+            <h5 class="fw-bold mb-0 text-warning"><i class="bi bi-qr-code-scan me-2"></i>Langkah 2: Scan Barcode 1 di Pos Security (Berangkat / Pulang)</h5>
+            <span class="badge bg-warning text-dark fw-bold">SCANNER SANDRI</span>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label-bright text-warning fw-bold">Target Scan HP:</label>
+            <select class="form-select form-select-bright fw-bold" id="selectScanTargetMode">
+              <option value="AUTO" selected>🔄 Auto-Detect (Gate Security Out / In & Checkpoint)</option>
+              <option value="GATE_EXIT">🚪 1. Gate Security - Berangkat Keluar</option>
+              <option value="CHECKPOINT_IN">📌 2. Checkpoint Lokasi - Tiba (In)</option>
+              <option value="CHECKPOINT_OUT">🚀 3. Checkpoint Lokasi - Selesai (Out)</option>
+              <option value="GATE_RETURN">🏢 4. Gate Security - Stempel Masuk Kembali</option>
+            </select>
+          </div>
+
+          <div id="interactiveReaderBox" class="mb-3 position-relative d-flex align-items-center justify-content-center text-center">
+            <div id="cameraPlaceholderText" class="p-4 text-secondary">
+              <i class="bi bi-camera fs-1 d-block mb-2 text-info"></i>
+              <span>Kamera mati. Klik <b>"Buka Kamera HP Sandri"</b> di bawah untuk me-scan QR Barcode 1 di Pos Security atau Checkpoint.</span>
+            </div>
+            <div id="reader" style="width: 100%; height: 100%; display: none;"></div>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-warning text-dark py-2.5 fw-bold flex-fill" onclick="triggerCameraWithGpsCheck('SANDRI')">
+              <i class="bi bi-camera-video-fill me-1"></i> Buka Kamera Sandri
+            </button>
+            <label class="btn btn-info text-dark py-2.5 fw-bold flex-fill mb-0 text-center" style="cursor:pointer" title="Upload foto/file QR Barcode jika kamera tidak ada">
+              <i class="bi bi-file-earmark-image me-1"></i> 📁 Upload QR
+              <input type="file" accept="image/*" class="d-none" onchange="handleQrFileUpload(event, 'SANDRI')">
+            </label>
+            <button class="btn btn-outline-danger py-2.5 fw-bold" onclick="stopCameraScanner()">
+              <i class="bi bi-stop-circle me-1"></i> Matikan Kamera
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 2. SCREEN 2: HALAMAN SECURITY (ISOLATED) -->
+    <div id="screenSecurityView" class="row justify-content-center mb-5 d-none">
+      <div class="col-lg-9">
+        
+        <!-- KAMERA BARCODE SCANNER SECURITY -->
+        <div class="card card-custom p-4 mb-4 border border-2 border-success">
+          <div class="d-flex justify-content-between align-items-center mb-2 border-bottom border-secondary pb-2">
+            <h5 class="fw-bold mb-0 text-success"><i class="bi bi-camera-fill me-2"></i>Kamera Barcode Scanner Security (Approve Keluar / Stempel Masuk)</h5>
+            <span class="badge bg-success text-white fw-bold">MODE SECURITY SCAN</span>
+          </div>
+
+          <p class="text-light small mb-3">
+            Petugas Security me-scan 🔴 <b>QR BARCODE 1 di tembok</b> menggunakan HP ini untuk <b>Approve Keberangkatan Sandri</b> maupun <b>Verifikasi Stempel Kepulangan</b>.
+          </p>
+
+          <div id="interactiveReaderBoxSec" class="mb-3 position-relative d-flex align-items-center justify-content-center text-center style-sec-box" style="min-height: 250px; background:#000; border-radius:12px; border: 2px dashed #10b981;">
+            <div id="cameraPlaceholderTextSec" class="p-4 text-secondary">
+              <i class="bi bi-qr-code-scan fs-1 d-block mb-2 text-success"></i>
+              <span>Kamera mati. Klik <b>"Buka Kamera HP Security"</b> untuk me-scan QR Barcode 1 di Pos Gate.</span>
+            </div>
+            <div id="readerSec" style="width: 100%; height: 100%; display: none;"></div>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-success py-2.5 fw-bold flex-fill" onclick="triggerCameraWithGpsCheck('SECURITY')">
+              <i class="bi bi-camera-video-fill me-1"></i> Buka Kamera Security
+            </button>
+            <label class="btn btn-info text-dark py-2.5 fw-bold flex-fill mb-0 text-center" style="cursor:pointer" title="Upload foto/file QR Barcode jika kamera tidak ada">
+              <i class="bi bi-file-earmark-image me-1"></i> 📁 Upload QR
+              <input type="file" accept="image/*" class="d-none" onchange="handleQrFileUpload(event, 'SECURITY')">
+            </label>
+            <button class="btn btn-outline-danger py-2.5 fw-bold" onclick="stopCameraScanner()">
+              <i class="bi bi-stop-circle me-1"></i> Matikan Kamera
+            </button>
+          </div>
+        </div>
+
+        <!-- TABEL PERJALANAN AKTIF BERANGKAT KHUSUS SECURITY -->
+        <div class="card card-custom p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary pb-2">
+            <h5 class="fw-bold mb-0 text-success"><i class="bi bi-shield-check me-2"></i>Daftar Tugas Luar Sandri (Proses Verifikasi Security Pos Gate)</h5>
+            <span class="badge bg-success text-white fs-6">SECURITY PORTAL</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-dark table-hover table-bordered align-middle mb-0">
+              <thead class="table-secondary text-dark fw-bold text-uppercase small text-center">
+                <tr>
+                  <th>No Tiket</th>
+                  <th>Tanggal</th>
+                  <th>PIC Utama</th>
+                  <th>Tujuan & Keperluan</th>
+                  <th>Status Verifikasi</th>
+                  <th>Aksi Verifikasi Security</th>
+                </tr>
+              </thead>
+              <tbody id="tableSecurityVerifyBody">
+                <tr>
+                  <td colspan="6" class="text-center py-4 text-secondary">Memuat data perjalanan aktif...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 3. SCREEN 3: HALAMAN BOS / DASHBOARD -->
+    <div id="screenBossView" class="row mb-5 d-none">
+      <div class="col-12">
+        
+        <!-- FORM BUAT TIKET ADMIN FULL WIDTH ON PC -->
+        <div class="row g-4 mb-4">
+          <div class="col-12">
+            <div class="card card-custom p-4 border border-2 border-primary">
+              <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary pb-2 flex-wrap gap-2">
+                <h5 class="fw-bold mb-0 text-info"><i class="bi bi-plus-circle-fill me-2"></i>Buat Tiket Tugas Luar Baru (Input Admin / Accounting / Finance)</h5>
+                <div class="d-flex gap-2 align-items-center">
+                  <button class="btn btn-sm btn-outline-warning fw-bold" type="button" onclick="document.getElementById('adminCameraBoxWrap').classList.toggle('d-none')">
+                    📷 Buka Scanner Admin (Opsional)
+                  </button>
+                  <span class="badge bg-primary text-white fs-6">ADMIN CREATOR</span>
+                </div>
+              </div>
+
+              <!-- COLLAPSIBLE SCANNER CAMERA FOR ADMIN -->
+              <div id="adminCameraBoxWrap" class="mb-4 d-none">
+                <div class="card card-custom p-3 border border-warning" style="background:#0f172a">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold mb-0 text-warning"><i class="bi bi-qr-code-scan me-2"></i>Kamera Scanner Admin Pos Gate</h6>
+                    <button class="btn-close btn-close-white btn-sm" onclick="document.getElementById('adminCameraBoxWrap').classList.add('d-none')"></button>
+                  </div>
+                  <div id="interactiveReaderBoxAdmin" class="mb-3 position-relative d-flex align-items-center justify-content-center text-center" style="min-height: 180px; background:#000; border-radius:12px; border: 2px dashed #f59e0b;">
+                    <div id="cameraPlaceholderTextAdmin" class="p-3 text-secondary">
+                      <i class="bi bi-camera fs-2 d-block mb-1 text-warning"></i>
+                      <span class="small">Kamera mati. Klik <b>"Buka Kamera Admin"</b> di bawah.</span>
+                    </div>
+                    <div id="readerAdmin" style="width: 100%; height: 100%; display: none;"></div>
+                  </div>
+                  <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-warning text-dark py-2 fw-bold small flex-fill" type="button" onclick="triggerCameraWithGpsCheck('ADMIN')">
+                      <i class="bi bi-camera-video-fill me-1"></i> Buka Kamera Admin
+                    </button>
+                    <label class="btn btn-info text-dark py-2 fw-bold small flex-fill mb-0 text-center" style="cursor:pointer">
+                      <i class="bi bi-file-earmark-image me-1"></i> 📁 Upload QR
+                      <input type="file" accept="image/*" class="d-none" onchange="handleQrFileUpload(event, 'ADMIN')">
+                    </label>
+                    <button class="btn btn-outline-danger py-2 fw-bold small" type="button" onclick="stopCameraScanner()">
+                      <i class="bi bi-stop-circle me-1"></i> Matikan
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <form id="formAdminTugasLuar" onsubmit="handleCreateTicketDraftAdmin(event)">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label-bright text-warning"><i class="bi bi-calendar-event me-1"></i> Tanggal Tugas</label>
+                    <input type="date" class="form-control form-control-bright" id="inputAdminTanggal" required>
+                  </div>
+
+                  <div class="col-md-4">
+                    <label class="form-label-bright text-info"><i class="bi bi-person-circle me-1"></i> Pilih PIC Utama</label>
+                    <input type="text" class="form-control form-control-bright" id="inputAdminPic" list="registeredPicList" value="Sandri" placeholder="Pilih atau Ketik Nama PIC" required>
+                    <datalist id="registeredPicList">
+                      <option value="Sandri"></option>
+                      <option value="Sukanta"></option>
+                      <option value="Naim"></option>
+                      <option value="Hafidzi"></option>
+                      <option value="Aang.js"></option>
+                    </datalist>
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label-bright text-warning"><i class="bi bi-building me-1"></i> Pilih Departemen</label>
+                    <select class="form-select form-select-bright" id="inputAdminDepartemen">
+                      <option value="Finance / Accounting" selected>Finance / Accounting</option>
+                      <option value="Purchasing / Umum">Purchasing / Umum</option>
+                      <option value="HRD / GA">HRD / GA</option>
+                      <option value="Maintenance / Utility">Maintenance / Utility</option>
+                      <option value="Production / Plant">Production / Plant</option>
+                      <option value="IT / EDP">IT / EDP</option>
+                      <option value="Quality Control">Quality Control</option>
+                      <option value="Sales / Marketing">Sales / Marketing</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label-bright text-info"><i class="bi bi-person-check-fill me-1"></i> Atasan (DISETUJUI OLEH)</label>
+                    <input type="text" class="form-control form-control-bright" id="inputAdminDisetujuiOleh" list="approversList" value="Pak Herry (Section Head)" placeholder="Atasan Yang Menyetujui" required>
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label-bright text-success"><i class="bi bi-geo-alt-fill me-1"></i> Lokasi Tujuan Checkpoint & Keperluan per Line (Maksimal 5 Tujuan)</label>
+                    
+                    <div class="row g-2 mb-2">
+                      <div class="col-md-6 col-12">
+                        <div class="input-group">
+                          <span class="input-group-text bg-dark text-info border-secondary fw-bold" style="width: 90px;">Tujuan 1</span>
+                          <input type="text" class="form-control form-control-bright" id="inputAdminTujuan1" placeholder="Ketik Tempat / PT (Wajib)" required>
+                        </div>
+                      </div>
+                      <div class="col-md-6 col-12">
+                        <div class="input-group">
+                          <span class="input-group-text bg-dark text-warning border-secondary fw-bold" style="width: 105px;">Keperluan 1</span>
+                          <input type="text" class="form-control form-control-bright" id="inputAdminKeperluan1" placeholder="Contoh: Setor Tunai (Wajib)" required>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                      <div class="col-md-6 col-12">
+                        <div class="input-group">
+                          <span class="input-group-text bg-dark text-info border-secondary fw-bold" style="width: 90px;">Tujuan 2</span>
+                          <input type="text" class="form-control form-control-bright" id="inputAdminTujuan2" placeholder="Tujuan 2 (Opsional)">
+                        </div>
+                      </div>
+                      <div class="col-md-6 col-12">
+                        <div class="input-group">
+                          <span class="input-group-text bg-dark text-warning border-secondary fw-bold" style="width: 105px;">Keperluan 2</span>
+                          <input type="text" class="form-control form-control-bright" id="inputAdminKeperluan2" placeholder="Keperluan 2 (Opsional)">
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                      <div class="col-md-6 col-12">
+                        <div class="input-group">
+                          <span class="input-group-text bg-dark text-info border-secondary fw-bold" style="width: 90px;">Tujuan 3</span>
+                          <input type="text" class="form-control form-control-bright" id="inputAdminTujuan3" placeholder="Tujuan 3 (Opsional)">
+                        </div>
+                      </div>
+                      <div class="col-md-6 col-12">
+                        <div class="input-group">
+                          <span class="input-group-text bg-dark text-warning border-secondary fw-bold" style="width: 105px;">Keperluan 3</span>
+                          <input type="text" class="form-control form-control-bright" id="inputAdminKeperluan3" placeholder="Keperluan 3 (Opsional)">
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                      <div class="col-md-6 col-12">
+                        <div class="input-group">
+                          <span class="input-group-text bg-dark text-info border-secondary fw-bold" style="width: 90px;">Tujuan 4</span>
+                          <input type="text" class="form-control form-control-bright" id="inputAdminTujuan4" placeholder="Tujuan 4 (Opsional)">
+                        </div>
+                      </div>
+                      <div class="col-md-6 col-12">
+                        <div class="input-group">
+                          <span class="input-group-text bg-dark text-warning border-secondary fw-bold" style="width: 105px;">Keperluan 4</span>
+                          <input type="text" class="form-control form-control-bright" id="inputAdminKeperluan4" placeholder="Keperluan 4 (Opsional)">
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                      <div class="col-md-6 col-12">
+                        <div class="input-group">
+                          <span class="input-group-text bg-dark text-info border-secondary fw-bold" style="width: 90px;">Tujuan 5</span>
+                          <input type="text" class="form-control form-control-bright" id="inputAdminTujuan5" placeholder="Tujuan 5 (Opsional)">
+                        </div>
+                      </div>
+                      <div class="col-md-6 col-12">
+                        <div class="input-group">
+                          <span class="input-group-text bg-dark text-warning border-secondary fw-bold" style="width: 105px;">Keperluan 5</span>
+                          <input type="text" class="form-control form-control-bright" id="inputAdminKeperluan5" placeholder="Keperluan 5 (Opsional)">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-12 mt-3">
+                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-6 shadow-lg">
+                      <i class="bi bi-plus-lg me-2 fs-5"></i> 💾 BUAT TIKET TUGAS LUAR BARU (ADMIN)
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. DASHBOARD MONITORING & HISTORIS TABEL (REALTIME ALL USERS) -->
+    <div id="screenSharedDashboardView" class="row mb-5 d-none">
+      <div class="col-12">
+        <div class="card card-custom p-4">
+          
+          <!-- TAB NAVIGATION: LIVE TRACKER VS HISTORIS PERIODE -->
+          <div class="d-flex align-items-center justify-content-between mb-3 border-bottom border-secondary pb-3 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-success fw-bold py-2 px-3 me-1 active shadow" id="tabBtnLiveTracker" onclick="switchMonitoringTab('LIVE')">
+                📡 1. Live Tracker (Hari Ini)
+              </button>
+              <button class="btn btn-outline-warning fw-bold py-2 px-3" id="tabBtnHistory" onclick="switchMonitoringTab('HISTORY')">
+                📚 2. Historis Periode & Departemen
+              </button>
+            </div>
+
+            <div id="historyFilterControls" class="d-flex align-items-center gap-2 flex-wrap d-none">
+              <div class="d-flex align-items-center gap-1">
+                <span class="small text-white fw-bold">Dari:</span>
+                <input type="date" class="form-control form-control-bright form-control-sm" id="filterDateFromDashboard" onchange="loadDashboardData()">
+              </div>
+              <div class="d-flex align-items-center gap-1">
+                <span class="small text-white fw-bold">s/d:</span>
+                <input type="date" class="form-control form-control-bright form-control-sm" id="filterDateToDashboard" onchange="loadDashboardData()">
+              </div>
+              <div class="d-flex align-items-center gap-1">
+                <span class="small text-white fw-bold">Dept:</span>
+                <select id="filterDeptDashboard" class="form-select form-select-bright form-select-sm" style="min-width: 160px;" onchange="loadDashboardData()">
+                  <option value="ALL">Semua Departemen</option>
+                  <option value="Purchasing / Umum">Purchasing / Umum</option>
+                  <option value="Finance / Accounting">Finance / Accounting</option>
+                  <option value="HRD / GA">HRD / GA</option>
+                  <option value="Maintenance / Utility">Maintenance / Utility</option>
+                  <option value="Production / Plant">Production / Plant</option>
+                  <option value="IT / EDP">IT / EDP</option>
+                  <option value="Quality Control">Quality Control</option>
+                  <option value="Sales / Marketing">Sales / Marketing</option>
+                </select>
+              </div>
+              <button class="btn btn-sm btn-outline-light" onclick="setDashboardQuickFilter('TODAY')" title="Filter Hari Ini">Hari Ini</button>
+              <button class="btn btn-sm btn-outline-info" onclick="setDashboardQuickFilter('MONTH')" title="Filter Bulan Ini">Bulan Ini</button>
+              <button class="btn btn-sm btn-outline-warning" onclick="setDashboardQuickFilter('ALL')" title="Tampilkan Semua Historis">Semua Historis</button>
+              <button class="btn btn-sm btn-success fw-bold" onclick="exportFilteredExcel()"><i class="bi bi-file-earmark-excel me-1"></i> Export Excel</button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-dark table-hover table-bordered align-middle mb-0">
+              <thead class="table-secondary text-uppercase small fw-bold text-dark text-center">
+                <tr>
+                  <th>NO / TIKET</th>
+                  <th>TANGGAL</th>
+                  <th>PIC TUGAS LUAR</th>
+                  <th>PEMBUAT TIKET / DEPT</th>
+                  <th>TUJUAN & KEPERLUAN</th>
+                  <th style="min-width: 170px;">CHECKPOINT PROGRESS</th>
+                  <th>JAM KELUAR</th>
+                  <th>JAM KEMBALI</th>
+                  <th>DURASI</th>
+                  <th>GPS / IP AUDIT</th>
+                  <th style="min-width: 140px;">SECURITY BERTUGAS</th>
+                  <th style="min-width: 150px;">STEMPEL SECURITY</th>
+                  <th style="min-width: 120px;">AKSI CETAK / ADMIN</th>
+                </tr>
+              </thead>
+              <tbody id="tableBossDashboardBody">
+                <tr>
+                  <td colspan="13" class="text-center py-4 text-secondary">Memuat data dashboard...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION POSTER LEMBAR PRINT FISIK POS SECURITY -->
+    <div id="printablePosterAreaContainer" class="row justify-content-center my-4 d-none">
+      <div class="col-lg-10">
+        
+        <div id="printablePosterArea" class="card p-4 text-center text-dark bg-white border border-4 border-dark rounded-4 shadow-lg">
+          
+          <div class="d-flex align-items-center justify-content-center gap-3 mb-2">
+            <img src="/logo_cnc.png" alt="Logo CNC" height="54" onerror="this.style.display='none'">
+            <div class="text-start">
+              <h2 class="fw-extrabold text-dark m-0 tracking-tight fs-2" style="font-family:'Plus Jakarta Sans',sans-serif;">PT. CHANDRA NUGERAH CIPTA</h2>
+              <p class="m-0 text-dark fw-extrabold fs-6 text-uppercase tracking-wider">POS SECURITY GATE - TUGAS LUAR ERP</p>
+            </div>
+          </div>
+
+          <hr class="my-3 border-4 border-dark">
+
+          <!-- GRID 2 BARCODE CLEAN -->
+          <div class="row align-items-center justify-content-center my-2">
+            <div class="col-md-7 border-end border-3 border-dark py-2">
+              <span class="badge bg-danger text-white fs-5 px-4 py-2 mb-2 fw-bold">🔴 QR BARCODE 1 (SCAN KELUAR & PULANG)</span>
+              <br>
+              <div class="qr-container-lg my-3 shadow-lg">
+                <div id="posterQrLgBox"></div>
+              </div>
+              <h5 class="fw-extrabold text-dark mt-2 mb-0 font-monospace fs-5">https://erp.mogaworld.xyz/tugas_luar.html?action=scan_gate</h5>
+            </div>
+
+            <div class="col-md-5 py-2">
+              <span class="badge bg-primary text-white fs-6 px-3 py-2 mb-2 fw-bold">🔵 QR BARCODE 2 (BUKA APLIKASI WEB)</span>
+              <br>
+              <div class="qr-container-sm my-3 shadow">
+                <div id="posterQrSmBox"></div>
+              </div>
+              <h6 class="fw-bold text-dark mt-2 mb-0 font-monospace fs-6">https://erp.mogaworld.xyz/tugas_luar.html</h6>
+            </div>
+          </div>
+
+          <div class="mt-4 no-print">
+            <button class="btn btn-warning btn-lg fw-bold text-dark px-5 py-3 shadow fs-5" onclick="triggerPrintPoster()">
+              <i class="bi bi-printer-fill me-2"></i> 🖨️ CETAK POSTER FISIK 2 BARCODE INI
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODAL VERIFIKASI SECURITY KEPULANGAN -->
+  <div class="modal fade no-print" id="modalSecurityVerify" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white border border-secondary">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title fw-bold text-success"><i class="bi bi-shield-check me-2"></i>Verifikasi Kepulangan Security</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info py-2 small mb-3">
+            <i class="bi bi-info-circle me-1"></i>Security bertugas memilih NIK & Centang Anggota Rombongan yang kembali ke pabrik.
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label-bright text-warning">Tiket Perjalanan Yang Dipilih</label>
+            <input type="text" class="form-control form-control-bright text-info fw-bold" id="secModalTicketCode" readonly>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label-bright text-warning">Security Bertugas</label>
+            <input type="text" class="form-control form-control-bright text-success fw-bold" id="secUserActiveDisplay" readonly>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label-bright text-success">Daftar Anggota Rombongan (Centang yang ikut kembali)</label>
+            <div class="bg-black p-3 rounded border border-secondary">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" value="Sukanta" id="memberSukanta" checked>
+                <label class="form-check-label text-white small" for="memberSukanta">Sukanta</label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" value="Naim" id="memberNaim" checked>
+                <label class="form-check-label text-white small" for="memberNaim">Naim</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="Hafidzi" id="memberHafidzi" checked>
+                <label class="form-check-label text-white small" for="memberHafidzi">Hafidzi</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center p-3 rounded border border-dashed border-secondary bg-black mb-3">
+            <p class="small text-secondary mb-2 fw-bold text-uppercase">Pratinjau Stempel Resmi Security PT. CNC:</p>
+            <img src="stempel security.jpg" alt="Stempel Security" class="stamp-overlay-img">
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-success fw-bold" onclick="submitSecurityVerify()">
+            <i class="bi bi-check-circle-fill me-1"></i>Verifikasi Masuk & Tempel Stempel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL TAP CHECKPOINT TIBA / SELESAI (MODAL CUSTOM ERGONOMIC) -->
+  <div class="modal fade no-print" id="modalConfirmCheckpoint" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white border border-primary shadow-lg rounded-4">
+        <div class="modal-header border-secondary bg-black rounded-top-4">
+          <h5 class="modal-title fw-bold text-info" id="cpModalTitle">
+            <i class="bi bi-geo-alt-fill me-2 text-warning"></i>Konfirmasi Checkpoint Lokasi
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center py-4">
+          <div class="mb-3">
+            <span class="badge bg-warning text-dark px-3 py-2 fs-6 fw-bold mb-2" id="cpModalActionBadge">TIBA DI LOKASI</span>
+            <h3 class="fw-extrabold text-white mb-1" id="cpModalDestName">Nama Tujuan</h3>
+            <p class="text-secondary small font-monospace" id="cpModalTicketDisplay">TIKET: -</p>
+          </div>
+
+          <div class="p-3 bg-black rounded-3 border border-secondary text-start mb-3">
+            <label class="form-label text-warning small fw-bold mb-1">
+              <i class="bi bi-qr-code-scan me-1"></i> Scan QR Barcode Lokasi atau Ketik Manual Barcode:
+            </label>
+            <div class="input-group mb-2">
+              <input type="text" class="form-control bg-dark text-white border-secondary" id="cpModalBarcodeCode" placeholder="Ketik / Scan Barcode (Contoh: BCA, KAYABA, CP-1)">
+              <button class="btn btn-warning text-dark fw-bold" type="button" onclick="triggerCpCameraScan()">
+                <i class="bi bi-camera-fill me-1"></i> Kamera Scan
+              </button>
+              <label class="btn btn-info text-dark fw-bold mb-0 flex-shrink-0" style="cursor:pointer;" title="Upload foto/gambar QR Barcode dari galeri HP">
+                <i class="bi bi-file-image me-1"></i> Upload Gambar
+                <input type="file" id="cpModalFileInput" accept="image/*" style="display:none;" onchange="handleCpFileSelect(event)">
+              </label>
+            </div>
+            <div id="cpReaderBox" class="mb-2 text-center" style="display:none; background:#000; border-radius:8px; padding:10px;">
+              <div id="cpReader"></div>
+            </div>
+            <div class="d-flex align-items-center gap-2 text-success">
+              <i class="bi bi-broadcast fs-6"></i>
+              <span class="fw-bold style-mini">GPS Live & Waktu Terkunci Otomatis saat Scan</span>
+            </div>
+          </div>
+
+          <input type="hidden" id="cpModalTicketCode">
+          <input type="hidden" id="cpModalDestIndex">
+          <input type="hidden" id="cpModalActionType">
+        </div>
+        <div class="modal-footer border-secondary bg-black rounded-bottom-4 d-flex justify-content-between">
+          <button type="button" class="btn btn-outline-secondary px-4 fw-bold" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-info fw-bold text-dark px-4" id="btnSubmitCpModal" onclick="submitCheckpointFromModal()">
+            <i class="bi bi-check-circle-fill me-1"></i> YA, KONFIRMASI TAP LOKASI
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL RINCIAN BIAYA & BENSIN / PARKIR / TOL (MODAL CUSTOM ERGONOMIC) -->
+  <div class="modal fade no-print" id="modalInputExpenses" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content bg-dark text-white border border-warning shadow-lg rounded-4">
+        <div class="modal-header border-secondary bg-black rounded-top-4">
+          <h5 class="modal-title fw-bold text-warning">
+            <i class="bi bi-cash-stack me-2 text-success"></i>Form Rincian Biaya & Pengeluaran
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-dark border-secondary py-2 small mb-3">
+            <i class="bi bi-info-circle text-info me-1"></i> Masukkan rincian biaya pengeluaran. Anda bisa tambah item biaya manual dengan tombol <b>"+ Tambah Item Biaya"</b>.
+          </div>
+
+          <input type="hidden" id="expModalTicketCode">
+
+          <div class="row g-2 mb-2">
+            <div class="col-md-4">
+              <label class="form-label text-warning small fw-bold"><i class="bi bi-fuel-pump me-1"></i> Biaya Bensin (Rp)</label>
+              <input type="number" class="form-control bg-black text-warning border-secondary fw-bold" id="expModalBensin" placeholder="0" min="0" oninput="calcExpModalTotal()">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label text-info small fw-bold"><i class="bi bi-p-square me-1"></i> Biaya Parkir (Rp)</label>
+              <input type="number" class="form-control bg-black text-info border-secondary fw-bold" id="expModalParkir" placeholder="0" min="0" oninput="calcExpModalTotal()">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label text-success small fw-bold"><i class="bi bi-receipt me-1"></i> Tol / Lain-lain (Rp)</label>
+              <input type="number" class="form-control bg-black text-success border-secondary fw-bold" id="expModalLain" placeholder="0" min="0" oninput="calcExpModalTotal()">
+            </div>
+          </div>
+
+          <!-- ITEM BIAYA TAMBAHAN MANUAL -->
+          <div class="mt-3 mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-warning small fw-bold"><i class="bi bi-list-ul me-1"></i> Item Biaya Tambahan (Manual):</span>
+              <button type="button" class="btn btn-sm btn-outline-success fw-bold px-3" onclick="addExpenseItem()">
+                <i class="bi bi-plus-circle me-1"></i> + Tambah Item Biaya
+              </button>
+            </div>
+            <div id="extraExpenseItemsContainer" class="d-flex flex-column gap-2">
+              <!-- Item tambahan akan muncul di sini -->
+            </div>
+          </div>
+
+          <div class="p-3 bg-black rounded-3 border border-warning text-center mt-3">
+            <span class="text-secondary small d-block">TOTAL KESELURUHAN KLAIM ACCOUNTING</span>
+            <span class="fs-3 fw-extrabold text-warning" id="expModalTotalDisplay">Rp 0</span>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary bg-black rounded-bottom-4 d-flex justify-content-between">
+          <button type="button" class="btn btn-outline-secondary px-4 fw-bold" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-warning fw-bold text-dark px-4" onclick="submitExpensesFromModal()">
+            <i class="bi bi-save-fill me-1"></i> SIMPAN RINCIAN BIAYA
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    let currentUserSession = null;
+    let currentGps = { lat: null, lng: null };
+    let activeTicketCode = null;
+    let html5QrCodeScanner = null;
+    let isGpsActive = false;
+
+    const SECURITY_USERS = [
+      { nik: '99990016', name: 'Sukanta' },
+      { nik: '99990011', name: 'Naim' },
+      { nik: '99990009', name: 'Hafidzi' }
+    ];
+
+    function playScanBeepSound() {
+      try {
+        if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        setTimeout(() => { osc.stop(); ctx.close(); }, 150);
+      } catch(e) {}
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (document.getElementById('inputTanggal')) document.getElementById('inputTanggal').valueAsDate = new Date();
+      if (document.getElementById('inputAdminTanggal')) document.getElementById('inputAdminTanggal').valueAsDate = new Date();
+      if (document.getElementById('filterDateFromDashboard')) document.getElementById('filterDateFromDashboard').valueAsDate = new Date();
+      if (document.getElementById('filterDateToDashboard')) document.getElementById('filterDateToDashboard').valueAsDate = new Date();
+      if (document.getElementById('filterTanggalDashboard')) document.getElementById('filterTanggalDashboard').valueAsDate = new Date();
+      
+      initGpsLocation();
+      renderPosterBarcodes();
+      
+      // Stop kamera checkpoint saat modal ditutup
+      const cpModalEl = document.getElementById('modalConfirmCheckpoint');
+      if (cpModalEl) {
+        cpModalEl.addEventListener('hidden.bs.modal', () => {
+          if (cpHtml5Scanner) {
+            try {
+              cpHtml5Scanner.stop().then(() => {
+                cpHtml5Scanner = null;
+                const box = document.getElementById('cpReaderBox');
+                if (box) box.style.display = 'none';
+                const readerEl = document.getElementById('cpReader');
+                if (readerEl) readerEl.innerHTML = '';
+              }).catch(() => { cpHtml5Scanner = null; });
+            } catch(e) { cpHtml5Scanner = null; }
+          }
+        });
+      }
+      
+      if (!checkAutoLoginFromAPPortal()) {
+        checkSessionStorageLogin();
+      }
+      
+      checkUrlAutoActionParam();
+    });
+
+    function initGpsLocation() {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.watchPosition(
+          (pos) => {
+            currentGps.lat = pos.coords.latitude;
+            currentGps.lng = pos.coords.longitude;
+            isGpsActive = true;
+            document.getElementById('gpsWarningAlert').classList.add('d-none');
+          },
+          (err) => {
+            isGpsActive = true;
+            if (!currentGps.lat) {
+              // Koordinat default Cikarang (lokasi kantor)
+              currentGps = { lat: -6.300000, lng: 107.150000 };
+            }
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 }
+        );
+      } else {
+        isGpsActive = true;
+        currentGps = { lat: -6.300000, lng: 107.150000 };
+      }
+    }
+
+    // Fungsi Reverse Geocoding: Koordinat GPS -> Nama Alamat Lengkap (Gratis, Nominatim)
+    async function getAddressFromCoords(lat, lng) {
+      if (!lat || !lng) return null;
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`, {
+          headers: { 'Accept-Language': 'id,en' }
+        });
+        const data = await res.json();
+        if (data && data.display_name) {
+          // Ringkas: kelurahan, kecamatan, kota
+          const addr = data.address || {};
+          const parts = [
+            addr.road || addr.neighbourhood || addr.suburb,
+            addr.village || addr.suburb || addr.quarter,
+            addr.city_district || addr.county,
+            addr.city || addr.town || addr.municipality || addr.state
+          ].filter(Boolean);
+          return parts.length > 0 ? parts.join(', ') : data.display_name;
+        }
+        return null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function bypassGpsWarning() {
+      isGpsActive = true;
+      if (!currentGps.lat) {
+        currentGps = { lat: -6.200000, lng: 106.816666 };
+      }
+      document.getElementById('gpsWarningAlert').classList.add('d-none');
+    }
+
+    let liveStatusPoller = null;
+
+    function checkAutoLoginFromAPPortal() {
+      const isInsideIframe = window.self !== window.top;
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+      if (isInsideIframe) {
+        sessionStorage.removeItem('manualLogout');
+        localStorage.removeItem('manualLogout');
+      } else if (sessionStorage.getItem('manualLogout') === 'true' || localStorage.getItem('manualLogout') === 'true') {
+        return false;
+      }
+
+      if (isInsideIframe || isLocalhost) {
+        let parentUser = null;
+        try {
+          if (window.parent && window.parent.document) {
+            const uLabel = window.parent.document.getElementById('usernameLabel');
+            if (uLabel && uLabel.innerText && uLabel.innerText !== 'Memuat...') {
+              parentUser = uLabel.innerText.trim();
+            }
+          }
+        } catch(e) {}
+
+        const adminName = parentUser || 'Aang.js - Admin';
+        currentUserSession = { role: 'ADMIN', name: adminName, nik: 'ADMIN' };
+        sessionStorage.setItem('tugasLuarUserSession', JSON.stringify(currentUserSession));
+        localStorage.setItem('tugasLuarUserSession', JSON.stringify(currentUserSession));
+        applyUserSessionUI();
+        return true;
+      }
+      return false;
+    }
+
+    async function checkUrlAutoActionParam() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const action = urlParams.get('action');
+
+      if (action === 'scan_gate') {
+        document.getElementById('autoScanBanner').classList.remove('d-none');
+
+        setTimeout(async () => {
+          try {
+            const res = await fetch('/api/tugas-luar/scan-static', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ticket_code: 'GATE-POS-001',
+                gps_lat: currentGps.lat,
+                gps_lng: currentGps.lng
+              })
+            });
+            const data = await res.json();
+            playScanBeepSound();
+
+            if (data.success) {
+              alert(`⚡ INSTANT SCAN SUKSES!\n\n${data.message}`);
+              loadDashboardData();
+            } else {
+              alert(`⚠️ GAGAL SCAN / PERINGATAN:\n\n${data.message}`);
+            }
+          } catch(e) {}
+        }, 300);
+      }
+    }
+
+    function checkSessionStorageLogin() {
+      if (sessionStorage.getItem('manualLogout') === 'true' || localStorage.getItem('manualLogout') === 'true') {
+        showScreen('LOGIN');
+        return;
+      }
+
+      const saved = sessionStorage.getItem('tugasLuarUserSession') || localStorage.getItem('tugasLuarUserSession');
+      if (saved) {
+        try {
+          currentUserSession = JSON.parse(saved);
+          applyUserSessionUI();
+          return;
+        } catch(e) {}
+      }
+
+      showScreen('LOGIN');
+    }
+
+    function handleUnifiedLoginSubmit(e) {
+      e.preventDefault();
+
+      const userRaw = document.getElementById('loginUnifiedUser').value || '';
+      const passRaw = document.getElementById('loginUnifiedPass').value || '';
+
+      const userClean = userRaw.trim();
+      const passClean = passRaw.trim();
+
+      if (!userClean || !passClean) {
+        return alert('Username dan Password wajib diisi!');
+      }
+
+      const userLower = userClean.toLowerCase();
+      const passLower = passClean.toLowerCase();
+
+      sessionStorage.removeItem('manualLogout');
+      localStorage.removeItem('manualLogout');
+
+      if (userLower === 'sandri') {
+        currentUserSession = { role: 'PIC', name: 'Sandri', nik: 'SANDRI01' };
+        sessionStorage.setItem('tugasLuarUserSession', JSON.stringify(currentUserSession));
+        localStorage.setItem('tugasLuarUserSession', JSON.stringify(currentUserSession));
+        applyUserSessionUI();
+        return;
+      }
+
+      const foundSec = SECURITY_USERS.find(s => 
+        s.nik === userClean || 
+        s.name.toLowerCase() === userLower || 
+        s.nik === passClean ||
+        userLower.includes('security') ||
+        userLower.includes('sukanta') ||
+        userLower.includes('naim') ||
+        userLower.includes('hafidzi')
+      );
+
+      if (foundSec) {
+        currentUserSession = { role: 'SECURITY', name: foundSec.name, nik: foundSec.nik };
+        sessionStorage.setItem('tugasLuarUserSession', JSON.stringify(currentUserSession));
+        localStorage.setItem('tugasLuarUserSession', JSON.stringify(currentUserSession));
+        applyUserSessionUI();
+        return;
+      }
+
+      if (userLower === 'aang.js' || userLower === 'aang' || passClean === '03214' || userLower === 'admin' || userLower === 'bos') {
+        if (passClean === '03214' || passLower === 'admin' || passLower === 'bos' || passLower === 'aang') {
+          currentUserSession = { role: 'ADMIN', name: userClean, nik: 'USER' };
+          sessionStorage.setItem('tugasLuarUserSession', JSON.stringify(currentUserSession));
+          localStorage.setItem('tugasLuarUserSession', JSON.stringify(currentUserSession));
+          applyUserSessionUI();
+          return;
+        }
+      }
+
+      alert('⚠️ LOGIN GAGAL!\nUsername atau Password salah. Silakan periksa kembali kredensial akun Anda.');
+    }
+
+    function openSignupModal() {
+      const modalEl = document.getElementById('modalInitialSignup');
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+    }
+
+    async function submitInitialSignup(event) {
+      event.preventDefault();
+      const name = document.getElementById('signupName').value.trim();
+      const username = document.getElementById('signupUsername').value.trim();
+      const password = document.getElementById('signupPassword').value.trim();
+      const department = document.getElementById('signupDepartemen').value;
+
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, username, password, department, role: department.includes('Supplier') ? 'supplier' : 'internal' })
+        });
+        const data = await res.json();
+        const modalEl = document.getElementById('modalInitialSignup');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+
+        alert(data.message || '✅ AKUN BERHASIL DIDAFTARKAN! Silakan login sekarang.');
+        document.getElementById('loginUnifiedUser').value = username;
+        document.getElementById('loginUnifiedPass').value = password;
+      } catch (e) {
+        alert('Gagal registrasi: ' + e.message);
+      }
+    }
+
+    function userLogout() {
+      if (liveStatusPoller) {
+        clearInterval(liveStatusPoller);
+        liveStatusPoller = null;
+      }
+      sessionStorage.removeItem('tugasLuarUserSession');
+      localStorage.removeItem('tugasLuarUserSession');
+      sessionStorage.setItem('manualLogout', 'true');
+      localStorage.setItem('manualLogout', 'true');
+      currentUserSession = null;
+      stopCameraScanner();
+      
+      // Sembunyikan navbar dengan menambahkan class d-none
+      document.getElementById('navUserBar').classList.add('d-none');
+      document.getElementById('printablePosterAreaContainer').classList.add('d-none');
+      
+      showScreen('LOGIN');
+      alert('🔒 Anda telah berhasil Logout dari akun Anda.');
+    }
+
+    function applyUserSessionUI() {
+      if (liveStatusPoller) {
+        clearInterval(liveStatusPoller);
+        liveStatusPoller = null;
+      }
+
+      // Tampilkan navUserBar dengan menghapus class d-none
+      const navBar = document.getElementById('navUserBar');
+      navBar.classList.remove('d-none');
+      document.getElementById('navUserSessionBadge').innerText = `Login: ${currentUserSession.role} (${currentUserSession.name})`;
+
+      if (currentUserSession.role === 'ADMIN' || currentUserSession.role === 'BOSS') {
+        document.getElementById('btnNavPrintPoster').style.display = 'inline-block';
+        document.getElementById('printablePosterAreaContainer').classList.remove('d-none');
+        showScreen('BOSS');
+        loadDashboardData();
+        liveStatusPoller = setInterval(loadDashboardData, 5000);
+      } else if (currentUserSession.role === 'PIC') {
+        document.getElementById('btnNavPrintPoster').style.display = 'none';
+        document.getElementById('printablePosterAreaContainer').classList.add('d-none');
+        showScreen('SANDRI');
+        loadSandriActiveTickets();
+        loadDashboardData();
+        liveStatusPoller = setInterval(() => {
+          loadSandriActiveTickets();
+          loadDashboardData();
+        }, 3000);
+      } else if (currentUserSession.role === 'SECURITY') {
+        document.getElementById('btnNavPrintPoster').style.display = 'none';
+        document.getElementById('printablePosterAreaContainer').classList.add('d-none');
+        showScreen('SECURITY');
+        loadDashboardData();
+        liveStatusPoller = setInterval(loadDashboardData, 3000);
+      }
+    }
+
+    function showScreen(screenType) {
+      const headerNav = document.getElementById('mainHeaderNavbar');
+      if (headerNav) {
+        headerNav.classList.toggle('d-none', screenType === 'LOGIN');
+      }
+
+      document.getElementById('screenLoginGate').classList.toggle('d-none', screenType !== 'LOGIN');
+      document.getElementById('screenSandriView').classList.toggle('d-none', screenType !== 'SANDRI');
+      document.getElementById('screenSecurityView').classList.toggle('d-none', screenType !== 'SECURITY');
+      document.getElementById('screenBossView').classList.toggle('d-none', screenType !== 'BOSS');
+      
+      const sharedDash = document.getElementById('screenSharedDashboardView');
+      if (sharedDash) {
+        sharedDash.classList.toggle('d-none', screenType === 'LOGIN');
+      }
+
+      if (screenType === 'LOGIN') {
+        document.getElementById('navUserBar').classList.add('d-none');
+        document.getElementById('printablePosterAreaContainer').classList.add('d-none');
+      }
+    }
+
+    function renderPosterBarcodes() {
+      const publicDomain = 'https://erp.mogaworld.xyz';
+      const barcode1TransactionUrl = publicDomain + '/tugas_luar.html?action=scan_gate';
+      const barcode2WebUrl = publicDomain + '/tugas_luar.html';
+
+      const boxLg = document.getElementById('posterQrLgBox');
+      if (boxLg) {
+        boxLg.innerHTML = '';
+        new QRCode(boxLg, {
+          text: barcode1TransactionUrl,
+          width: 220,
+          height: 220,
+          colorDark : "#000000",
+          colorLight : "#ffffff",
+          correctLevel : QRCode.CorrectLevel.H
+        });
+      }
+
+      const boxSm = document.getElementById('posterQrSmBox');
+      if (boxSm) {
+        boxSm.innerHTML = '';
+        new QRCode(boxSm, {
+          text: barcode2WebUrl,
+          width: 120,
+          height: 120,
+          colorDark : "#000000",
+          colorLight : "#ffffff",
+          correctLevel : QRCode.CorrectLevel.H
+        });
+      }
+    }
+
+    function triggerPrintPoster() {
+      window.print();
+    }
+
+    function triggerCameraWithGpsCheck(mode) {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            currentGps.lat = pos.coords.latitude;
+            currentGps.lng = pos.coords.longitude;
+          },
+          (err) => {},
+          { timeout: 4000 }
+        );
+      }
+      startCameraScanner(mode);
+    }
+
+    function startCameraScanner(mode) {
+      let readerId = "reader";
+      let placeholderId = "cameraPlaceholderText";
+
+      if (mode === 'SECURITY') {
+        readerId = "readerSec";
+        placeholderId = "cameraPlaceholderTextSec";
+      } else if (mode === 'ADMIN') {
+        readerId = "readerAdmin";
+        placeholderId = "cameraPlaceholderTextAdmin";
+      }
+
+      document.getElementById(placeholderId).style.display = 'none';
+      document.getElementById(readerId).style.display = 'block';
+
+      if (html5QrCodeScanner) {
+        html5QrCodeScanner.stop().then(() => initScannerInstance(readerId, mode));
+      } else {
+        initScannerInstance(readerId, mode);
+      }
+    }
+
+    function initScannerInstance(readerId, mode) {
+      html5QrCodeScanner = new Html5Qrcode(readerId);
+      html5QrCodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 15, qrbox: { width: 220, height: 220 } },
+        async (decodedText) => {
+          stopCameraScanner();
+          playScanBeepSound();
+
+          try {
+            const bodyPayload = {
+              ticket_code: 'GATE-POS-001',
+              gps_lat: currentGps.lat,
+              gps_lng: currentGps.lng
+            };
+
+            if (currentUserSession?.role === 'SECURITY') {
+              bodyPayload.security_nik = currentUserSession.nik;
+              bodyPayload.security_nama = currentUserSession.name;
+            }
+
+            const res = await fetch('/api/tugas-luar/scan-static', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(bodyPayload)
+            });
+            const data = await res.json();
+
+            if (data.success) {
+              if (currentUserSession?.role === 'PIC') {
+                alert(`⚡ ${data.message}`);
+                loadSandriActiveTickets();
+              } else if (currentUserSession?.role === 'SECURITY') {
+                if (data.ticket && data.ticket.status === 'MENUNGGU VERIFIKASI MASUK SECURITY') {
+                  openSecurityVerifyModal(data.ticket.ticket_code);
+                } else {
+                  alert(data.message);
+                }
+              } else {
+                alert(`⚡ ${data.message}`);
+              }
+              loadDashboardData();
+            } else {
+              alert(`⚠️ GAGAL SCAN / PERINGATAN:\n\n${data.message}`);
+            }
+          } catch(e) {
+            saveOfflineScan('GATE-POS-001', currentUserSession?.role === 'SECURITY' ? 'SECURITY_STAMP' : 'SANDRI_RETURN');
+          }
+        },
+        (error) => {}
+      ).catch(err => {
+        alert("⚠️ TIDAK DAPAT MEMBUKA KAMERA HP!\nPastikan Anda telah memberikan izin Kamera pada browser HP Anda.");
+      });
+    }
+
+    function stopCameraScanner() {
+      if (html5QrCodeScanner) {
+        html5QrCodeScanner.stop().then(() => {
+          if (document.getElementById('reader')) document.getElementById('reader').style.display = 'none';
+          if (document.getElementById('readerSec')) document.getElementById('readerSec').style.display = 'none';
+          if (document.getElementById('readerAdmin')) document.getElementById('readerAdmin').style.display = 'none';
+          
+          if (document.getElementById('cameraPlaceholderText')) document.getElementById('cameraPlaceholderText').style.display = 'block';
+          if (document.getElementById('cameraPlaceholderTextSec')) document.getElementById('cameraPlaceholderTextSec').style.display = 'block';
+          if (document.getElementById('cameraPlaceholderTextAdmin')) document.getElementById('cameraPlaceholderTextAdmin').style.display = 'block';
+        }).catch(e => {});
+      }
+    }
+
+    async function handleQrFileUpload(event, mode) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      let readerId = "reader";
+      if (mode === 'SECURITY') readerId = "readerSec";
+      else if (mode === 'ADMIN') readerId = "readerAdmin";
+
+      const html5QrCode = new Html5Qrcode(readerId);
+      try {
+        const decodedText = await html5QrCode.scanFile(file, true);
+        playScanBeepSound();
+
+        const bodyPayload = {
+          ticket_code: 'GATE-POS-001',
+          gps_lat: currentGps.lat,
+          gps_lng: currentGps.lng
+        };
+
+        if (currentUserSession?.role === 'SECURITY') {
+          bodyPayload.security_nik = currentUserSession.nik;
+          bodyPayload.security_nama = currentUserSession.name;
+        }
+
+        const res = await fetch('/api/tugas-luar/scan-static', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bodyPayload)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          if (currentUserSession?.role === 'PIC') {
+            alert(`⚡ ${data.message}`);
+            loadSandriActiveTickets();
+          } else if (currentUserSession?.role === 'SECURITY') {
+            if (data.ticket && data.ticket.status === 'MENUNGGU VERIFIKASI MASUK SECURITY') {
+              openSecurityVerifyModal(data.ticket.ticket_code);
+            } else {
+              alert(data.message);
+            }
+          } else {
+            alert(`⚡ ${data.message}`);
+          }
+          loadDashboardData();
+        } else {
+          alert(`⚠️ GAGAL SCAN / PERINGATAN:\n\n${data.message}`);
+        }
+      } catch (err) {
+        alert(`⚠️ Gambar QR tidak terbaca.\n\nPastikan foto QR jelas, terang, dan tidak buram.\n\nDetail: ${err.message || err}`);
+      }
+    }
+
+    // MEMUAT TIKET TUGAS LUAR AKTIF UNTUK USER SANDRI
+    async function loadSandriActiveTickets() {
+      const container = document.getElementById('sandriActiveTicketsContainer');
+      if (!container) return;
+
+      const today = new Date().toISOString().slice(0, 10);
+      try {
+        const res = await fetch(`/api/tugas-luar/list?tanggal=${today}`);
+        const data = await res.json();
+
+        if (!data.success || !data.data || data.data.length === 0) {
+          container.innerHTML = `<div class="text-center py-3 text-secondary small">Belum ada tugas luar aktif untuk hari ini (${today}).</div>`;
+          return;
+        }
+
+        const activeUserName = (currentUserSession?.name || 'Sandri').toLowerCase().trim();
+        const userTickets = data.data.filter(t => {
+          const pic = String(t.pic_utamanya || '').toLowerCase().trim();
+          return pic.includes(activeUserName) || activeUserName.includes(pic) || currentUserSession?.role === 'ADMIN' || currentUserSession?.role === 'BOSS';
+        });
+
+        if (userTickets.length === 0) {
+          container.innerHTML = `<div class="text-center py-3 text-secondary small">Tidak ada tugas luar aktif yang ditugaskan untuk ${currentUserSession?.name || 'User'} hari ini.</div>`;
+          return;
+        }
+
+        const cardsHtml = await Promise.all(userTickets.map(async t => {
+          let badge = '<span class="badge badge-status-draft">1. DRAFT (BELUM SCAN KELUAR)</span>';
+          let guide = '💡 <b>Petunjuk:</b> Silakan jalan ke Pos Gate & me-scan 🔴 <b>QR BARCODE 1</b> dengan kamera HP di bawah untuk Berangkat.';
+
+          if (t.status === 'MENUNGGU APPROVAL KELUAR SECURITY') {
+            badge = '<span class="badge badge-status-wait-exit">2. MENUNGGU ACC KELUAR SECURITY</span>';
+            guide = '⏳ <b>Petunjuk:</b> Anda sudah scan keluar. Serahkan ke Security untuk me-ACC di HP Security.';
+          } else if (t.status === 'BERANGKAT') {
+            badge = '<span class="badge badge-status-berangkat">3. SEDANG BERANGKAT (DI LUAR PABRIK)</span>';
+            guide = '🟢 <b>Petunjuk:</b> Tekan tombol 📍 <b>Tap Checkpoint</b> di bawah setiap kali tiba di lokasi tujuan, lalu scan 🔴 <b>QR BARCODE 1</b> saat pulang.';
+          } else if (t.status === 'MENUNGGU VERIFIKASI MASUK SECURITY') {
+            badge = '<span class="badge badge-status-wait-in">4. MENUNGGU STEMPEL KEPULANGAN SECURITY</span>';
+            guide = '⏳ <b>Petunjuk:</b> Kepulangan Sandri tercatat. Serahkan ke HP Security untuk Verifikasi & Tempel Stempel.';
+          } else if (t.status === 'SELESAI') {
+            badge = '<span class="badge badge-status-selesai">5. SELESAI & TER-STEMPEL</span>';
+            guide = '✅ <b>Status:</b> Tugas Luar Selesai & Stempel Security Resmi Terpasang.';
+          }
+
+          // Detail checkpoints untuk tiket ini
+          let checkpointsList = [];
+          try {
+            const detailRes = await fetch(`/api/tugas-luar/detail/${t.ticket_code}`);
+            const detailData = await detailRes.json();
+            if (detailData.success && detailData.checkpoints) {
+              checkpointsList = detailData.checkpoints;
+            }
+          } catch(err) {}
+
+          const cpButtons = checkpointsList.map((cp, idx) => {
+            if (cp.status === 'COMPLETED') {
+              const dur = cp.durasi_lokasi_menit ? `${cp.durasi_lokasi_menit} Mnt` : 'Selesai';
+              return `<span class="badge bg-success p-2 me-1 mb-1 style-small">✅ ${idx+1}. ${cp.destination_name} (Selesai: ${dur})</span>`;
+            } else if (cp.status === 'ARRIVED') {
+              const tibaStr = cp.waktu_tiba ? new Date(cp.waktu_tiba).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : 'Tiba';
+              return `<span class="badge bg-info p-2 me-1 mb-1 style-small">📍 ${idx+1}. ${cp.destination_name} (Tiba ${tibaStr})</span>
+                      <button class="btn btn-sm btn-warning text-dark me-1 mb-1 fw-bold px-3 py-1.5 rounded-3 shadow-sm" onclick="openConfirmCheckpointModal('${t.ticket_code}', ${cp.destination_index}, 'COMPLETE', '${cp.destination_name}')">🚀 TAP SELESAI: ${cp.destination_name}</button>`;
+            } else {
+              return `<button class="btn btn-sm btn-info text-dark me-1 mb-1 fw-bold px-3 py-1.5 rounded-3 shadow-sm" onclick="openConfirmCheckpointModal('${t.ticket_code}', ${cp.destination_index}, 'ARRIVE', '${cp.destination_name}')">📌 TAP TIBA: ${cp.destination_name}</button>`;
+            }
+          }).join('');
+
+          const isEligibleUangMakan = t.is_eligible_uang_makan;
+          const uangMakanVal = isEligibleUangMakan ? 20000 : parseFloat(t.uang_makan || 0);
+
+          return `
+            <div class="card bg-black p-3 mb-3 border border-secondary text-white rounded-3 shadow">
+              <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="fw-bold text-info fs-5">${t.ticket_code}</span>
+                  ${t.waktu_acc_atasan ? `<span class="badge bg-success text-white style-mini">✔ ACC Atasan: ${t.acc_atasan_oleh || t.disetujui_oleh}</span>` : `<button class="btn btn-sm btn-outline-info text-white fw-bold py-0.5 px-2 style-mini" onclick="approveAtasan('${t.ticket_code}', '${t.disetujui_oleh}')">👤 ACC Atasan (${t.disetujui_oleh || 'Pak Herry'})</button>`}
+                </div>
+                ${badge}
+              </div>
+              <div class="row g-1 small mb-2">
+                <div class="col-md-6">📍 <b>Tujuan:</b> ${t.tujuan}</div>
+                <div class="col-md-6">📝 <b>Keperluan:</b> ${t.keperluan}</div>
+              </div>
+
+              <!-- CHECKPOINT DESTINATION BUTTONS -->
+              <div class="p-2 mb-2 bg-dark rounded border border-secondary">
+                <div class="fw-bold text-warning small mb-1">📍 Checkpoint Status (Tap Tiba & Tap Selesai di Lokasi):</div>
+                <div class="d-flex flex-wrap align-items-center">
+                  ${cpButtons || '<span class="text-secondary small">Lokasi Utama: ' + t.tujuan + '</span>'}
+                </div>
+              </div>
+
+              <!-- FORM EXPENSE CLAIMS (PARKIR, BENSIN, TIKET/TOL, UANG MAKAN) -->
+              <div class="p-3 mb-2 bg-dark rounded border border-warning shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="fw-bold text-warning fs-6">💰 Rincian Biaya Pengeluaran (Klaim Pak Handoko):</div>
+                  <button class="btn btn-sm btn-outline-warning fw-bold px-3" onclick="openExpensesModal('${t.ticket_code}', ${t.biaya_bensin || 0}, ${t.biaya_parkir || 0}, ${t.biaya_lain || 0})">
+                    ✏️ Input / Edit Biaya
+                  </button>
+                </div>
+                <div class="row g-2 align-items-center">
+                  <div class="col-md-3 col-6">
+                    <label class="small text-warning fw-bold">Uang Makan (Berangkat &lt;10:00 &amp; Kembali ≥13:00)</label>
+                    <input type="text" class="form-control form-control-sm bg-black text-success fw-bold border-secondary" value="${uangMakanVal > 0 ? 'Rp 20.000 (Dapat)' : 'Rp 0 (Belum)'}" readonly>
+                  </div>
+                  <div class="col-md-3 col-6">
+                    <label class="small text-info fw-bold">Biaya Parkir</label>
+                    <input type="text" class="form-control form-control-sm bg-black text-info fw-bold border-secondary" value="Rp ${(t.biaya_parkir || 0).toLocaleString('id-ID')}" readonly>
+                  </div>
+                  <div class="col-md-3 col-6">
+                    <label class="small text-warning fw-bold">Biaya Bensin</label>
+                    <input type="text" class="form-control form-control-sm bg-black text-warning fw-bold border-secondary" value="Rp ${(t.biaya_bensin || 0).toLocaleString('id-ID')}" readonly>
+                  </div>
+                  <div class="col-md-3 col-6">
+                    <label class="small text-success fw-bold">Biaya Tol / Lain</label>
+                    <input type="text" class="form-control form-control-sm bg-black text-success fw-bold border-secondary" value="Rp ${(t.biaya_lain || 0).toLocaleString('id-ID')}" readonly>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-dark p-2 rounded small text-warning border border-secondary">${guide}</div>
+              <a href="/api/tugas-luar/export-pdf/${t.id}" target="_blank" class="btn btn-sm btn-warning text-dark fw-bold w-100 mt-2 py-2 fs-6">
+                📄 Cetak / Download Surat Tugas Luar (PDF HP)
+              </a>
+            </div>
+          `;
+        }));
+
+        container.innerHTML = cardsHtml.join('');
+
+      } catch(e) {
+        container.innerHTML = `<div class="text-danger small">Gagal memuat tiket Sandri: ${e.message}</div>`;
+      }
+    }
+
+    // MODAL TRIGGER UNTUK TAP / SCAN CHECKPOINT (TIBA & SELESAI)
+    let cpHtml5Scanner = null;
+
+    function openConfirmCheckpointModal(ticketCode, destinationIndex, actionType, destName) {
+      document.getElementById('cpModalTicketCode').value = ticketCode;
+      document.getElementById('cpModalDestIndex').value = destinationIndex;
+      document.getElementById('cpModalActionType').value = actionType || 'ARRIVE';
+      document.getElementById('cpModalDestName').innerText = destName || ('Checkpoint ' + destinationIndex);
+      document.getElementById('cpModalTicketDisplay').innerText = `TIKET: ${ticketCode}`;
+      if (document.getElementById('cpModalBarcodeCode')) {
+        document.getElementById('cpModalBarcodeCode').value = '';
+        document.getElementById('cpModalBarcodeCode').placeholder = `Scan / ketik Barcode (Contoh: ${destName || 'BCA'})`;
+      }
+      
+      const isComplete = (actionType === 'COMPLETE');
+      const badgeEl = document.getElementById('cpModalActionBadge');
+      badgeEl.innerText = isComplete ? '📷 SCAN SELESAI / BERANGKAT LAGI DARI LOKASI' : '📷 SCAN TIBA DI LOKASI TUJUAN';
+      badgeEl.className = isComplete ? 'badge bg-warning text-dark px-3 py-2 fs-6 fw-bold mb-2' : 'badge bg-info text-dark px-3 py-2 fs-6 fw-bold mb-2';
+
+      const modalEl = document.getElementById('modalConfirmCheckpoint');
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+    }
+
+    function triggerCpCameraScan() {
+      const box = document.getElementById('cpReaderBox');
+      if (!box) return;
+
+      // Stop scanner sebelumnya jika masih berjalan
+      if (cpHtml5Scanner) {
+        try {
+          cpHtml5Scanner.stop().then(() => {
+            cpHtml5Scanner.clear();
+            cpHtml5Scanner = null;
+            _startCpScanner(box);
+          }).catch(() => {
+            cpHtml5Scanner = null;
+            _startCpScanner(box);
+          });
+        } catch(e) {
+          cpHtml5Scanner = null;
+          _startCpScanner(box);
+        }
+      } else {
+        _startCpScanner(box);
+      }
+    }
+
+    function _startCpScanner(box) {
+      // Bersihkan element reader agar tidak ada instance lama
+      const readerEl = document.getElementById('cpReader');
+      if (readerEl) readerEl.innerHTML = '';
+      box.style.display = 'block';
+
+      // Gunakan Html5Qrcode (bukan Html5QrcodeScanner) agar lebih kontrol
+      cpHtml5Scanner = new Html5Qrcode('cpReader');
+      cpHtml5Scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+          playScanBeepSound();
+          if (document.getElementById('cpModalBarcodeCode')) {
+            document.getElementById('cpModalBarcodeCode').value = decodedText;
+          }
+          // Stop kamera setelah berhasil scan
+          try {
+            cpHtml5Scanner.stop().then(() => {
+              cpHtml5Scanner = null;
+              box.style.display = 'none';
+            });
+          } catch(e) {}
+          submitCheckpointFromModal();
+        },
+        (errorMessage) => { /* scan error, ignore */ }
+      ).catch((err) => {
+        alert('⚠️ Tidak bisa membuka kamera! Pastikan izin kamera sudah diberikan di browser.\n\nDetail: ' + err);
+        box.style.display = 'none';
+      });
+    }
+
+    async function handleCpFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      try {
+        const readerEl = document.getElementById('cpReader');
+        if (!readerEl) return;
+        
+        const html5QrCode = new Html5Qrcode('cpReader');
+        const decodedText = await html5QrCode.scanFile(file, true);
+        playScanBeepSound();
+        if (document.getElementById('cpModalBarcodeCode')) {
+          document.getElementById('cpModalBarcodeCode').value = decodedText;
+        }
+        alert(`✅ QR / Barcode Terdeteksi dari Gambar File:\n\nKode: ${decodedText}`);
+        submitCheckpointFromModal();
+      } catch (err) {
+        alert('⚠️ Barcode / QR Code tidak terdeteksi dari foto/gambar tersebut.\n\nPastikan foto terjelas dan berisi QR Code / Barcode yang valid.');
+      } finally {
+        event.target.value = '';
+      }
+    }
+
+    async function submitCheckpointFromModal() {
+      const ticketCode = document.getElementById('cpModalTicketCode').value;
+      const destinationIndex = parseInt(document.getElementById('cpModalDestIndex').value, 10);
+      const actionType = document.getElementById('cpModalActionType').value;
+      const barcodeInput = document.getElementById('cpModalBarcodeCode')?.value.trim() || '';
+      const btn = document.getElementById('btnSubmitCpModal');
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengunci GPS & Scanning...';
+
+      const modalEl = document.getElementById('modalConfirmCheckpoint');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+
+      const sendReq = async (lat, lng) => {
+        // Ambil nama lokasi dari GPS via Nominatim
+        let locationName = null;
+        if (lat && lng) {
+          locationName = await getAddressFromCoords(lat, lng);
+        }
+
+        try {
+          const payload = {
+            ticket_code: ticketCode,
+            destination_index: destinationIndex,
+            action_type: actionType,
+            barcode_code: barcodeInput,
+            gps_lat: lat,
+            gps_lng: lng,
+            location_name: locationName
+          };
+          const res = await fetch('/api/tugas-luar/checkpoint-reach', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> VERIFIKASI & CATAT CHECKPOINT';
+          if (modal) modal.hide();
+          if (cpHtml5Scanner) { try { cpHtml5Scanner.clear(); } catch(e){} }
+
+          if (data.success) {
+            playScanBeepSound();
+            alert(`✅ CHECKPOINT BERHASIL DISCAN!\n\nTiket: ${ticketCode}\nStatus: ${actionType === 'COMPLETE' ? 'Selesai di Lokasi' : 'Tiba di Lokasi'}`);
+            loadSandriActiveTickets();
+            loadDashboardData();
+          } else {
+            alert('Gagal checkpoint: ' + data.message);
+          }
+        } catch(e) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> VERIFIKASI & CATAT CHECKPOINT';
+          alert('Error: ' + e.message);
+        }
+      };
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => sendReq(pos.coords.latitude, pos.coords.longitude),
+        (err) => sendReq(null, null),
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    }
+
+    // MODAL TRIGGER UNTUK INPUT EXPENSES (BENSIN, PARKIR, TOL/LAIN + ITEM MANUAL)
+    let extraExpenseItems = []; // Array item biaya tambahan manual
+
+    function openExpensesModal(ticketCode, bensin, parkir, lain) {
+      document.getElementById('expModalTicketCode').value = ticketCode;
+      document.getElementById('expModalBensin').value = bensin || '';
+      document.getElementById('expModalParkir').value = parkir || '';
+      document.getElementById('expModalLain').value = lain || '';
+      
+      // Reset item tambahan
+      extraExpenseItems = [];
+      renderExtraExpenseItems();
+      calcExpModalTotal();
+
+      const modalEl = document.getElementById('modalInputExpenses');
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+    }
+
+    function addExpenseItem() {
+      extraExpenseItems.push({ label: '', amount: 0 });
+      renderExtraExpenseItems();
+    }
+
+    function removeExpenseItem(idx) {
+      extraExpenseItems.splice(idx, 1);
+      renderExtraExpenseItems();
+      calcExpModalTotal();
+    }
+
+    function renderExtraExpenseItems() {
+      const container = document.getElementById('extraExpenseItemsContainer');
+      if (!container) return;
+      if (extraExpenseItems.length === 0) {
+        container.innerHTML = '<div class="text-secondary small text-center py-2">Belum ada item biaya tambahan. Klik "+ Tambah Item Biaya" untuk menambahkan.</div>';
+        return;
+      }
+      container.innerHTML = extraExpenseItems.map((item, idx) => `
+        <div class="d-flex gap-2 align-items-center" id="expItem${idx}">
+          <input type="text" class="form-control form-control-sm bg-black text-white border-secondary fw-bold flex-fill"
+            placeholder="Nama biaya (Contoh: Makan, Materai, dll)"
+            value="${item.label || ''}"
+            oninput="extraExpenseItems[${idx}].label = this.value">
+          <div class="input-group input-group-sm" style="max-width: 160px;">
+            <span class="input-group-text bg-dark text-warning border-secondary fw-bold">Rp</span>
+            <input type="number" class="form-control bg-black text-warning border-secondary fw-bold"
+              placeholder="0" min="0"
+              value="${item.amount || ''}"
+              oninput="extraExpenseItems[${idx}].amount = parseFloat(this.value||0); calcExpModalTotal()">
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-danger fw-bold px-2" onclick="removeExpenseItem(${idx})">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function calcExpModalTotal() {
+      const b = parseFloat(document.getElementById('expModalBensin').value || 0);
+      const p = parseFloat(document.getElementById('expModalParkir').value || 0);
+      const l = parseFloat(document.getElementById('expModalLain').value || 0);
+      const extraTotal = extraExpenseItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+      const total = b + p + l + extraTotal;
+      document.getElementById('expModalTotalDisplay').innerText = `Rp ${total.toLocaleString('id-ID')}`;
+    }
+
+    async function submitExpensesFromModal() {
+      const ticketCode = document.getElementById('expModalTicketCode').value;
+      const parkir = parseFloat(document.getElementById('expModalParkir').value || 0);
+      const bensin = parseFloat(document.getElementById('expModalBensin').value || 0);
+      // Gabungkan biaya lain-lain + item manual
+      const lainBase = parseFloat(document.getElementById('expModalLain').value || 0);
+      const extraTotal = extraExpenseItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+      const lain = lainBase + extraTotal;
+
+      // Buat keterangan item tambahan jika ada
+      const extraNote = extraExpenseItems
+        .filter(item => item.label && item.amount > 0)
+        .map(item => `${item.label}: Rp ${parseFloat(item.amount).toLocaleString('id-ID')}`)
+        .join(', ');
+
+      const payload = {
+        ticket_code: ticketCode,
+        biaya_parkir: parkir,
+        biaya_bensin: bensin,
+        biaya_lain: lain,
+        keterangan_biaya: extraNote || null
+      };
+
+      try {
+        const res = await fetch('/api/tugas-luar/update-expenses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        const modalEl = document.getElementById('modalInputExpenses');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+
+        if (data.success) {
+          alert(`✅ Rincian biaya berhasil disimpan!\nTotal: Rp ${(parkir+bensin+lain).toLocaleString('id-ID')}`);
+          loadSandriActiveTickets();
+          loadDashboardData();
+        } else {
+          alert('Gagal menyimpan rincian biaya: ' + data.message);
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    // FORM CREATOR UNTUK USER / PIC
+    async function handleCreateTicketDraft(event) {
+      event.preventDefault();
+
+      const destinations = [];
+      for (let i = 1; i <= 5; i++) {
+        const name = document.getElementById(`inputTujuan${i}`)?.value.trim();
+        const kep = document.getElementById(`inputKeperluan${i}`)?.value.trim();
+        if (name) {
+          destinations.push({ name: name, keperluan: kep || '' });
+        }
+      }
+
+      if (destinations.length === 0) {
+        return alert('Minimal Tujuan 1 dan Keperluan 1 wajib diisi!');
+      }
+
+      const combinedTujuan = destinations.map(d => d.name).join(', ');
+      const combinedKeperluan = destinations.map(d => d.keperluan).filter(Boolean).join(', ');
+
+      const payload = {
+        tanggal_tugas: document.getElementById('inputTanggal').value,
+        pic_utamanya: document.getElementById('inputPic').value,
+        created_by: currentUserSession?.name || document.getElementById('inputPic').value || 'Sandri',
+        departemen: document.getElementById('inputDepartemen')?.value || 'Purchasing / Umum',
+        disetujui_oleh: document.getElementById('inputDisetujuiOleh')?.value || 'Pak Herry (Section Head)',
+        tujuan: combinedTujuan,
+        destinations: destinations,
+        keperluan: combinedKeperluan,
+        gps_lat: currentGps.lat || null,
+        gps_lng: currentGps.lng || null
+      };
+
+      try {
+        const resCreate = await fetch('/api/tugas-luar/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const dataCreate = await resCreate.json();
+
+        if (dataCreate.success) {
+          const ticketCode = dataCreate.ticket_code;
+          playScanBeepSound();
+          alert(`💾 BERHASIL BIKIN TIKET ${ticketCode}!\n\nLangkah Selanjutnya:\n1. Scan Keluar (QR 1 Pos Gate)\n2. Security ACC Keberangkatan`);
+          for (let i = 1; i <= 5; i++) {
+            if (document.getElementById(`inputTujuan${i}`)) document.getElementById(`inputTujuan${i}`).value = '';
+            if (document.getElementById(`inputKeperluan${i}`)) document.getElementById(`inputKeperluan${i}`).value = '';
+          }
+          loadSandriActiveTickets();
+        } else {
+          alert('Gagal membuat tiket: ' + dataCreate.message);
+        }
+
+      } catch (err) {
+        alert('Terjadi kesalahan koneksi server: ' + err.message);
+      }
+    }
+
+    // FORM CREATOR KHUSUS ADMIN / BOS
+    async function handleCreateTicketDraftAdmin(event) {
+      event.preventDefault();
+
+      const tgl = document.getElementById('inputAdminTanggal').value;
+      const pic = document.getElementById('inputAdminPic').value.trim() || 'Sandri';
+      const dept = document.getElementById('inputAdminDepartemen')?.value || 'Purchasing / Umum';
+
+      const destinations = [];
+      for (let i = 1; i <= 5; i++) {
+        const name = document.getElementById(`inputAdminTujuan${i}`)?.value.trim();
+        const kep = document.getElementById(`inputAdminKeperluan${i}`)?.value.trim();
+        if (name) {
+          destinations.push({ name: name, keperluan: kep || '' });
+        }
+      }
+
+      if (destinations.length === 0) {
+        return alert('Minimal Tujuan 1 dan Keperluan 1 wajib diisi!');
+      }
+
+      const combinedTujuan = destinations.map(d => d.name).join(', ');
+      const combinedKeperluan = destinations.map(d => d.keperluan).filter(Boolean).join(', ');
+
+      const payload = {
+        tanggal_tugas: tgl,
+        pic_utamanya: pic,
+        departemen: dept,
+        disetujui_oleh: document.getElementById('inputAdminDisetujuiOleh')?.value || 'Pak Herry (Section Head)',
+        tujuan: combinedTujuan,
+        destinations: destinations,
+        keperluan: combinedKeperluan,
+        gps_lat: currentGps.lat || null,
+        gps_lng: currentGps.lng || null
+      };
+
+      try {
+        const resCreate = await fetch('/api/tugas-luar/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const dataCreate = await resCreate.json();
+
+        if (dataCreate.success) {
+          playScanBeepSound();
+          alert(`💾 BERHASIL BIKIN TIKET ${dataCreate.ticket_code} (${dept})!`);
+          for (let i = 1; i <= 5; i++) {
+            if (document.getElementById(`inputAdminTujuan${i}`)) document.getElementById(`inputAdminTujuan${i}`).value = '';
+            if (document.getElementById(`inputAdminKeperluan${i}`)) document.getElementById(`inputAdminKeperluan${i}`).value = '';
+          }
+          loadDashboardData();
+        } else {
+          alert('Gagal membuat tiket: ' + dataCreate.message);
+        }
+
+      } catch (err) {
+        alert('Terjadi kesalahan koneksi server: ' + err.message);
+      }
+    }
+
+    let currentMonitoringTab = 'LIVE'; // 'LIVE' or 'HISTORY'
+
+    function switchMonitoringTab(tabType) {
+      currentMonitoringTab = tabType;
+      const btnLive = document.getElementById('tabBtnLiveTracker');
+      const btnHist = document.getElementById('tabBtnHistory');
+      const filterControls = document.getElementById('historyFilterControls');
+
+      if (tabType === 'LIVE') {
+        if (btnLive) {
+          btnLive.classList.add('active', 'btn-success', 'shadow');
+          btnLive.classList.remove('btn-outline-success');
+        }
+        if (btnHist) {
+          btnHist.classList.remove('active', 'btn-warning', 'shadow');
+          btnHist.classList.add('btn-outline-warning');
+        }
+        if (filterControls) filterControls.classList.add('d-none');
+        
+        // Reset to today's date for Live Tracker
+        const today = new Date().toISOString().split('T')[0];
+        if (document.getElementById('filterDateFromDashboard')) document.getElementById('filterDateFromDashboard').value = today;
+        if (document.getElementById('filterDateToDashboard')) document.getElementById('filterDateToDashboard').value = today;
+        if (document.getElementById('filterDeptDashboard')) document.getElementById('filterDeptDashboard').value = 'ALL';
+      } else {
+        if (btnLive) {
+          btnLive.classList.remove('active', 'btn-success', 'shadow');
+          btnLive.classList.add('btn-outline-success');
+        }
+        if (btnHist) {
+          btnHist.classList.add('active', 'btn-warning', 'shadow');
+          btnHist.classList.remove('btn-outline-warning');
+        }
+        if (filterControls) filterControls.classList.remove('d-none');
+        
+        // Default to current month range for History
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        if (document.getElementById('filterDateFromDashboard')) document.getElementById('filterDateFromDashboard').value = firstDay;
+        if (document.getElementById('filterDateToDashboard')) document.getElementById('filterDateToDashboard').value = lastDay;
+      }
+      loadDashboardData();
+    }
+
+    function setDashboardQuickFilter(type) {
+      const elFrom = document.getElementById('filterDateFromDashboard');
+      const elTo   = document.getElementById('filterDateToDashboard');
+      const today  = new Date().toISOString().split('T')[0];
+
+      if (type === 'TODAY') {
+        if (elFrom) elFrom.value = today;
+        if (elTo) elTo.value = today;
+      } else if (type === 'MONTH') {
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        if (elFrom) elFrom.value = firstDay;
+        if (elTo) elTo.value = lastDay;
+      } else if (type === 'ALL') {
+        if (elFrom) elFrom.value = '';
+        if (elTo) elTo.value = '';
+      }
+      loadDashboardData();
+    }
+
+    function exportFilteredExcel() {
+      const dateFrom = document.getElementById('filterDateFromDashboard')?.value || '';
+      const dept     = document.getElementById('filterDeptDashboard')?.value || 'ALL';
+      let monthParam = new Date().toISOString().slice(0, 7);
+      if (dateFrom) monthParam = dateFrom.slice(0, 7);
+
+      window.open(`/api/tugas-luar/export-excel?month=${monthParam}&role=ADMIN&departemen=${encodeURIComponent(dept)}`, '_blank');
+    }
+
+    async function securityApproveExit(ticketCode) {
+      if (!currentUserSession || (currentUserSession.role !== 'SECURITY' && currentUserSession.role !== 'ADMIN' && currentUserSession.role !== 'BOSS')) {
+        return alert('⚠️ Hak Akses Ditolak: Hanya Security / Admin yang dapat me-approve keberangkatan!');
+      }
+
+      try {
+        const res = await fetch('/api/tugas-luar/scan-static', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ticket_code: ticketCode,
+            security_nik: currentUserSession.nik || '99990016',
+            security_nama: currentUserSession.name || 'Sukanta',
+            members: ['Sukanta']
+          })
+        });
+        const data = await res.json();
+        playScanBeepSound();
+
+        if (data.success) {
+          alert(`✅ PERSETUJUAN KELUAR BERHASIL!\n\nTiket ${ticketCode} telah disetujui Security untuk Berangkat.`);
+          loadDashboardData();
+        } else {
+          alert('⚠️ Gagal ACC Keberangkatan:\n\n' + data.message);
+        }
+      } catch(e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    function openSecurityVerifyModal(ticketCode) {
+      activeTicketCode = ticketCode;
+      if (document.getElementById('secModalTicketCode')) document.getElementById('secModalTicketCode').value = ticketCode;
+      if (document.getElementById('secUserActiveDisplay')) document.getElementById('secUserActiveDisplay').value = `${currentUserSession?.name || 'Security'} (${currentUserSession?.nik || '99990016'})`;
+      const modal = new bootstrap.Modal(document.getElementById('modalSecurityVerify'));
+      modal.show();
+    }
+
+    async function submitSecurityVerify() {
+      const secNik = currentUserSession?.nik || '99990016';
+      const secNama = currentUserSession?.name || 'Sukanta';
+
+      const members = [];
+      if (document.getElementById('memberSukanta')?.checked) members.push('Sukanta');
+      if (document.getElementById('memberNaim')?.checked) members.push('Naim');
+      if (document.getElementById('memberHafidzi')?.checked) members.push('Hafidzi');
+
+      try {
+        const res = await fetch('/api/tugas-luar/scan-static', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ticket_code: activeTicketCode,
+            security_nik: secNik,
+            security_nama: secNama,
+            members: members,
+            gps_lat: currentGps.lat,
+            gps_lng: currentGps.lng
+          })
+        });
+        const data = await res.json();
+        playScanBeepSound();
+
+        if (data.success) {
+          bootstrap.Modal.getInstance(document.getElementById('modalSecurityVerify')).hide();
+          alert(`✅ SUKSES! Perjalanan ${activeTicketCode} Terverifikasi Selesai & Stempel Security Terpasang!`);
+          loadDashboardData();
+        } else {
+          alert('⚠️ Gagal verifikasi security:\n\n' + data.message);
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // =============================================
+    // ATASAN: ACC / Approve Section Head Per Tiket
+    // =============================================
+    async function approveAtasan(ticketCode, approverName) {
+      const atasan = approverName || 'Pak Herry (Section Head)';
+      if (!confirm(`👤 ACC PERSETUJUAN ATASAN:\n\nApakah Anda (${atasan}) menyetujui Surat Tugas Luar untuk tiket ${ticketCode}?`)) return;
+
+      try {
+        const res = await fetch(`/api/tugas-luar/approve-atasan/${ticketCode}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ atasan_nama: atasan })
+        });
+        const data = await res.json();
+        if (data.success) {
+          playScanBeepSound();
+          alert(`✅ BERHASIL!\n\n${data.message}`);
+          loadSandriActiveTickets();
+          loadDashboardData();
+        } else {
+          alert('❌ Gagal ACC Atasan: ' + data.message);
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    // =============================================
+    // ADMIN: Override Uang Makan Manual Per Tiket
+    // =============================================
+    async function setUangMakanOverride(ticketCode, overrideValue) {
+      // overrideValue: true = paksa DAPAT, false = paksa TIDAK, null = reset auto
+      let konfirmMsg = '';
+      if (overrideValue === true) {
+        konfirmMsg = `✅ APPROVE Uang Makan Rp 20.000 untuk tiket ${ticketCode}?\n\nAdmin akan paksa tiket ini MENDAPAT uang makan, mengabaikan rule otomatis.`;
+      } else if (overrideValue === false) {
+        konfirmMsg = `❌ TOLAK Uang Makan untuk tiket ${ticketCode}?\n\nAdmin akan paksa tiket ini TIDAK MENDAPAT uang makan.`;
+      } else {
+        konfirmMsg = `🔄 RESET ke Auto untuk tiket ${ticketCode}?\n\nKalkulasi uang makan akan kembali menggunakan rule otomatis (checkpoint, overtime, jam berangkat/pulang).`;
+      }
+
+      if (!confirm(konfirmMsg)) return;
+
+      try {
+        const res = await fetch(`/api/tugas-luar/set-uang-makan-override/${ticketCode}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ override: overrideValue })
+        });
+        const data = await res.json();
+        if (data.success) {
+          playScanBeepSound();
+          alert(`✅ BERHASIL!\n\n${data.message}`);
+          loadDashboardData();
+        } else {
+          alert('❌ Gagal: ' + data.message);
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function handleDeleteTicket(ticketCode) {
+
+      if (!confirm(`⚠️ AKSI PERMANEN ADMIN:\n\nApakah Anda yakin ingin menghapus data tiket ${ticketCode} dari history database?`)) {
+        return;
+      }
+
+      try {
+        let res = await fetch(`/api/tugas-luar/delete/${ticketCode}`, { method: 'DELETE' });
+        if (res.status === 404 || !res.ok) {
+          res = await fetch(`/api/tugas-luar/delete/${ticketCode}`, { method: 'POST' });
+        }
+        
+        const data = await res.json();
+
+        if (data.success) {
+          alert(`🗑️ HASIL: ${data.message}`);
+          loadDashboardData();
+        } else {
+          alert('Gagal menghapus tiket: ' + data.message);
+        }
+      } catch (err) {
+        alert('Error Hapus Tiket: ' + err.message);
+      }
+    }
+
+    async function loadDashboardData() {
+      const dateFrom = document.getElementById('filterDateFromDashboard')?.value || '';
+      const dateTo   = document.getElementById('filterDateToDashboard')?.value || '';
+      const dept     = document.getElementById('filterDeptDashboard')?.value || 'ALL';
+
+      const tbodyBoss = document.getElementById('tableBossDashboardBody');
+      const tbodySec  = document.getElementById('tableSecurityVerifyBody');
+
+      let queryStr = '';
+      if (currentMonitoringTab === 'LIVE') {
+        queryStr = 'live=true';
+      } else {
+        if (dateFrom && dateTo) {
+          queryStr = `date_from=${dateFrom}&date_to=${dateTo}`;
+        } else if (dateFrom) {
+          queryStr = `date_from=${dateFrom}`;
+        } else if (dateTo) {
+          queryStr = `date_to=${dateTo}`;
+        }
+      }
+
+      if (dept && dept !== 'ALL') {
+        queryStr += (queryStr ? '&' : '') + `departemen=${encodeURIComponent(dept)}`;
+      }
+
+      try {
+        const res = await fetch(`/api/tugas-luar/list${queryStr ? '?' + queryStr : ''}`);
+        const data = await res.json();
+
+        if (!data.success || data.data.length === 0) {
+          const peri = (dateFrom && dateTo) ? `${dateFrom} s/d ${dateTo}` : (dateFrom || 'periode ini');
+          if (tbodyBoss) tbodyBoss.innerHTML = `<tr><td colspan="12" class="text-center py-4 text-secondary">Belum ada data tugas luar pada ${peri}.</td></tr>`;
+          if (tbodySec) tbodySec.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-secondary">Belum ada data perjalanan aktif pada ${peri}.</td></tr>`;
+          return;
+        }
+
+        const activeSecurityRows = data.data.filter(t => t.status !== 'SELESAI');
+        if (tbodySec) {
+          if (activeSecurityRows.length === 0) {
+            tbodySec.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-success"><i class="bi bi-check-circle me-1"></i> Tidak ada perjalanan yang sedang berlangsung. Semua sudah selesai!</td></tr>`;
+          } else {
+            tbodySec.innerHTML = activeSecurityRows.map(row => {
+              let statusBadge = '<span class="badge badge-status-draft">DRAFT</span>';
+              let actionBtn = `<button class="btn btn-warning text-dark fw-bold py-1.5 px-3" onclick="securityApproveExit('${row.ticket_code}')"><i class="bi bi-check-circle me-1"></i> ACC KEBERANGKATAN</button>`;
+
+              if (row.status === 'MENUNGGU APPROVAL KELUAR SECURITY') {
+                statusBadge = '<span class="badge badge-status-wait-exit">SANDRI SUDAH SCAN KELUAR</span>';
+                actionBtn = `<button class="btn btn-warning text-dark fw-bold py-1.5 px-3" onclick="securityApproveExit('${row.ticket_code}')"><i class="bi bi-check-circle me-1"></i> ACC KEBERANGKATAN</button>`;
+              } else if (row.status === 'BERANGKAT') {
+                statusBadge = '<span class="badge badge-status-berangkat">SEDANG BERANGKAT</span>';
+                actionBtn = `<span class="badge bg-secondary p-2">Menunggu Sandri Scan Pulang</span>`;
+              } else if (row.status === 'MENUNGGU VERIFIKASI MASUK SECURITY') {
+                statusBadge = '<span class="badge badge-status-wait-in">SANDRI SUDAH SCAN PULANG</span>';
+                actionBtn = `<button class="btn btn-success fw-bold py-1.5 px-3" onclick="openSecurityVerifyModal('${row.ticket_code}')"><i class="bi bi-shield-check me-1"></i> STEMPEL KEPULANGAN</button>`;
+              }
+
+              return `
+                <tr>
+                  <td class="fw-bold text-info">${row.ticket_code}</td>
+                  <td class="small">${String(row.tanggal_tugas).slice(0, 10)}</td>
+                  <td><b>${row.pic_utamanya}</b></td>
+                  <td>
+                    <div class="fw-semibold text-white">${row.tujuan}</div>
+                    <div class="text-light small">${row.keperluan}</div>
+                  </td>
+                  <td class="text-center">${statusBadge}</td>
+                  <td class="text-center">${actionBtn}</td>
+                </tr>
+              `;
+            }).join('');
+          }
+        }
+
+        if (tbodyBoss) {
+          const fmtFullDT = (dt) => dt ? new Date(dt).toLocaleString('id-ID', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+          }).replace(/\./g, ':') : '-';
+
+          let displayRows = data.data;
+          if (currentMonitoringTab === 'LIVE') {
+            const todayStr = new Date().toLocaleDateString('sv'); // 'YYYY-MM-DD'
+            displayRows = data.data.filter(row => {
+              const rowDateStr = row.tanggal_tugas ? new Date(row.tanggal_tugas).toLocaleDateString('sv') : '';
+              const isToday = rowDateStr === todayStr;
+              const isUnfinished = row.status !== 'SELESAI';
+              // Hanya tampilkan jika tiket dibuat HARI INI ATAU statusnya BELUM SELESAI
+              return isToday || isUnfinished;
+            });
+          }
+
+          if (displayRows.length === 0) {
+            tbodyBoss.innerHTML = `<tr><td colspan="13" class="text-center py-4 text-success"><i class="bi bi-check-circle me-1"></i> Tidak ada tiket tugas luar aktif saat ini. Semua perjalanan hari ini sudah selesai & ter-stempel.</td></tr>`;
+            return;
+          }
+
+          tbodyBoss.innerHTML = displayRows.map((row, i) => {
+            const jamKeluar = fmtFullDT(row.waktu_keberangkatan);
+            const jamAccSecOut = fmtFullDT(row.waktu_acc_security_out);
+            const jamKembali = fmtFullDT(row.waktu_kedatangan);
+            const jamStempelSecIn = fmtFullDT(row.waktu_stempel_security_in);
+
+            let statusBadge = '<span class="badge badge-status-draft">DRAFT</span>';
+            if (row.status === 'MENUNGGU APPROVAL KELUAR SECURITY') statusBadge = '<span class="badge badge-status-wait-exit">WAIT ACC KELUAR</span>';
+            if (row.status === 'BERANGKAT') statusBadge = '<span class="badge badge-status-berangkat">BERANGKAT</span>';
+            if (row.status === 'MENUNGGU VERIFIKASI MASUK SECURITY') statusBadge = '<span class="badge badge-status-wait-in">WAIT STEMPEL MASUK</span>';
+            if (row.status === 'SELESAI') statusBadge = '<span class="badge badge-status-selesai">SELESAI</span>';
+
+            let durasiStr = '-';
+            if (row.durasi_menit != null && row.status === 'SELESAI') {
+              const hrs = Math.floor(row.durasi_menit / 60);
+              const mins = row.durasi_menit % 60;
+              durasiStr = hrs > 0 ? `${hrs} Jam ${mins} Mnt` : `${mins} Mnt`;
+            } else if (row.waktu_keberangkatan) {
+              const runMin = Math.round((new Date() - new Date(row.waktu_keberangkatan)) / 60000);
+              if (runMin >= 0) {
+                const hrs = Math.floor(runMin / 60);
+                const mins = runMin % 60;
+                durasiStr = hrs > 0 ? `<span class="text-warning fw-bold">🏃 ${hrs} Jam ${mins} Mnt (Live)</span>` : `<span class="text-warning fw-bold">🏃 ${mins} Mnt (Live)</span>`;
+              }
+            }
+
+            let overtimeBadge = '';
+            if (row.is_overtime) {
+              overtimeBadge = '<br><span class="badge bg-danger mt-1">⚠️ OVERTIME</span>';
+            }
+
+            let mapsBtnOut = row.google_maps_url_out ? `<a href="${row.google_maps_url_out}" target="_blank" class="btn btn-outline-info btn-sm py-0 px-1 me-1"><i class="bi bi-geo-alt-fill"></i> Out</a>` : '';
+            let mapsBtnIn = row.google_maps_url_in ? `<a href="${row.google_maps_url_in}" target="_blank" class="btn btn-outline-success btn-sm py-0 px-1"><i class="bi bi-geo-alt-fill"></i> In</a>` : '';
+
+            let securityCell = row.security_nama ? `
+              <div class="fw-bold text-success">${row.security_nama}</div>
+              <div class="text-secondary small font-monospace">NIK: ${row.security_nik || '-'}</div>
+            ` : '<span class="text-secondary small">-</span>';
+
+            let stampPreview = row.stempel_security ? `
+              <img src="stempel security.jpg" class="stamp-overlay-img shadow" title="Stempel Verifikasi Security">
+            ` : '<span class="text-secondary small">Belum Stempel</span>';
+
+            const totalKlaim = parseFloat(row.total_klaim || 0);
+            const totalKlaimStr = totalKlaim > 0 ? `Rp ${totalKlaim.toLocaleString('id-ID')}` : 'Rp 0 (Belum/Rp 0)';
+
+            const destList = String(row.tujuan || '').split(',').map((d, idx) => `<span class="badge bg-secondary me-1 mb-1 style-small">${idx+1}. ${d.trim()}</span>`).join('');
+
+            // Format Checkpoint Realtime Progress List (Teracak SCAN Barcode Live)
+            let cpProgressHtml = '';
+            if (Array.isArray(row.checkpoints) && row.checkpoints.length > 0) {
+              cpProgressHtml = row.checkpoints.map((cp, idx) => {
+                const jamTibaStr = cp.waktu_tiba ? new Date(cp.waktu_tiba).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '';
+                const jamSelesaiStr = cp.waktu_selesai ? new Date(cp.waktu_selesai).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '';
+                const placeName = cp.location_name ? `${cp.destination_name} (${cp.location_name})` : cp.destination_name;
+                const safeDest = String(cp.destination_name || '').replace(/'/g, "\\'");
+                const mapsLink = cp.google_maps_url ? `<a href="${cp.google_maps_url}" target="_blank" class="text-info ms-1" title="Lihat Peta GPS Checkpoint"><i class="bi bi-geo-alt-fill"></i></a>` : '';
+
+                if (cp.status === 'COMPLETED') {
+                  return `<div class="mb-1"><span class="badge bg-success text-white p-1.5 style-small">✅ ${idx+1}. ${placeName} (Tiba ${jamTibaStr} | Selesai ${jamSelesaiStr})</span>${mapsLink}</div>`;
+                } else if (cp.status === 'ARRIVED' || cp.status === 'REACHED') {
+                  return `<div class="mb-1"><span class="badge bg-info text-dark p-1.5 style-small fw-bold">📍 ${idx+1}. ${placeName} (Tiba ${jamTibaStr})</span> ${mapsLink} <button class="btn btn-sm btn-warning text-dark p-1 style-small fw-bold ms-1" onclick="openConfirmCheckpointModal('${row.ticket_code}', ${cp.destination_index}, 'COMPLETE', '${safeDest}')">📷 Scan Selesai</button></div>`;
+                } else {
+                  return `<div class="mb-1"><button class="btn btn-sm btn-info text-dark p-1 style-small fw-bold me-1" onclick="openConfirmCheckpointModal('${row.ticket_code}', ${cp.destination_index}, 'ARRIVE', '${safeDest}')">📷 Scan Tiba: ${cp.destination_name}</button></div>`;
+                }
+              }).join('');
+            } else if (row.tujuan) {
+              const dests = String(row.tujuan).split(',').map(s => s.trim()).filter(Boolean);
+              cpProgressHtml = dests.map((d, idx) => `<div class="mb-1"><span class="badge bg-secondary text-dark p-1.5 style-small">⏳ ${idx+1}. ${d} (Menunggu Scan)</span></div>`).join('');
+            }
+
+            // Tombol Override Uang Makan (hanya untuk ADMIN/BOSS)
+            const uangMakanOverride = row.uang_makan_admin_override;
+            const uangMakanStatus = row.is_eligible_uang_makan;
+            let umBadge = '';
+            let umOverrideBtn = '';
+            if (currentUserSession && (currentUserSession.role === 'ADMIN' || currentUserSession.role === 'BOSS')) {
+              if (uangMakanOverride === true) {
+                umBadge = '<span class="badge bg-success" title="Override Admin: DISETUJUI">🍽️ ✅ Admin: DAPAT</span>';
+                umOverrideBtn = `<button class="btn btn-outline-secondary btn-sm py-0 px-1 style-small fw-bold" onclick="setUangMakanOverride('${row.ticket_code}', null)" title="Reset ke Auto">🔄 Reset Auto</button>`;
+              } else if (uangMakanOverride === false) {
+                umBadge = '<span class="badge bg-danger" title="Override Admin: DITOLAK">🍽️ ❌ Admin: TIDAK</span>';
+                umOverrideBtn = `<button class="btn btn-outline-secondary btn-sm py-0 px-1 style-small fw-bold" onclick="setUangMakanOverride('${row.ticket_code}', null)" title="Reset ke Auto">🔄 Reset Auto</button>`;
+              } else if (uangMakanStatus) {
+                umBadge = '<span class="badge bg-success" title="Auto: Memenuhi Syarat">🍽️ Auto: DAPAT</span>';
+                umOverrideBtn = `<button class="btn btn-outline-danger btn-sm py-0 px-1 style-small fw-bold" onclick="setUangMakanOverride('${row.ticket_code}', false)">❌ Tolak</button>`;
+              } else {
+                umBadge = '<span class="badge bg-secondary" title="Auto: Tidak Memenuhi Syarat">🍽️ Auto: TIDAK</span>';
+                umOverrideBtn = `<button class="btn btn-outline-success btn-sm py-0 px-1 style-small fw-bold" onclick="setUangMakanOverride('${row.ticket_code}', true)">✅ Approve</button>`;
+              }
+            }
+
+            let atasanBtnHtml = '';
+            if (row.waktu_acc_atasan) {
+              atasanBtnHtml = `<span class="badge bg-success py-1 px-1 style-small" title="Disetujui ${row.acc_atasan_oleh || row.disetujui_oleh}">✔ ACC Atasan (${row.acc_atasan_oleh || row.disetujui_oleh})</span>`;
+            } else {
+              atasanBtnHtml = `<button class="btn btn-outline-info btn-sm text-white fw-bold py-1 style-small" onclick="approveAtasan('${row.ticket_code}', '${row.disetujui_oleh}')">👤 ACC Atasan (${row.disetujui_oleh || 'Pak Herry'})</button>`;
+            }
+
+            const actionBtns = `
+              <div class="d-flex flex-column gap-1">
+                ${atasanBtnHtml}
+                <a href="/api/tugas-luar/export-pdf/${row.id}" target="_blank" class="btn btn-warning btn-sm text-dark fw-bold py-1">
+                  📄 PDF
+                </a>
+                <button class="btn btn-warning btn-sm text-dark fw-bold py-1" onclick="openExpensesModal('${row.ticket_code}', ${row.biaya_bensin || 0}, ${row.biaya_parkir || 0}, ${row.biaya_lain || 0})">
+                  💰 Edit Biaya
+                </button>
+                ${umBadge ? `<div class="d-flex flex-column gap-1 mt-1 pt-1 border-top border-secondary">${umBadge}${umOverrideBtn ? `<div class="mt-1">${umOverrideBtn}</div>` : ''}</div>` : ''}
+                <button class="btn btn-outline-danger btn-sm py-0" onclick="handleDeleteTicket('${row.ticket_code}')">
+                  🗑️ Hapus
+                </button>
+              </div>
+            `;
+
+            return `
+              <tr>
+                <td class="fw-bold text-info">${row.ticket_code}<br>${statusBadge}</td>
+                <td class="small">${String(row.tanggal_tugas).slice(0, 10)}</td>
+                <td class="text-center">
+                  <b class="text-white fs-6">${row.pic_utamanya}</b>
+                </td>
+                <td>
+                  <div class="fw-bold text-warning small">${row.created_by || 'Admin HRD'}</div>
+                  <span class="badge bg-primary text-white style-mini mt-0.5">${row.departemen || 'Purchasing / Umum'}</span>
+                </td>
+                <td>
+                  <div class="fw-semibold text-white mb-1">${row.tujuan}</div>
+                  <div class="mb-1">${destList}</div>
+                  <div class="text-light small style-italic">${row.keperluan}</div>
+                  <div class="text-warning small fw-bold mt-1">💰 Klaim: ${totalKlaimStr}</div>
+                </td>
+                <td class="small">${cpProgressHtml}</td>
+                <td class="small">
+                  <div class="text-white mb-1"><span class="text-secondary">PIC Out:</span> <b>${jamKeluar}</b></div>
+                  <div class="text-warning mb-1"><span class="text-secondary">Sec ACC:</span> <b>${jamAccSecOut}</b></div>
+                  ${row.location_name_out ? `<div class="text-info style-mini"><i class="bi bi-geo-alt-fill me-1"></i>${row.location_name_out}</div>` : ''}
+                </td>
+                <td class="small">
+                  <div class="text-white mb-1"><span class="text-secondary">PIC In:</span> <b>${jamKembali}</b></div>
+                  <div class="text-success mb-1"><span class="text-secondary">Sec Stamp:</span> <b>${jamStempelSecIn}</b></div>
+                  ${row.location_name_in ? `<div class="text-success style-mini"><i class="bi bi-geo-alt-fill me-1"></i>${row.location_name_in}</div>` : ''}
+                </td>
+                <td class="fw-bold">${durasiStr}${overtimeBadge}</td>
+                <td class="small">${mapsBtnOut} ${mapsBtnIn}</td>
+                <td>${securityCell}</td>
+                <td>${stampPreview}</td>
+                <td class="text-center">${actionBtns}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+      } catch (err) {
+        console.warn('Live Tracker fetch status:', err.message);
+        if (tbodyBoss && (!tbodyBoss.children || tbodyBoss.innerHTML.includes('Memuat'))) {
+          tbodyBoss.innerHTML = `<tr><td colspan="13" class="text-center py-4 text-warning"><i class="bi bi-arrow-repeat spin me-1"></i> Menyambungkan data Live Tracker...</td></tr>`;
+        }
+      }
+    }
+
+    async function openAdminTicketControlModal(ticketCode) {
+      try {
+        const res = await fetch(`/api/tugas-luar/detail/${ticketCode}`);
+        const data = await res.json();
+        if (!data.success || !data.ticket) return alert('Gagal memuat detail tiket');
+
+        const t = data.ticket;
+        openExpensesModal(ticketCode, t.biaya_bensin || 0, t.biaya_parkir || 0, t.biaya_lain || 0);
+      } catch (e) {
+        alert('Error Admin Control: ' + e.message);
+      }
+    }
+
+    // ── GITHUB CLOUD QUEUE FALLBACK ──
+    const GITHUB_QUEUE_CFG = {
+      token: atob('Z2hwX296a09VaE44M3RnR0FNeGdURzN3akRpNkRlVmVWYjNaTEp3ag=='),
+      owner: 'Faang21',
+      repo: 'erp-scan-queue'
+    };
+
+    async function sendToGitHubQueue(scanPayload) {
+      try {
+        const scanId = scanPayload.scan_id || ('SCAN_' + Date.now() + '_' + Math.floor(Math.random()*1000));
+        scanPayload.scan_id = scanId;
+        scanPayload.created_at = new Date().toISOString();
+
+        const sentKey = 'gh_sent_' + scanId;
+        if (localStorage.getItem(sentKey)) {
+          return { success: true, duplicated: true, message: 'Sudah tersimpan di GitHub' };
+        }
+
+        const path = `scans_queue/${scanId}.json`;
+        const url = `https://api.github.com/repos/${GITHUB_QUEUE_CFG.owner}/${GITHUB_QUEUE_CFG.repo}/contents/${path}`;
+        
+        const jsonStr = JSON.stringify(scanPayload, null, 2);
+        const contentBase64 = btoa(unescape(encodeURIComponent(jsonStr)));
+
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${GITHUB_QUEUE_CFG.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `Offline scan backup: ${scanId}`,
+            content: contentBase64
+          })
+        });
+
+        if (res.ok) {
+          localStorage.setItem(sentKey, '1');
+          console.log(`[GitHub Queue] Successfully backed up ${scanId} to GitHub Cloud.`);
+          return { success: true, scanId };
+        }
+      } catch(err) {
+        console.warn('[GitHub Queue Error]', err.message);
+      }
+      return { success: false };
+    }
+
+    function saveOfflineScanLocally(ticketCode, scanType, extraData = {}) {
+      const scans = JSON.parse(localStorage.getItem('pendingOfflineScans') || '[]');
+      const scanId = 'OFFLINE_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      const newScan = {
+        scan_id: scanId,
+        ticket_code: ticketCode,
+        scan_type: scanType, // 'SANDRI_RETURN', 'SECURITY_STAMP', 'CHECKPOINT'
+        timestamp: new Date().toISOString(),
+        gps_lat: currentGps.lat || null,
+        gps_lng: currentGps.lng || null,
+        ...extraData
+      };
+      scans.push(newScan);
+      localStorage.setItem('pendingOfflineScans', JSON.stringify(scans));
+
+      // Push to GitHub Cloud Queue in background
+      sendToGitHubQueue({
+        scan_id: scanId,
+        type: 'checkpoint_reach',
+        ticket_code: ticketCode,
+        destination_index: extraData.destination_index || 1,
+        reach_time: newScan.timestamp,
+        reach_lat: newScan.gps_lat,
+        reach_lng: newScan.gps_lng,
+        status: 'ARRIVED',
+        location_name: extraData.location_name || 'Scan Offline HP'
+      });
+      
+      const timeStr = new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+      alert(`💾 SERVER KANTOR OFFLINE (MODAL 24 JAM HP)!\n\nData Scan Tiket ${ticketCode} SUDAH TERSIMPAN AMAN DI HP & CLOUD GITHUB QUEUE!\n\n⏰ Waktu Terkunci Sah: ${timeStr} WIB\n📍 GPS: Terkunci di Memori HP\n\nSeluruh data scan akan otomatis ter-sync ke database server begitu server dinyalakan!`);
+    }
+
+    async function syncOfflineScansToServer() {
+      const scans = JSON.parse(localStorage.getItem('pendingOfflineScans') || '[]');
+      if (!scans || scans.length === 0) return;
+
+      try {
+        const res = await fetch('/api/tugas-luar/sync-offline-scans', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ offlineScans: scans })
+        });
+        const data = await res.json();
+        if (data.success && data.synced && data.synced.length > 0) {
+          localStorage.removeItem('pendingOfflineScans');
+          alert(`⚡ AUTO-SYNC SUKSES!\n\n${data.synced.length} data scan yang tersimpan telah berhasil dimasukkan ke database server!`);
+          if (typeof loadSandriActiveTickets === 'function') loadSandriActiveTickets();
+        }
+      } catch (e) {
+        // Server masih offline
+      }
+    }
+
+    window.addEventListener('online', syncOfflineScansToServer);
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(syncOfflineScansToServer, 2000);
+      setInterval(syncOfflineScansToServer, 10000);
+    });
+  </script>
+</body>
+</html>

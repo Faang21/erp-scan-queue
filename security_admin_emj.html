@@ -1,0 +1,2215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin PT. Erik Maju Jaya (EMJ) - Security, Payroll & Cut-Off Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- html2pdf for direct 1-click PDF download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #080c14;
+      --bg-card: #0f172a;
+      --bg-card-hover: #1e293b;
+      --bg-input: #1e293b;
+      --primary: #0284c7;
+      --primary-accent: #38bdf8;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-wa: #25d366;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #1e293b;
+      --border-focus: #0284c7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    }
+
+    body {
+      background: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Bar */
+    .navbar {
+      background: #0d1527;
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo-img {
+      height: 44px;
+      max-width: 80px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .brand-sub {
+      font-size: 12px;
+      color: var(--primary-accent);
+      font-weight: 600;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-pill {
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Main Container */
+    .main-content {
+      padding: 24px 28px;
+      max-width: 1820px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Stat Cards Grid */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--primary-accent);
+    }
+
+    .stat-card.emerald::after { background: var(--accent-emerald); }
+    .stat-card.amber::after { background: var(--accent-amber); }
+    .stat-card.rose::after { background: var(--accent-rose); }
+    .stat-card.purple::after { background: #a855f7; }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .stat-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Filter Control Box */
+    .filter-box {
+      background: #0d1527;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .filter-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Tab Controls */
+    .tabs-wrapper {
+      display: flex;
+      background: #0d1527;
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      gap: 6px;
+      overflow-x: auto;
+    }
+
+    .nav-tab {
+      padding: 10px 18px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .nav-tab.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    }
+
+    .badge-count {
+      background: rgba(255,255,255,0.2);
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 11px;
+    }
+
+    /* Content Panels */
+    .tab-panel {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .tab-panel.active {
+      display: flex;
+    }
+
+    /* Table Container */
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .table-header-box {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: rgba(15, 23, 42, 0.6);
+    }
+
+    .table-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .table-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .table-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-action {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.2s;
+    }
+
+    .btn-action:hover { opacity: 0.9; }
+    .btn-action.success { background: var(--accent-emerald); }
+    .btn-action.warning { background: var(--accent-amber); color: #000; }
+    .btn-action.danger { background: var(--accent-rose); }
+    .btn-action.whatsapp { background: var(--accent-wa); color: #fff; }
+    .btn-action.outline {
+      background: transparent;
+      border: 1px solid #334155;
+      color: #94a3b8;
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: left;
+    }
+
+    th {
+      background: #0d1527;
+      color: var(--text-muted);
+      font-weight: 700;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 11px;
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #1e293b;
+      color: #e2e8f0;
+      white-space: nowrap;
+    }
+
+    tr:hover td {
+      background: rgba(30, 41, 59, 0.5);
+    }
+
+    .num-col {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .highlight-col {
+      font-weight: 700;
+      color: #38bdf8;
+    }
+
+    .fee-col {
+      color: #c084fc;
+      font-weight: 700;
+    }
+
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+
+    .status-badge.verified { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .status-badge.unverified { background: rgba(244, 63, 94, 0.2); color: #fb7185; }
+    .status-badge.resign { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .status-badge.aktif { background: rgba(14, 165, 233, 0.2); color: #38bdf8; }
+
+    /* Modal System */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-card {
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 24px;
+      max-width: 560px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-card.wide {
+      max-width: 920px;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #94a3b8;
+    }
+
+    .form-input {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary-accent);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* Printable Slip Gaji */
+    .slip-page {
+      background: #fff;
+      color: #000;
+      padding: 28px;
+      margin-bottom: 24px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11px;
+      page-break-after: always;
+    }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      .navbar, .stat-grid, .filter-box, .tabs-wrapper, .tab-panel, .modal-header, .no-print { display: none !important; }
+      .printable, .printable * { visibility: visible; }
+      .modal-overlay { position: static; background: transparent; display: block !important; padding: 0; }
+      .modal-card { max-width: 100% !important; border: none; box-shadow: none; padding: 0; background: #fff; }
+      .slip-page { border: none; padding: 0; margin-bottom: 40px; page-break-after: always; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ADMIN AUTHENTICATION LOGIN GATE -->
+  <div id="loginOverlay" class="modal-overlay" style="display: flex; z-index: 2000;">
+    <div class="modal-card" style="max-width: 420px; text-align: center;">
+      <img src="/logo_emj.png?v=4" alt="Logo PT EMJ" style="height: 60px; max-width: 80px; object-fit: contain; margin: 0 auto 10px; border: none; background: transparent;">
+      <h2 style="font-size: 18px; font-weight: 800; color: #fff;">PT. ERIK MAJU JAYA</h2>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Portal Manajemen Payroll, Absensi & Invoice Security</p>
+
+      <div id="loginAlertBox" style="display: none; background: rgba(239, 68, 68, 0.18); border: 1px solid #ef4444; color: #fca5a5; padding: 10px; border-radius: 8px; font-size: 12px; font-weight: 600; text-align: left;"></div>
+
+      <form onsubmit="event.preventDefault(); handleAdminLogin();" style="display: flex; flex-direction: column; gap: 14px; text-align: left;">
+        <div class="form-group">
+          <label>Username / NIK Admin</label>
+          <input type="text" id="adminLoginUser" class="form-input" placeholder="Masukkan Username (anis / aang.js)" required autofocus>
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="adminLoginPass" class="form-input" placeholder="Masukkan Password" required>
+        </div>
+
+        <button type="submit" id="btnAdminLoginSubmit" class="btn-action success" style="padding: 12px; justify-content: center; font-size: 13px; font-weight: 800;">
+          🔓 Masuk ke Dashboard Admin
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- DASHBOARD WRAPPER -->
+  <div id="dashboardApp" style="display: none; flex-direction: column; width: 100%;">
+    
+    <!-- Top Navbar -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <img src="/logo_emj.png?v=4" alt="PT EMJ Logo" class="brand-logo-img">
+        <div>
+          <div class="brand-title">PT. ERIK MAJU JAYA &bull; Unit Security CNC</div>
+          <div class="brand-sub">Management Fee, Attendance, BPJS & Master Payroll Control</div>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <div class="user-pill">
+          <span>👤</span>
+          <span id="adminNameDisplay">Admin Security</span>
+        </div>
+        <a href="/security-portal" class="btn-action outline" target="_blank" style="text-decoration: none;">
+          📱 Buka Portal HP
+        </a>
+        <button class="btn-action danger" onclick="handleAdminLogout()" style="padding: 6px 12px;">
+          🚪 Logout
+        </button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      
+      <!-- Top Executive Stat Cards -->
+      <section class="stat-grid">
+        <div class="stat-card">
+          <span class="stat-label">Total Personil Security</span>
+          <div class="stat-value" id="cardTotalPersonil">35 Orang</div>
+          <div class="stat-desc" id="cardActiveDesc">35 Aktif &bull; Unit Kerja Chandra Nugrah Cipta</div>
+        </div>
+
+        <div class="stat-card emerald">
+          <span class="stat-label">Total Hak Gaji Personil</span>
+          <div class="stat-value" id="cardTotalGaji">Rp 0</div>
+          <div class="stat-desc">Gaji Bersih setelah potongan absen aktual</div>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-label" id="labelBpjsTk">BPJS Ketenagakerjaan (6.24%)</span>
+          <div class="stat-value" id="cardBpjsTk" style="color: #60a5fa;">Rp 0</div>
+          <div class="stat-desc">JKK, JKM, JHT, JP Resmi</div>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-label" id="labelBpjsKes">BPJS Kesehatan (4.00%)</span>
+          <div class="stat-value" id="cardBpjsKes" style="color: #34d399;">Rp 0</div>
+          <div class="stat-desc">Jaminan Pemeliharaan Kesehatan</div>
+        </div>
+
+        <div class="stat-card purple">
+          <span class="stat-label" id="labelManFee">Management Fee EMJ (7%)</span>
+          <div class="stat-value" id="cardManFee" style="color: #c084fc;">Rp 0</div>
+          <div class="stat-desc">Keuntungan resmi PT. Erik Maju Jaya</div>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-label">Total Tagihan Invoice Bulanan</span>
+          <div class="stat-value" id="cardGrandTagihan" style="color: #38bdf8;">Rp 0</div>
+          <div class="stat-desc">Pengajuan pembayaran ke Mogaworld</div>
+        </div>
+      </section>
+
+      <!-- Filter Cut-Off Bar -->
+      <section class="filter-box">
+        <div class="filter-left">
+          <span style="font-size: 13px; font-weight: 700; color: var(--primary-accent);">📅 Periode Cut-Off:</span>
+          <select id="periodCutOffSelect" class="form-input" style="padding: 6px 12px; font-size: 13px; font-weight: 700; background: #1e293b; color: #fff;" onchange="onPeriodChange()">
+            <!-- Generated dynamically by JavaScript -->
+          </select>
+
+          <span style="font-size: 13px; font-weight: 700; color: var(--primary-accent); margin-left: 6px;">🏢 Site / Unit Kerja:</span>
+          <select id="unitKerjaSelect" class="form-input" style="padding: 6px 12px; font-size: 13px; font-weight: 700; background: #1e293b; color: #38bdf8;" onchange="loadAdminSummary()">
+            <option value="">🌐 SEMUA SITE / UNIT KERJA</option>
+            <option value="CNC 1">🏭 CNC 1 (PT Chandra Nugrah Cipta)</option>
+            <option value="CEMERLANG">🏬 CNC CEMERLANG (PT Chandra Nugrah Cemerlang)</option>
+            <option value="SIP">🏢 SIP (Unit SIP)</option>
+          </select>
+
+          <div id="customDateRangeBox" style="display: none; align-items: center; gap: 8px;">
+            <input type="date" id="customFromDate" class="form-input" style="padding: 4px 8px; font-size: 12px;">
+            <span>s/d</span>
+            <input type="date" id="customToDate" class="form-input" style="padding: 4px 8px; font-size: 12px;">
+            <button class="btn-action" style="padding: 6px 12px;" onclick="loadAdminSummary()">Terapkan</button>
+          </div>
+        </div>
+
+        <div class="filter-right">
+          <button class="btn-action outline" onclick="printAllSlipsModal()" style="border-color: #38bdf8; color: #38bdf8;">
+            🖨️ Cetak Seluruh Slip Gaji
+          </button>
+          <button class="btn-action" onclick="openBpjsSettingsModal()" style="background: #475569;">
+            ⚙️ Tarif BPJS & Pajak
+          </button>
+          <button class="btn-action warning" onclick="openBulkUmkModal()">
+            💰 Update UMK Massal
+          </button>
+          <button class="btn-action success" onclick="openAddPersonnelModal()">
+            ➕ Tambah Personil
+          </button>
+        </div>
+      </section>
+
+      <!-- Navigation Tabs -->
+      <nav class="tabs-wrapper">
+        <button class="nav-tab active" onclick="switchAdminTab('tabInvoice')">
+          📄 Tagihan Bulanan & Man Fee (Lampiran SEC)
+        </button>
+        <button class="nav-tab" onclick="switchAdminTab('tabMasterPersonnel')">
+          👥 Master Personil & Tarif UMK / TMK
+        </button>
+        <button class="nav-tab" onclick="switchAdminTab('tabThrInvoice')">
+          🎁 Tagihan THR (Tunjangan Hari Raya)
+        </button>
+        <button class="nav-tab" onclick="switchAdminTab('tabAbsenSec')">
+          📅 Rekap Absensi Periode (Absen SEC)
+        </button>
+        <button class="nav-tab" onclick="switchAdminTab('tabLiveMonitor')">
+          📸 Live Absensi & Lokasi GPS
+        </button>
+        <button class="nav-tab" onclick="switchAdminTab('tabIzinApproval')">
+          📝 Persetujuan Izin / Sakit / Tukar Shift <span class="badge-count" id="pendingIzinCount">0</span>
+        </button>
+      </nav>
+
+      <!-- TAB 1: LAMPIRAN TAGIHAN & INVOICE MANAGEMENT FEE -->
+      <section id="tabInvoice" class="tab-panel active">
+        <div class="table-container">
+          <div class="table-header-box">
+            <div>
+              <div class="table-title" id="invoiceHeadingTitle">LAMPIRAN TAGIHAN INVOICE BULANAN PT. ERIK MAJU JAYA</div>
+              <div class="table-subtitle" id="invoiceHeadingSubtitle">Periode Cut-Off Dihitung Otomatis dari Verifikasi Absensi Asli (WIB)</div>
+            </div>
+            <div class="table-tools">
+              <button class="btn-action success" onclick="exportToExcel()">
+                📥 Export Excel (.xlsx)
+              </button>
+              <button class="btn-action" onclick="window.print()">
+                🖨️ Cetak Rekap Tagihan
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table id="invoiceTable">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>NIK</th>
+                  <th>Nama Karyawan</th>
+                  <th>No. WhatsApp / HP</th>
+                  <th>Jabatan</th>
+                  <th class="num-col">Gaji Pokok (UMK)</th>
+                  <th class="num-col">Tunj. Tetap</th>
+                  <th class="num-col">Insentif</th>
+                  <th class="num-col">Total 1</th>
+                  <th class="num-col" style="color: #60a5fa;" id="thBpjsTk">BPJS TK (6.24%)</th>
+                  <th class="num-col" style="color: #34d399;" id="thBpjsKes">BPJS Kes (4.00%)</th>
+                  <th class="num-col" id="thBpjsTotal">Total BPJS (10.24%)</th>
+                  <th class="num-col">Total 2</th>
+                  <th class="num-col">Hari Hadir</th>
+                  <th class="num-col" style="color: #f87171;">Pot. Absen</th>
+                  <th class="num-col highlight-col">Jumlah Bersih</th>
+                  <th class="num-col fee-col" id="thManFee">Man Fee (7%)</th>
+                  <th class="num-col" id="thPph23">PPh 23 (2%)</th>
+                  <th class="num-col">Total Man Fee</th>
+                  <th class="num-col" id="thPpn">PPN (12%)</th>
+                  <th class="num-col highlight-col" style="color: #38bdf8;">Total Tagihan</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="invoiceTableBody"></tbody>
+              <tfoot id="invoiceTableFoot" style="font-weight: 800; background: #090f1d;"></tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: MASTER PERSONIL & PENGATURAN TARIF UMK / TMK -->
+      <section id="tabMasterPersonnel" class="tab-panel">
+        <div class="table-container">
+          <div class="table-header-box">
+            <div>
+              <div class="table-title">MASTER DATA PERSONIL SECURITY & TARIF UMK / TMK</div>
+              <div class="table-subtitle">Kelola Data Karyawan, No. WhatsApp, Tanggal Masuk Kerja (TMK), UMK, Tunjangan, dan Status Resign</div>
+            </div>
+            <div class="table-tools">
+              <button class="btn-action success" onclick="openAddPersonnelModal()">
+                ➕ Tambah Personil
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>NIK / No ID</th>
+                  <th>Nama Lengkap</th>
+                  <th>No. WhatsApp / HP</th>
+                  <th>Gender</th>
+                  <th>Jabatan</th>
+                  <th>Tanggal Masuk (TMK)</th>
+                  <th>Masa Kerja</th>
+                  <th class="num-col">Gaji Pokok (UMK)</th>
+                  <th class="num-col">Tunj. Tetap</th>
+                  <th class="num-col">Insentif</th>
+                  <th class="num-col highlight-col">Total 1</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="masterPersonnelTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: TAGIHAN THR (TUNJANGAN HARI RAYA) TERPISAH -->
+      <section id="tabThrInvoice" class="tab-panel">
+        <div class="table-container">
+          <div class="table-header-box">
+            <div>
+              <div class="table-title">INVOICE TAGIHAN TUNJANGAN HARI RAYA (THR) PT. ERIK MAJU JAYA</div>
+              <div class="table-subtitle">Dihitung Otomatis Berdasarkan Tanggal Masuk Kerja (TMK) &bull; Proporsional jika < 12 Bulan</div>
+            </div>
+            <div class="table-tools">
+              <button class="btn-action success" onclick="window.print()">
+                🖨️ Cetak Invoice THR
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>NIK</th>
+                  <th>Nama Karyawan</th>
+                  <th>Jabatan</th>
+                  <th>TMK (Masuk Kerja)</th>
+                  <th>Masa Kerja</th>
+                  <th class="num-col">Upah Dasar (Pokok+Tunj)</th>
+                  <th class="num-col highlight-col">Nilai THR</th>
+                  <th class="num-col fee-col">Man Fee (7%)</th>
+                  <th class="num-col">PPh 23 (2%)</th>
+                  <th class="num-col">Total Man Fee</th>
+                  <th class="num-col">PPN (12%)</th>
+                  <th class="num-col highlight-col" style="color: #38bdf8;">Total Tagihan THR</th>
+                </tr>
+              </thead>
+              <tbody id="thrTableBody"></tbody>
+              <tfoot id="thrTableFoot" style="font-weight: 800; background: #090f1d;"></tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: REKAP ABSENSI PERIODE (FULL MATRIX HARIAN SEPERTI EXCEL) -->
+      <section id="tabAbsenSec" class="tab-panel">
+        <div class="table-container">
+          <div class="table-header-box">
+            <div>
+              <div class="table-title" id="matrixHeadingTitle">REKAPITULASI ABSENSI BULANAN PERSONIL SECURITY (MATRIKS HARIAN 12 JAM)</div>
+              <div class="table-subtitle">Shift Pagi (P: 07:00-19:00 WIB), Shift Malam (M: 19:00-07:00 WIB), Libur (L), Sakit (S), Izin (I), Alpha (A) &bull; Arahkan kursor / klik sel untuk melihat detail jam & GPS</div>
+            </div>
+            <div class="table-tools">
+              <span class="status-badge" style="background:#0284c7; color:#fff;">P = Pagi (12j)</span>
+              <span class="status-badge" style="background:#7c3aed; color:#fff;">M = Malam (12j)</span>
+              <span class="status-badge" style="background:#1e293b; color:#94a3b8;">L = Libur</span>
+              <span class="status-badge" style="background:#e11d48; color:#fff;">A = Alpha</span>
+              <span class="status-badge" style="background:#d97706; color:#fff;">S = Sakit</span>
+              <span class="status-badge" style="background:#0891b2; color:#fff;">I = Izin</span>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="max-height: 75vh; overflow: auto;">
+            <table id="matrixTable" style="border-collapse: separate; border-spacing: 1px;">
+              <thead id="matrixTableHead" style="position: sticky; top: 0; z-index: 10;"></thead>
+              <tbody id="matrixTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: LIVE ABSENSI MONITOR & VALIDASI GPS -->
+      <section id="tabLiveMonitor" class="tab-panel">
+        <div class="table-container">
+          <div class="table-header-box">
+            <div>
+              <div class="table-title">MONITORING ABSENSI HARI INI & VALIDASI LOKASI GPS POS JAGA (WIB)</div>
+              <div class="table-subtitle">Pantau Foto Presensi, Shift 12 Jam, Jam Masuk/Pulang, dan Koordinat GPS Nyata</div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Foto Absen</th>
+                  <th>NIK & Nama</th>
+                  <th>No. WhatsApp</th>
+                  <th>Jabatan</th>
+                  <th>Status KYC</th>
+                  <th>Shift (12 Jam)</th>
+                  <th>Jam Masuk (WIB)</th>
+                  <th>Jam Pulang (WIB)</th>
+                  <th>Kemiripan</th>
+                  <th>Koordinat GPS & Peta</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="liveMonitorTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: PERSETUJUAN IZIN / SAKIT / TUKAR SHIFT -->
+      <section id="tabIzinApproval" class="tab-panel">
+        <div class="table-container">
+          <div class="table-header-box">
+            <div>
+              <div class="table-title">INBOX PERSETUJUAN (APPROVAL WORKFLOW)</div>
+              <div class="table-subtitle">Validasi Pengajuan Tukar Shift 12 Jam, Cuti/Izin, dan Sakit dari Personil Security</div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tgl Pengajuan</th>
+                  <th>Personil</th>
+                  <th>Jenis Permohonan</th>
+                  <th>Rentang Tanggal</th>
+                  <th>Alasan / Keterangan</th>
+                  <th>Lampiran Surat</th>
+                  <th>Status Persetujuan</th>
+                  <th>Disetujui Oleh</th>
+                  <th>Aksi Keputusan</th>
+                </tr>
+              </thead>
+              <tbody id="leaveApprovalTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: PENGATURAN TARIF BPJS, MANAGEMENT FEE & PAJAK -->
+  <div id="modalBpjsSettings" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="color: #fff; font-size: 16px; font-weight: 800;">⚙️ Pengaturan Tarif BPJS, Management Fee & Pajak</h3>
+        <button onclick="closeModal('modalBpjsSettings')" style="background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <form onsubmit="event.preventDefault(); submitBpjsSettings();" style="display:flex; flex-direction:column; gap:14px;">
+        <p style="font-size: 12px; color: #94a3b8; line-height: 1.5;">
+          Ubah persentase tarif di bawah ini jika terjadi penyesuaian aturan pemerintah atau kontrak. Seluruh kalkulasi invoice dan slip gaji akan terhitung ulang secara otomatis.
+        </p>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>BPJS Ketenagakerjaan (%)</label>
+            <input type="number" step="0.01" id="setBpjsTk" class="form-input" value="6.24" required>
+            <small style="font-size: 10px; color: #64748b;">Standar: 6.24% (JKK, JKM, JHT, JP)</small>
+          </div>
+          <div class="form-group">
+            <label>BPJS Kesehatan (%)</label>
+            <input type="number" step="0.01" id="setBpjsKes" class="form-input" value="4.00" required>
+            <small style="font-size: 10px; color: #64748b;">Standar: 4.00%</small>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Management Fee EMJ (%)</label>
+            <input type="number" step="0.01" id="setManFee" class="form-input" value="7.00" required>
+            <small style="font-size: 10px; color: #64748b;">Standar: 7.00%</small>
+          </div>
+          <div class="form-group">
+            <label>PPh 23 (%)</label>
+            <input type="number" step="0.01" id="setPph23" class="form-input" value="2.00" required>
+            <small style="font-size: 10px; color: #64748b;">Standar: 2.00% dari Man Fee</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>PPN (%)</label>
+          <input type="number" step="0.01" id="setPpn" class="form-input" value="12.00" required>
+          <small style="font-size: 10px; color: #64748b;">Standar UU HPP: 12.00%</small>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+          <button type="button" class="btn-action outline" onclick="closeModal('modalBpjsSettings')">Batal</button>
+          <button type="submit" class="btn-action success">💾 Simpan Tarif Baru</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: TAMBAH PERSONIL BARU -->
+  <div id="modalAddPersonnel" class="modal-overlay">
+    <div class="modal-card wide">
+      <div class="modal-header">
+        <h3 style="color: #fff; font-size: 16px; font-weight: 800;">➕ Daftarkan Personil Security Baru</h3>
+        <button onclick="closeModal('modalAddPersonnel')" style="background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <form onsubmit="event.preventDefault(); submitAddPersonnel();" style="display:flex; flex-direction:column; gap:14px;">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>NIK / No ID Personil</label>
+            <input type="text" id="addNik" class="form-input" placeholder="Contoh: 2627.K1-0460" required>
+          </div>
+          <div class="form-group">
+            <label>Nama Lengkap</label>
+            <input type="text" id="addNama" class="form-input" placeholder="Nama Lengkap Personil" required>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>No. HP / WhatsApp (Wajib untuk Kirim Slip Gaji)</label>
+            <input type="text" id="addPhone" class="form-input" placeholder="Contoh: 081234567890">
+          </div>
+          <div class="form-group">
+            <label>Tanggal Masuk Kerja (TMK)</label>
+            <input type="date" id="addTmk" class="form-input" required>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Jabatan</label>
+            <select id="addJabatan" class="form-input">
+              <option value="ANGGOTA">ANGGOTA SECURITY</option>
+              <option value="DANRU">DANRU (KOMANDAN REGU)</option>
+              <option value="CHIEF">CHIEF SECURITY</option>
+              <option value="ADMIN">ADMIN SECURITY</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Jenis Kelamin</label>
+            <select id="addGender" class="form-input">
+              <option value="L">Laki-laki (L)</option>
+              <option value="P">Perempuan (P)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Gaji Pokok (UMK)</label>
+            <input type="number" id="addGajiPokok" class="form-input" value="5938885" required>
+          </div>
+          <div class="form-group">
+            <label>Tunjangan Tetap</label>
+            <input type="number" id="addTunjangan" class="form-input" value="0">
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Insentif</label>
+            <input type="number" id="addInsentif" class="form-input" value="40000">
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+          <button type="button" class="btn-action outline" onclick="closeModal('modalAddPersonnel')">Batal</button>
+          <button type="submit" class="btn-action success">Simpan Personil</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT PERSONIL & TMK / UMK -->
+  <div id="modalEditPersonnel" class="modal-overlay">
+    <div class="modal-card wide">
+      <div class="modal-header">
+        <h3 style="color: #fff; font-size: 16px; font-weight: 800;">✏️ Edit Data Personil, No HP & TMK / UMK</h3>
+        <button onclick="closeModal('modalEditPersonnel')" style="background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <form onsubmit="event.preventDefault(); submitEditPersonnel();" style="display:flex; flex-direction:column; gap:14px;">
+        <input type="hidden" id="editId">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>NIK / No ID Personil</label>
+            <input type="text" id="editNik" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label>Nama Lengkap</label>
+            <input type="text" id="editNama" class="form-input" required>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>No. HP / WhatsApp (Untuk Kirim Slip Gaji)</label>
+            <input type="text" id="editPhone" class="form-input" placeholder="08xxxxxxxxxx">
+          </div>
+          <div class="form-group">
+            <label>Tanggal Masuk Kerja (TMK)</label>
+            <input type="date" id="editTmk" class="form-input" required>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Jabatan</label>
+            <select id="editJabatan" class="form-input">
+              <option value="ANGGOTA">ANGGOTA SECURITY</option>
+              <option value="DANRU">DANRU (KOMANDAN REGU)</option>
+              <option value="CHIEF">CHIEF SECURITY</option>
+              <option value="ADMIN">ADMIN SECURITY</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status Karyawan</label>
+            <select id="editStatus" class="form-input">
+              <option value="AKTIF">AKTIF (Bekerja)</option>
+              <option value="RESIGN">RESIGN / KELUAR (Riwayat Tetap Ada)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Gaji Pokok (UMK)</label>
+            <input type="number" id="editGajiPokok" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label>Tunjangan Tetap</label>
+            <input type="number" id="editTunjangan" class="form-input">
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Insentif</label>
+            <input type="number" id="editInsentif" class="form-input">
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+          <button type="button" class="btn-action outline" onclick="closeModal('modalEditPersonnel')">Batal</button>
+          <button type="submit" class="btn-action success">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: BULK UPDATE UMK -->
+  <div id="modalBulkUmk" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="color: #fff; font-size: 16px; font-weight: 800;">💰 Update Gaji Pokok / UMK Massal</h3>
+        <button onclick="closeModal('modalBulkUmk')" style="background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <form onsubmit="event.preventDefault(); submitBulkUmk();" style="display:flex; flex-direction:column; gap:14px;">
+        <p style="font-size: 12px; color: #94a3b8; line-height: 1.5;">
+          Fitur ini akan memperbarui <b>Gaji Pokok seluruh 35 personil security</b> secara serentak (misal: saat penyesuaian UMK tahunan).
+        </p>
+        <div class="form-group">
+          <label>Nominal UMK / Gaji Pokok Baru (Rp)</label>
+          <input type="number" id="bulkUmkValue" class="form-input" value="5938885" required>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+          <button type="button" class="btn-action outline" onclick="closeModal('modalBulkUmk')">Batal</button>
+          <button type="submit" class="btn-action warning">Terapkan ke Semua Personil</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT POTONGAN GAJI (POTONGAN SERAGAM, KASBON, DLL) -->
+  <div id="modalEditPotongan" class="modal-overlay">
+    <div class="modal-card" style="max-width: 480px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-color); padding-bottom:10px; margin-bottom: 14px;">
+        <h2 style="font-size: 16px; font-weight: 800; color: #38bdf8;">✏️ Update Potongan Gaji Karyawan</h2>
+        <button type="button" onclick="closeModal('modalEditPotongan')" style="background:none; border:none; color:var(--text-muted); font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <form id="formEditPotongan" onsubmit="savePotonganPersonil(event)">
+        <input type="hidden" id="potonganPersonilNik">
+        
+        <div class="form-group">
+          <label>Nama Karyawan / NIK</label>
+          <input type="text" id="potonganPersonilNama" class="form-input" readonly style="opacity:0.8; background:var(--bg-dark);">
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <div class="form-group" style="flex:1;">
+            <label style="color:#f59e0b; font-weight:700;">Potongan Seragam (Rp)</label>
+            <input type="number" id="inputPotSeragam" class="form-input" style="border-color:#f59e0b;" placeholder="0">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label style="color:#f59e0b; font-weight:700;">Potongan Kasbon (Rp)</label>
+            <input type="number" id="inputPotKasbon" class="form-input" style="border-color:#f59e0b;" placeholder="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Potongan Lain-Lain (Rp)</label>
+          <input type="number" id="inputPotLainnya" class="form-input" placeholder="0">
+        </div>
+
+        <div class="form-group">
+          <label>Catatan / Keterangan Potongan</label>
+          <input type="text" id="inputPotKet" class="form-input" placeholder="Contoh: Cicilan Seragam Ke-1">
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
+          <button type="button" class="btn-action outline" onclick="closeModal('modalEditPotongan')">Batal</button>
+          <button type="submit" class="btn-action success">💾 Simpan Potongan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: SLIP GAJI INDIVIDUAL & MASSAL -->
+  <div id="slipModal" class="modal-overlay">
+    <div class="modal-card wide" style="background: #fff; color: #000; max-height: 90vh;">
+      <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #000; padding-bottom:10px; margin-bottom: 14px; flex-wrap:wrap; gap:10px;">
+        <h2 id="slipModalTitle" style="font-size: 15px; font-weight: 800; color: #000;">SLIP GAJI &bull; PT. ERIK MAJU JAYA</h2>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button id="btnSendWa" class="btn-action whatsapp" style="display:none;" onclick="sendSingleSlipToWhatsApp()">
+            📲 Kirim ke WhatsApp
+          </button>
+          <button class="btn-action success" onclick="downloadSlipPdf()">
+            📥 Download PDF
+          </button>
+          <button class="btn-action primary" onclick="printSlipGaji()">
+            🖨️ Cetak / Print
+          </button>
+          <button class="btn-action outline" onclick="closeModal('slipModal')" style="color:#000; border-color:#000;">
+            ✕ Tutup
+          </button>
+        </div>
+      </div>
+      <div id="slipContent" class="printable">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let globalData = null;
+    let currentAdminUser = null;
+    let currentActiveSlipPerson = null;
+    let globalSettings = {
+      bpjs_tk_rate: 0.0624,
+      bpjs_kes_rate: 0.0400,
+      man_fee_rate: 0.0700,
+      pph23_rate: 0.0200,
+      ppn_rate: 0.1200
+    };
+
+    // 1. DYNAMIC ROLLING CUT-OFF (WIB TIMEZONE AWARE)
+    function getDynamicCutOffPeriod(targetDate = new Date()) {
+      // Convert to WIB string
+      const wibStr = targetDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }); // YYYY-MM-DD
+      const [yStr, mStr, dStr] = wibStr.split('-');
+      const y = parseInt(yStr, 10);
+      const m = parseInt(mStr, 10) - 1;
+      const d = parseInt(dStr, 10);
+
+      let fromDate, toDate;
+      if (d >= 21) {
+        fromDate = new Date(Date.UTC(y, m, 21));
+        toDate = new Date(Date.UTC(y, m + 1, 20));
+      } else {
+        fromDate = new Date(Date.UTC(y, m - 1, 21));
+        toDate = new Date(Date.UTC(y, m, 20));
+      }
+
+      const fmt = (dt) => dt.toISOString().slice(0, 10);
+      return { from: fmt(fromDate), to: fmt(toDate) };
+    }
+
+    function initDynamicCutOffDropdown() {
+      const sel = document.getElementById('periodCutOffSelect');
+      if (!sel) return;
+      sel.innerHTML = '';
+
+      const now = new Date();
+      const current = getDynamicCutOffPeriod(now);
+      const baseFrom = new Date(current.from);
+      const y = baseFrom.getUTCFullYear();
+      const m = baseFrom.getUTCMonth();
+
+      // 1. Generate Next 6 Future Periods (Periode Mendatang Kedepan)
+      for (let k = 6; k >= 1; k--) {
+        const fN = new Date(Date.UTC(y, m + k, 21)).toISOString().slice(0, 10);
+        const tN = new Date(Date.UTC(y, m + k + 1, 20)).toISOString().slice(0, 10);
+        const optN = document.createElement('option');
+        optN.value = `${fN}_${tN}`;
+        optN.innerText = `⏭️ ${formatDateIndo(fN)} s/d ${formatDateIndo(tN)} (Periode Mendatang)`;
+        sel.appendChild(optN);
+      }
+
+      // 2. Current Active Period
+      const optCurrent = document.createElement('option');
+      optCurrent.value = `${current.from}_${current.to}`;
+      optCurrent.innerText = `📅 ${formatDateIndo(current.from)} s/d ${formatDateIndo(current.to)} (Periode Berjalan Aktif)`;
+      optCurrent.selected = true;
+      sel.appendChild(optCurrent);
+
+      // 3. Generate Past 12 Periods (Arsip 1 Tahun Penuh Masa Lalu)
+      for (let i = 1; i <= 12; i++) {
+        const fPast = new Date(Date.UTC(y, m - i, 21)).toISOString().slice(0, 10);
+        const tPast = new Date(Date.UTC(y, m - i + 1, 20)).toISOString().slice(0, 10);
+        const optPast = document.createElement('option');
+        optPast.value = `${fPast}_${tPast}`;
+        optPast.innerText = `🏛️ ${formatDateIndo(fPast)} s/d ${formatDateIndo(tPast)} ${i === 1 ? '(Periode Lalu / Benchmark Excel)' : '(Arsip Periode Lalu)'}`;
+        sel.appendChild(optPast);
+      }
+
+      const customOpt = document.createElement('option');
+      customOpt.value = 'custom';
+      customOpt.innerText = '⚙️ Pilih Rentang Tanggal Kustom...';
+      sel.appendChild(customOpt);
+    }
+
+    function formatDateIndo(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+    }
+
+    // 2. AUTHENTICATION & LOGIN GATE
+    window.addEventListener('DOMContentLoaded', () => {
+      initDynamicCutOffDropdown();
+      const todayWib = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+      document.getElementById('addTmk').value = todayWib;
+
+      const savedAdmin = localStorage.getItem('emj_admin_session');
+      if (savedAdmin) {
+        try {
+          currentAdminUser = JSON.parse(savedAdmin);
+          showDashboard();
+        } catch (e) {
+          showLoginOverlay();
+        }
+      } else {
+        showLoginOverlay();
+      }
+    });
+
+    function showLoginOverlay() {
+      document.getElementById('loginOverlay').style.display = 'flex';
+      document.getElementById('dashboardApp').style.display = 'none';
+    }
+
+    function showDashboard() {
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('dashboardApp').style.display = 'flex';
+      document.getElementById('adminNameDisplay').innerText = currentAdminUser.nama || currentAdminUser.nik || 'Admin Security';
+      loadSettings();
+      loadAdminSummary();
+    }
+
+    async function loadSettings() {
+      try {
+        const resp = await fetch('/api/security/admin/settings');
+        const d = await resp.json();
+        if (d.success && d.settings) {
+          globalSettings = d.settings;
+          updateSettingsHeaders();
+        }
+      } catch (e) {}
+    }
+
+    function updateSettingsHeaders() {
+      const tkPct = ((globalSettings.bpjs_tk_rate || 0.0624) * 100).toFixed(2) + '%';
+      const kesPct = ((globalSettings.bpjs_kes_rate || 0.0400) * 100).toFixed(2) + '%';
+      const totBpjsPct = (((globalSettings.bpjs_tk_rate || 0.0624) + (globalSettings.bpjs_kes_rate || 0.0400)) * 100).toFixed(2) + '%';
+      const mfPct = ((globalSettings.man_fee_rate || 0.0700) * 100).toFixed(0) + '%';
+      const pphPct = ((globalSettings.pph23_rate || 0.0200) * 100).toFixed(0) + '%';
+      const ppnPct = ((globalSettings.ppn_rate || 0.1200) * 100).toFixed(0) + '%';
+
+      if (document.getElementById('labelBpjsTk')) document.getElementById('labelBpjsTk').innerText = `BPJS Ketenagakerjaan (${tkPct})`;
+      if (document.getElementById('labelBpjsKes')) document.getElementById('labelBpjsKes').innerText = `BPJS Kesehatan (${kesPct})`;
+      if (document.getElementById('labelManFee')) document.getElementById('labelManFee').innerText = `Management Fee EMJ (${mfPct})`;
+
+      if (document.getElementById('thBpjsTk')) document.getElementById('thBpjsTk').innerText = `BPJS TK (${tkPct})`;
+      if (document.getElementById('thBpjsKes')) document.getElementById('thBpjsKes').innerText = `BPJS Kes (${kesPct})`;
+      if (document.getElementById('thBpjsTotal')) document.getElementById('thBpjsTotal').innerText = `Total BPJS (${totBpjsPct})`;
+      if (document.getElementById('thManFee')) document.getElementById('thManFee').innerText = `Man Fee (${mfPct})`;
+      if (document.getElementById('thPph23')) document.getElementById('thPph23').innerText = `PPh 23 (${pphPct})`;
+      if (document.getElementById('thPpn')) document.getElementById('thPpn').innerText = `PPN (${ppnPct})`;
+    }
+
+    function openBpjsSettingsModal() {
+      document.getElementById('setBpjsTk').value = ((globalSettings.bpjs_tk_rate || 0.0624) * 100).toFixed(2);
+      document.getElementById('setBpjsKes').value = ((globalSettings.bpjs_kes_rate || 0.0400) * 100).toFixed(2);
+      document.getElementById('setManFee').value = ((globalSettings.man_fee_rate || 0.0700) * 100).toFixed(2);
+      document.getElementById('setPph23').value = ((globalSettings.pph23_rate || 0.0200) * 100).toFixed(2);
+      document.getElementById('setPpn').value = ((globalSettings.ppn_rate || 0.1200) * 100).toFixed(2);
+      openModal('modalBpjsSettings');
+    }
+
+    async function submitBpjsSettings() {
+      const payload = {
+        bpjs_tk_rate: Number(document.getElementById('setBpjsTk').value) / 100,
+        bpjs_kes_rate: Number(document.getElementById('setBpjsKes').value) / 100,
+        man_fee_rate: Number(document.getElementById('setManFee').value) / 100,
+        pph23_rate: Number(document.getElementById('setPph23').value) / 100,
+        ppn_rate: Number(document.getElementById('setPpn').value) / 100
+      };
+
+      try {
+        const resp = await fetch('/api/security/admin/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const d = await resp.json();
+        alert(d.message);
+        globalSettings = payload;
+        updateSettingsHeaders();
+        closeModal('modalBpjsSettings');
+        loadAdminSummary();
+      } catch (e) {
+        alert('Gagal update tarif: ' + e.message);
+      }
+    }
+
+    async function handleAdminLogin() {
+      const u = document.getElementById('adminLoginUser').value.trim();
+      const p = document.getElementById('adminLoginPass').value.trim();
+      const alertBox = document.getElementById('loginAlertBox');
+      const btn = document.getElementById('btnAdminLoginSubmit');
+
+      alertBox.style.display = 'none';
+      if (!u || !p) {
+        alertBox.innerText = 'Harap isi Username dan Password Admin!';
+        alertBox.style.display = 'block';
+        return;
+      }
+
+      btn.innerText = 'Memverifikasi...';
+      btn.disabled = true;
+
+      try {
+        const resp = await fetch('/api/security/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nik: u, password: p })
+        });
+        const data = await resp.json();
+
+        if (data.success && (data.role === 'ADMIN' || data.role === 'ADMIN_EMJ' || data.role === 'SUPERADMIN')) {
+          currentAdminUser = data.user;
+          localStorage.setItem('emj_admin_session', JSON.stringify(currentAdminUser));
+          showDashboard();
+        } else {
+          alertBox.innerText = data.message || 'Akses ditolak! Akun ini bukan Admin.';
+          alertBox.style.display = 'block';
+        }
+      } catch (err) {
+        alertBox.innerText = 'Error koneksi: ' + err.message;
+        alertBox.style.display = 'block';
+      } finally {
+        btn.innerText = '🔓 Masuk ke Dashboard Admin';
+        btn.disabled = false;
+      }
+    }
+
+    function handleAdminLogout() {
+      localStorage.removeItem('emj_admin_session');
+      currentAdminUser = null;
+      showLoginOverlay();
+    }
+
+    function onPeriodChange() {
+      const val = document.getElementById('periodCutOffSelect').value;
+      const customBox = document.getElementById('customDateRangeBox');
+      if (val === 'custom') {
+        customBox.style.display = 'flex';
+      } else {
+        customBox.style.display = 'none';
+        loadAdminSummary();
+      }
+    }
+
+    async function loadAdminSummary() {
+      const val = document.getElementById('periodCutOffSelect').value;
+      let fromDate = '';
+      let toDate = '';
+
+      if (val === 'custom') {
+        fromDate = document.getElementById('customFromDate').value;
+        toDate = document.getElementById('customToDate').value;
+      } else if (val.includes('_')) {
+        const parts = val.split('_');
+        fromDate = parts[0];
+        toDate = parts[1];
+      }
+
+      const siteVal = document.getElementById('unitKerjaSelect') ? document.getElementById('unitKerjaSelect').value : '';
+      let queryParams = [];
+      if (fromDate && toDate) {
+        queryParams.push(`period_from=${fromDate}`);
+        queryParams.push(`period_to=${toDate}`);
+      }
+      if (siteVal) {
+        queryParams.push(`site=${encodeURIComponent(siteVal)}`);
+      }
+      const queryStr = queryParams.length > 0 ? '?' + queryParams.join('&') : '';
+
+      try {
+        const resp = await fetch('/api/security/admin/summary' + queryStr);
+        const data = await resp.json();
+        if (data.success) {
+          globalData = data;
+          document.getElementById('invoiceHeadingSubtitle').innerText = `Periode Cut-Off: ${data.period.from} s.d ${data.period.to} (${data.period.total_days} Hari) &bull; Dihitung Otomatis Berdasarkan Kehadiran Asli (WIB)`;
+          renderUI(data);
+        }
+      } catch (err) {
+        console.error('Failed to load summary:', err);
+      }
+    }
+
+    function renderUI(data) {
+      const totals = data.totals;
+      document.getElementById('cardTotalPersonil').innerText = `${totals.total_personil} Orang`;
+      document.getElementById('cardTotalGaji').innerText = `Rp ${Number(totals.grand_jumlah_bersih).toLocaleString('id-ID')}`;
+      document.getElementById('cardBpjsTk').innerText = `Rp ${Number(totals.grand_bpjs_tk || 0).toLocaleString('id-ID')}`;
+      document.getElementById('cardBpjsKes').innerText = `Rp ${Number(totals.grand_bpjs_kes || 0).toLocaleString('id-ID')}`;
+      document.getElementById('cardManFee').innerText = `Rp ${Number(totals.grand_man_fee).toLocaleString('id-ID')}`;
+      document.getElementById('cardGrandTagihan').innerText = `Rp ${Number(totals.grand_total_tagihan).toLocaleString('id-ID')}`;
+
+      // 1. Invoice Table
+      const invBody = document.getElementById('invoiceTableBody');
+      invBody.innerHTML = data.personnel.map(p => `
+        <tr>
+          <td>${p.no}</td>
+          <td><b>${p.nik}</b></td>
+          <td>${p.nama}</td>
+          <td style="color:${p.phone_number ? '#25d366' : '#64748b'}; font-weight:600;">${p.phone_number || '<small style="color:#64748b;">Belum Input</small>'}</td>
+          <td><span class="status-badge" style="background:#1e293b; color:#93c5fd;">${p.jabatan}</span></td>
+          <td class="num-col">${p.gaji_pokok.toLocaleString('id-ID')}</td>
+          <td class="num-col">${p.tunjangan_tetap.toLocaleString('id-ID')}</td>
+          <td class="num-col">${p.insentif.toLocaleString('id-ID')}</td>
+          <td class="num-col"><b>${p.total_1.toLocaleString('id-ID')}</b></td>
+          <td class="num-col" style="color:#60a5fa;">${(p.bpjs_tk || 0).toLocaleString('id-ID')}</td>
+          <td class="num-col" style="color:#34d399;">${(p.bpjs_kes || 0).toLocaleString('id-ID')}</td>
+          <td class="num-col"><b>${p.bpjs.toLocaleString('id-ID')}</b></td>
+          <td class="num-col">${p.total_2.toLocaleString('id-ID')}</td>
+          <td class="num-col" style="color: #34d399; font-weight:700;">${p.total_hadir || 0} hr</td>
+          <td class="num-col" style="color: ${p.potongan_absen > 0 ? '#f87171' : '#94a3b8'};">${p.potongan_absen > 0 ? '-' + p.potongan_absen.toLocaleString('id-ID') : '0'}</td>
+          <td class="num-col highlight-col">${p.jumlah_bersih.toLocaleString('id-ID')}</td>
+          <td class="num-col fee-col">${p.man_fee.toLocaleString('id-ID')}</td>
+          <td class="num-col">${p.pph23.toLocaleString('id-ID')}</td>
+          <td class="num-col">${p.total_man_fee.toLocaleString('id-ID')}</td>
+          <td class="num-col">${p.ppn.toLocaleString('id-ID')}</td>
+          <td class="num-col highlight-col" style="color: #38bdf8;">${p.total_tagihan.toLocaleString('id-ID')}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn-action warning" style="padding: 4px 8px; font-size: 11px; margin-right:4px;" onclick="openEditPotonganModal('${p.nik}')" title="Edit Potongan Seragam / Kasbon">
+              ✏️ Edit Pot.
+            </button>
+            ${p.total_hadir > 0 ? `
+              <button class="btn-action success" style="padding: 4px 8px; font-size: 11px;" onclick="openSingleSlipModal('${p.nik}')">
+                📄 Slip Gaji (${p.total_hadir}hr)
+              </button>
+            ` : `
+              <button class="btn-action outline" style="padding: 4px 8px; font-size: 11px; opacity:0.55;" onclick="openSingleSlipModal('${p.nik}')" title="Lihat Slip Gaji">
+                📄 Slip Gaji (0hr)
+              </button>
+            `}
+          </td>
+        </tr>
+      `).join('');
+
+      document.getElementById('invoiceTableFoot').innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; color: #fff;">TOTAL GRAND TAGIHAN</td>
+          <td class="num-col">${totals.grand_total_1.toLocaleString('id-ID')}</td>
+          <td class="num-col">-</td>
+          <td class="num-col">-</td>
+          <td class="num-col">${totals.grand_total_1.toLocaleString('id-ID')}</td>
+          <td class="num-col" style="color:#60a5fa;">${(totals.grand_bpjs_tk || 0).toLocaleString('id-ID')}</td>
+          <td class="num-col" style="color:#34d399;">${(totals.grand_bpjs_kes || 0).toLocaleString('id-ID')}</td>
+          <td class="num-col"><b>${totals.grand_bpjs.toLocaleString('id-ID')}</b></td>
+          <td class="num-col">${totals.grand_total_2.toLocaleString('id-ID')}</td>
+          <td class="num-col">-</td>
+          <td class="num-col" style="color: #f87171;">-${totals.grand_potongan_absen.toLocaleString('id-ID')}</td>
+          <td class="num-col highlight-col">${totals.grand_jumlah_bersih.toLocaleString('id-ID')}</td>
+          <td class="num-col fee-col">${totals.grand_man_fee.toLocaleString('id-ID')}</td>
+          <td class="num-col">${totals.grand_pph23.toLocaleString('id-ID')}</td>
+          <td class="num-col">${totals.grand_total_man_fee.toLocaleString('id-ID')}</td>
+          <td class="num-col">${totals.grand_ppn.toLocaleString('id-ID')}</td>
+          <td class="num-col highlight-col" style="color: #38bdf8; font-size: 13px;">Rp ${totals.grand_total_tagihan.toLocaleString('id-ID')}</td>
+          <td>-</td>
+        </tr>
+      `;
+
+      // 2. Master Personnel Table
+      const masterBody = document.getElementById('masterPersonnelTableBody');
+      masterBody.innerHTML = data.personnel.map(p => {
+        const tmkFormatted = p.tmk_date ? new Date(p.tmk_date).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric', timeZone:'Asia/Jakarta'}) : '-';
+        const tahun = Math.floor(p.masa_kerja_bulan / 12);
+        const sisaBulan = p.masa_kerja_bulan % 12;
+        const masaKerjaStr = tahun > 0 ? `${tahun} Thn ${sisaBulan} Bln` : `${p.masa_kerja_bulan} Bulan`;
+
+        return `
+          <tr>
+            <td>${p.no}</td>
+            <td><b>${p.nik}</b></td>
+            <td>${p.nama}</td>
+            <td style="color:${p.phone_number ? '#25d366' : '#64748b'}; font-weight:700;">${p.phone_number || '<small style="color:#64748b;">Belum Input</small>'}</td>
+            <td>${p.gender || 'L'}</td>
+            <td><span class="status-badge" style="background:#1e293b; color:#93c5fd;">${p.jabatan}</span></td>
+            <td>${tmkFormatted}</td>
+            <td><b>${masaKerjaStr}</b></td>
+            <td class="num-col">${p.gaji_pokok.toLocaleString('id-ID')}</td>
+            <td class="num-col">${p.tunjangan_tetap.toLocaleString('id-ID')}</td>
+            <td class="num-col">${p.insentif.toLocaleString('id-ID')}</td>
+            <td class="num-col highlight-col">${p.total_1.toLocaleString('id-ID')}</td>
+            <td>
+              <span class="status-badge ${p.status === 'AKTIF' ? 'aktif' : 'resign'}">
+                ${p.status}
+              </span>
+            </td>
+            <td>
+              <button class="btn-action outline" style="padding: 4px 8px; font-size: 11px;" onclick="openEditModal(${p.id})">
+                ✏️ Edit
+              </button>
+              <button class="btn-action danger" style="padding: 4px 8px; font-size: 11px;" onclick="deletePersonnel(${p.id}, '${p.nik}', '${p.nama}')">
+                🗑️ Hapus
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // 3. THR Table (Dynamic by TMK)
+      const thrBody = document.getElementById('thrTableBody');
+      let grandThr = 0, grandThrManFee = 0, grandThrPph23 = 0, grandThrTotalManFee = 0, grandThrPpn = 0, grandThrTotal = 0;
+
+      thrBody.innerHTML = data.personnel.map(p => {
+        const isResigned = (p.status || '').toUpperCase() === 'RESIGN' || p.is_active === false;
+        const upahDasar = p.gaji_pokok + p.tunjangan_tetap;
+        let nilaiThr = upahDasar;
+        if (isResigned) {
+          nilaiThr = 0;
+        } else if (p.masa_kerja_bulan < 12) {
+          nilaiThr = Math.round((p.masa_kerja_bulan / 12) * upahDasar);
+        }
+        const manFee = nilaiThr * (globalSettings.man_fee_rate || 0.07);
+        const pph23 = manFee * (globalSettings.pph23_rate || 0.02);
+        const totalManFee = manFee - pph23;
+        const ppn = (11 / 12 * manFee) * (globalSettings.ppn_rate || 0.12);
+        const totalTagihan = nilaiThr > 0 ? (nilaiThr + totalManFee + ppn) : 0;
+
+        grandThr += nilaiThr;
+        grandThrManFee += manFee;
+        grandThrPph23 += pph23;
+        grandThrTotalManFee += totalManFee;
+        grandThrPpn += ppn;
+        grandThrTotal += totalTagihan;
+
+        const tmkFormatted = p.tmk_date ? new Date(p.tmk_date).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric', timeZone:'Asia/Jakarta'}) : '-';
+
+        return `
+          <tr style="${isResigned ? 'opacity:0.6; background:rgba(239,68,68,0.08);' : ''}">
+            <td>${p.no}</td>
+            <td><b>${p.nik}</b></td>
+            <td>${p.nama} ${isResigned ? '<span class="status-badge resign">RESIGN</span>' : ''}</td>
+            <td>${p.jabatan}</td>
+            <td>${tmkFormatted}</td>
+            <td><b>${p.masa_kerja_bulan} Bulan</b></td>
+            <td class="num-col">${upahDasar.toLocaleString('id-ID')}</td>
+            <td class="num-col highlight-col" style="color:${isResigned ? '#f87171' : '#38bdf8'};">${isResigned ? '0 (Resign)' : nilaiThr.toLocaleString('id-ID')}</td>
+            <td class="num-col fee-col">${Math.round(manFee).toLocaleString('id-ID')}</td>
+            <td class="num-col">${Math.round(pph23).toLocaleString('id-ID')}</td>
+            <td class="num-col">${Math.round(totalManFee).toLocaleString('id-ID')}</td>
+            <td class="num-col">${Math.round(ppn).toLocaleString('id-ID')}</td>
+            <td class="num-col highlight-col" style="color: ${isResigned ? '#f87171' : '#38bdf8'};">${Math.round(totalTagihan).toLocaleString('id-ID')}</td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('thrTableFoot').innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; color: #fff;">TOTAL GRAND TAGIHAN THR</td>
+          <td class="num-col">-</td>
+          <td class="num-col highlight-col">${Math.round(grandThr).toLocaleString('id-ID')}</td>
+          <td class="num-col fee-col">${Math.round(grandThrManFee).toLocaleString('id-ID')}</td>
+          <td class="num-col">${Math.round(grandThrPph23).toLocaleString('id-ID')}</td>
+          <td class="num-col">${Math.round(grandThrTotalManFee).toLocaleString('id-ID')}</td>
+          <td class="num-col">${Math.round(grandThrPpn).toLocaleString('id-ID')}</td>
+          <td class="num-col highlight-col" style="color: #38bdf8; font-size: 13px;">Rp ${Math.round(grandThrTotal).toLocaleString('id-ID')}</td>
+        </tr>
+      `;
+
+      // 4. Excel-Style Daily Matrix Table Renderer
+      const dateList = data.date_list || [];
+      const mHead = document.getElementById('matrixTableHead');
+      const mBody = document.getElementById('matrixTableBody');
+
+      let hRow1 = `<tr>
+        <th rowspan="2" style="position:sticky; left:0; z-index:12; background:#0d1527; min-width:34px; padding:6px;">No</th>
+        <th rowspan="2" style="position:sticky; left:34px; z-index:12; background:#0d1527; min-width:105px; padding:6px;">NIK</th>
+        <th rowspan="2" style="position:sticky; left:139px; z-index:12; background:#0d1527; min-width:170px; padding:6px;">Nama Karyawan</th>
+        <th rowspan="2" style="background:#0d1527; padding:6px;">Jabatan</th>`;
+
+      dateList.forEach(d => {
+        hRow1 += `<th style="text-align:center; min-width:32px; padding:4px; font-size:10px; background:#0d1527; border-left:1px solid #1e293b;">${d.day_num}</th>`;
+      });
+
+      hRow1 += `
+        <th style="color:#38bdf8; text-align:center; background:#0d1527; padding:6px;">Pagi (P)</th>
+        <th style="color:#c084fc; text-align:center; background:#0d1527; padding:6px;">Malam (M)</th>
+        <th style="color:#94a3b8; text-align:center; background:#0d1527; padding:6px;">Libur (L)</th>
+        <th style="color:#f59e0b; text-align:center; background:#0d1527; padding:6px;">Sakit (S)</th>
+        <th style="color:#06b6d4; text-align:center; background:#0d1527; padding:6px;">Izin (I)</th>
+        <th style="color:#f87171; text-align:center; background:#0d1527; padding:6px;">Alpha (A)</th>
+        <th class="num-col" style="color:#34d399; background:#0d1527; padding:6px;">Total Hadir</th>
+        <th class="num-col" style="color:#f87171; background:#0d1527; padding:6px;">Pot. Absen</th>
+      </tr>`;
+
+      let hRow2 = `<tr>`;
+      dateList.forEach(d => {
+        const isWeekend = d.day_name === 'Sabtu' || d.day_name === 'Minggu';
+        hRow2 += `<th style="text-align:center; padding:2px; font-size:9px; color:${isWeekend ? '#fb7185' : '#94a3b8'}; background:#0d1527; border-left:1px solid #1e293b;">${d.day_name.slice(0, 3)}</th>`;
+      });
+      hRow2 += `<th colspan="8" style="background:#0d1527;"></th></tr>`;
+
+      if (mHead) mHead.innerHTML = hRow1 + hRow2;
+
+      if (mBody) {
+        mBody.innerHTML = data.personnel.map(p => {
+          const matrix = p.daily_matrix || [];
+          let cells = '';
+
+          matrix.forEach(m => {
+            let bg = 'rgba(30, 41, 59, 0.4)';
+            let color = '#64748b';
+
+            if (m.code === 'P') { bg = '#0284c7'; color = '#fff'; }
+            else if (m.code === 'M') { bg = '#7c3aed'; color = '#fff'; }
+            else if (m.code === 'L') { bg = '#1e293b'; color = '#64748b'; }
+            else if (m.code === 'S') { bg = '#d97706'; color = '#fff'; }
+            else if (m.code === 'I') { bg = '#0891b2'; color = '#fff'; }
+            else if (m.code === 'A' || m.code === 'OUT') { bg = '#e11d48'; color = '#fff'; }
+
+            let titleTooltip = `Tanggal ${m.day_num}: Kode ${m.code}`;
+            if (m.detail) {
+              titleTooltip = `[${p.nama}] Tgl ${m.day_num}\nJam Masuk: ${m.detail.check_in}\nJam Pulang: ${m.detail.check_out}\nGPS: ${m.detail.gps}`;
+            }
+
+            cells += `<td style="text-align:center; padding:5px 2px; font-weight:800; background:${bg}; color:${color}; font-size:11px; border: 1px solid #0f172a; cursor:pointer;" title="${titleTooltip}">
+              ${m.code}
+            </td>`;
+          });
+
+          return `
+            <tr>
+              <td style="position:sticky; left:0; z-index:5; background:#0f172a; font-weight:700; border-bottom:1px solid #1e293b;">${p.no}</td>
+              <td style="position:sticky; left:34px; z-index:5; background:#0f172a; font-weight:700; border-bottom:1px solid #1e293b;">${p.nik}</td>
+              <td style="position:sticky; left:139px; z-index:5; background:#0f172a; font-weight:700; border-bottom:1px solid #1e293b;">${p.nama}</td>
+              <td style="border-bottom:1px solid #1e293b;"><span class="status-badge" style="background:#1e293b; color:#93c5fd;">${p.jabatan}</span></td>
+              ${cells}
+              <td style="text-align:center; color:#38bdf8; font-weight:700; border-bottom:1px solid #1e293b;">${p.p_count || 0}</td>
+              <td style="text-align:center; color:#c084fc; font-weight:700; border-bottom:1px solid #1e293b;">${p.m_count || 0}</td>
+              <td style="text-align:center; color:#94a3b8; border-bottom:1px solid #1e293b;">${p.l_count || 0}</td>
+              <td style="text-align:center; color:#f59e0b; border-bottom:1px solid #1e293b;">${p.s_count || 0}</td>
+              <td style="text-align:center; color:#06b6d4; border-bottom:1px solid #1e293b;">${p.i_count || 0}</td>
+              <td style="text-align:center; color:${(p.a_count || 0) > 0 ? '#f87171' : '#94a3b8'}; font-weight:700; border-bottom:1px solid #1e293b;">${p.a_count || 0}</td>
+              <td class="num-col" style="color:#34d399; font-weight:800; border-bottom:1px solid #1e293b;">${p.total_hadir || 0} hr</td>
+              <td class="num-col" style="color:${p.potongan_absen > 0 ? '#f87171' : '#94a3b8'}; font-weight:700; border-bottom:1px solid #1e293b;">${p.potongan_absen > 0 ? '-' + p.potongan_absen.toLocaleString('id-ID') : '0'}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // 5. Live Monitor Table with GPS Google Maps Links
+      const liveBody = document.getElementById('liveMonitorTableBody');
+      liveBody.innerHTML = data.personnel.map(p => {
+        const att = p.today_attendance;
+        const photoSrc = att && att.check_in_photo ? att.check_in_photo : (p.kyc_photo || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2364748b"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E');
+        
+        let gpsDisplay = '<span style="color:#64748b;">Belum Absen</span>';
+        if (att && att.check_in_gps) {
+          const gpsStr = att.check_in_gps;
+          const match = gpsStr.match(/(-?d+.d+),s*(-?d+.d+)/);
+          if (match) {
+            const lat = match[1];
+            const lng = match[2];
+            gpsDisplay = `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:#38bdf8; text-decoration:underline; font-weight:600;">📍 ${lat},${lng} (Lihat Peta)</a>`;
+          } else {
+            gpsDisplay = `<span style="color:#f59e0b;">📍 ${gpsStr}</span>`;
+          }
+        }
+
+        return `
+          <tr>
+            <td>${p.no}</td>
+            <td>
+              <img src="${photoSrc}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid #0ea5e9;">
+            </td>
+            <td><b>${p.nik}</b><br><small style="color: #94a3b8;">${p.nama}</small></td>
+            <td style="color:${p.phone_number ? '#25d366' : '#64748b'};">${p.phone_number || '-'}</td>
+            <td>${p.jabatan}</td>
+            <td><span class="status-badge ${p.is_kyc_verified ? 'verified' : 'unverified'}">${p.is_kyc_verified ? 'Terdaftar' : 'Belum'}</span></td>
+            <td><span class="status-badge" style="background:#1e293b; color:#38bdf8;">${att ? (att.shift_type === 'M' ? '🌙 Shift Malam (12 Jam)' : '☀️ Shift Siang (12 Jam)') : 'Belum Absen'}</span></td>
+            <td>${att && att.check_in_time ? new Date(att.check_in_time).toLocaleTimeString('id-ID', {timeZone:'Asia/Jakarta'}) + ' WIB' : '-'}</td>
+            <td>${att && att.check_out_time ? new Date(att.check_out_time).toLocaleTimeString('id-ID', {timeZone:'Asia/Jakarta'}) + ' WIB' : '-'}</td>
+            <td>${att ? '98.5%' : (p.is_kyc_verified ? 'Siap' : '-')}</td>
+            <td>${gpsDisplay}</td>
+            <td>
+              <button class="btn-action warning" style="padding: 4px 8px; font-size: 11px;" onclick="resetKYC('${p.nik}', '${p.nama}')">
+                🔄 Reset KYC
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // 6. Leave Requests
+      const pendingCount = data.leave_requests.filter(r => r.status === 'PENDING').length;
+      document.getElementById('pendingIzinCount').innerText = pendingCount;
+      const leaveBody = document.getElementById('leaveApprovalTableBody');
+      if (data.leave_requests.length === 0) {
+        leaveBody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 24px;">Tidak ada permohonan pending</td></tr>';
+      } else {
+        leaveBody.innerHTML = data.leave_requests.map(r => {
+          let attachDisplay = '<span style="color:#64748b; font-size:11px;">Tanpa Lampiran</span>';
+          if (r.attachment_url) {
+            attachDisplay = `
+              <div style="display:flex; align-items:center; gap:8px;">
+                <img src="${r.attachment_url}" onclick="window.open('${r.attachment_url}', '_blank')" style="width:42px; height:42px; object-fit:cover; border-radius:6px; border:1px solid #0ea5e9; cursor:pointer;" title="Klik untuk melihat / memperbesar foto">
+                <a href="${r.attachment_url}" download="Surat_Lampiran_${r.nik}_${r.start_date}.png" target="_blank" class="btn-action outline" style="padding:4px 8px; font-size:11px; text-decoration:none; background:#1e293b; color:#38bdf8; font-weight:700;">
+                  📥 Download Surat
+                </a>
+              </div>
+            `;
+          }
+          return `
+          <tr>
+            <td>${new Date(r.created_at).toLocaleDateString('id-ID', {timeZone:'Asia/Jakarta'})}</td>
+            <td><b>${r.nik}</b><br><small style="color:#94a3b8;">${r.nama}</small></td>
+            <td><span class="status-badge" style="background:rgba(14,165,233,0.2); color:#38bdf8;">${r.leave_type}</span></td>
+            <td>${r.start_date} s/d ${r.end_date}</td>
+            <td>${r.reason || '-'}</td>
+            <td>${attachDisplay}</td>
+            <td><span class="status-badge ${r.status === 'APPROVED' ? 'verified' : (r.status === 'REJECTED' ? 'unverified' : '')}">${r.status}</span></td>
+            <td>${r.approved_by || '-'}</td>
+            <td>
+              ${r.status === 'PENDING' ? `
+                <button class="btn-action success" style="padding:4px 8px; font-size:11px;" onclick="handleLeaveDecision(${r.id}, 'APPROVE')">Setujui</button>
+                <button class="btn-action danger" style="padding:4px 8px; font-size:11px;" onclick="handleLeaveDecision(${r.id}, 'REJECT')">Tolak</button>
+              ` : '<small style="color:#64748b;">Selesai</small>'}
+            </td>
+          </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    function switchAdminTab(tabId) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tabs-wrapper .nav-tab').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+    }
+
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function openAddPersonnelModal() {
+      document.getElementById('addNik').value = '';
+      document.getElementById('addNama').value = '';
+      document.getElementById('addPhone').value = '';
+      const todayWib = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+      document.getElementById('addTmk').value = todayWib;
+      openModal('modalAddPersonnel');
+    }
+
+    async function submitAddPersonnel() {
+      const payload = {
+        nik: document.getElementById('addNik').value.trim(),
+        nama: document.getElementById('addNama').value.trim(),
+        phone_number: document.getElementById('addPhone').value.trim(),
+        jabatan: document.getElementById('addJabatan').value,
+        tmk_date: document.getElementById('addTmk').value,
+        gaji_pokok: Number(document.getElementById('addGajiPokok').value),
+        tunjangan_tetap: Number(document.getElementById('addTunjangan').value),
+        insentif: Number(document.getElementById('addInsentif').value),
+        gender: document.getElementById('addGender').value
+      };
+
+      try {
+        const resp = await fetch('/api/security/admin/personnel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const d = await resp.json();
+        alert(d.message);
+        closeModal('modalAddPersonnel');
+        loadAdminSummary();
+      } catch (e) {
+        alert('Gagal menambah personil: ' + e.message);
+      }
+    }
+
+    function openEditModal(id) {
+      if (!globalData) return;
+      const p = globalData.personnel.find(x => x.id === id);
+      if (!p) return;
+
+      document.getElementById('editId').value = p.id;
+      document.getElementById('editNik').value = p.nik;
+      document.getElementById('editNama').value = p.nama;
+      document.getElementById('editPhone').value = p.phone_number || '';
+      document.getElementById('editJabatan').value = p.jabatan;
+      document.getElementById('editTmk').value = p.tmk_date ? p.tmk_date.slice(0, 10) : '';
+      document.getElementById('editGajiPokok').value = p.gaji_pokok;
+      document.getElementById('editTunjangan').value = p.tunjangan_tetap;
+      document.getElementById('editInsentif').value = p.insentif;
+      document.getElementById('editStatus').value = p.status || 'AKTIF';
+
+      openModal('modalEditPersonnel');
+    }
+
+    async function submitEditPersonnel() {
+      const id = document.getElementById('editId').value;
+      const payload = {
+        nik: document.getElementById('editNik').value.trim(),
+        nama: document.getElementById('editNama').value.trim(),
+        phone_number: document.getElementById('editPhone').value.trim(),
+        jabatan: document.getElementById('editJabatan').value,
+        tmk_date: document.getElementById('editTmk').value,
+        gaji_pokok: Number(document.getElementById('editGajiPokok').value),
+        tunjangan_tetap: Number(document.getElementById('editTunjangan').value),
+        insentif: Number(document.getElementById('editInsentif').value),
+        status: document.getElementById('editStatus').value
+      };
+
+      try {
+        const resp = await fetch('/api/security/admin/personnel/' + id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const d = await resp.json();
+        alert(d.message);
+        closeModal('modalEditPersonnel');
+        loadAdminSummary();
+      } catch (e) {
+        alert('Gagal mengedit personil: ' + e.message);
+      }
+    }
+
+    async function deletePersonnel(id, nik, nama) {
+      if (!confirm(`Yakin ingin menghapus personil ${nama} (NIK: ${nik}) secara permanen dari sistem?`)) return;
+
+      try {
+        const resp = await fetch('/api/security/admin/personnel/' + id, {
+          method: 'DELETE'
+        });
+        const d = await resp.json();
+        alert(d.message);
+        loadAdminSummary();
+      } catch (e) {
+        alert('Gagal menghapus personil: ' + e.message);
+      }
+    }
+
+    function openBulkUmkModal() { openModal('modalBulkUmk'); }
+
+    async function submitBulkUmk() {
+      const newUmk = Number(document.getElementById('bulkUmkValue').value);
+      if (!confirm(`Yakin ingin mengubah Gaji Pokok (UMK) SELURUH 35 PERSONIL menjadi Rp ${newUmk.toLocaleString('id-ID')}?`)) return;
+
+      try {
+        const resp = await fetch('/api/security/admin/bulk-update-umk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ new_umk: newUmk })
+        });
+        const d = await resp.json();
+        alert(d.message);
+        closeModal('modalBulkUmk');
+        loadAdminSummary();
+      } catch (e) {
+        alert('Gagal update UMK: ' + e.message);
+      }
+    }
+
+    // 2.5 EDIT POTONGAN PERSONIL HANDLERS
+    function openEditPotonganModal(nik) {
+      if (!globalData || !globalData.personnel) return;
+      const p = globalData.personnel.find(x => x.nik.toLowerCase() === nik.toLowerCase());
+      if (!p) return;
+
+      document.getElementById('potonganPersonilNik').value = p.nik;
+      document.getElementById('potonganPersonilNama').value = `${p.nama} (${p.nik})`;
+      document.getElementById('inputPotSeragam').value = p.potongan_seragam || 0;
+      document.getElementById('inputPotKasbon').value = p.potongan_kasbon || 0;
+      document.getElementById('inputPotLainnya').value = p.potongan_lainnya || 0;
+      document.getElementById('inputPotKet').value = p.ket_potongan || '';
+
+      openModal('modalEditPotongan');
+    }
+
+    async function savePotonganPersonil(e) {
+      if (e) e.preventDefault();
+      const nik = document.getElementById('potonganPersonilNik').value;
+      const potSeragam = parseFloat(document.getElementById('inputPotSeragam').value) || 0;
+      const potKasbon = parseFloat(document.getElementById('inputPotKasbon').value) || 0;
+      const potLainnya = parseFloat(document.getElementById('inputPotLainnya').value) || 0;
+      const ket = document.getElementById('inputPotKet').value;
+
+      try {
+        const resp = await fetch('/api/security/admin/update-potongan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nik: nik,
+            potongan_seragam: potSeragam,
+            potongan_kasbon: potKasbon,
+            potongan_lainnya: potLainnya,
+            ket_potongan: ket
+          })
+        });
+
+        const d = await resp.json();
+        if (!d.success) throw new Error(d.message);
+
+        alert(d.message || 'Potongan berhasil disimpan!');
+        closeModal('modalEditPotongan');
+        loadAdminSummary();
+      } catch (err) {
+        alert('Gagal menyimpan potongan: ' + err.message);
+      }
+    }
+
+    // 3. SLIP GAJI GENERATOR WITH BPJS TENAGA KERJA & BPJS KESEHATAN
+    function generateSlipTemplate(p, period) {
+      const tkPct = ((globalSettings.bpjs_tk_rate || 0.0624) * 100).toFixed(2);
+      const kesPct = ((globalSettings.bpjs_kes_rate || 0.0400) * 100).toFixed(2);
+
+      const potAbsen = p.potongan_absen || 0;
+      const potSeragam = p.potongan_seragam || 0;
+      const potKasbon = p.potongan_kasbon || 0;
+      const potLain = p.potongan_lainnya || 0;
+
+      const totalPotonganB = p.total_potongan_b || (potAbsen + potSeragam + potKasbon + potLain);
+
+      let potonganSeragamRow = '';
+      if (potSeragam > 0) {
+        potonganSeragamRow = `
+          <tr>
+            <td style="padding:4px 6px; color:#000;">Potongan Seragam</td>
+            <td style="text-align:right; padding:4px 6px; color:#dc2626; font-weight:bold;">-${potSeragam.toLocaleString('id-ID')}</td>
+          </tr>
+        `;
+      }
+
+      let potonganKasbonRow = '';
+      if (potKasbon > 0) {
+        potonganKasbonRow = `
+          <tr>
+            <td style="padding:4px 6px; color:#000;">Potongan Kasbon / Pinjaman</td>
+            <td style="text-align:right; padding:4px 6px; color:#dc2626; font-weight:bold;">-${potKasbon.toLocaleString('id-ID')}</td>
+          </tr>
+        `;
+      }
+
+      let potonganLainRow = '';
+      if (potLain > 0) {
+        potonganLainRow = `
+          <tr>
+            <td style="padding:4px 6px; color:#000;">Potongan Lainnya (${p.ket_potongan || '-'})</td>
+            <td style="text-align:right; padding:4px 6px; color:#dc2626;">-${potLain.toLocaleString('id-ID')}</td>
+          </tr>
+        `;
+      }
+
+      return `
+        <div class="slip-page" id="slipBox_${p.nik.replace(/[^a-zA-Z0-9]/g, '_')}">
+          <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:12px;">
+            <div style="display:flex; align-items:center; gap:14px;">
+              <img src="/logo_emj.png?v=4" alt="Logo EMJ" style="height:52px; max-width:80px; object-fit:contain; border:none; display:inline-block;">
+              <div style="display:inline-block;">
+                <h3 style="font-size:15px; font-weight:800; margin:0; color:#000; letter-spacing:0.5px;">PT. ERIK MAJU JAYA</h3>
+                <p style="font-size:11px; font-weight:700; margin:2px 0; color:#333;">SLIP GAJI PERSONIL SECURITY &bull; UNIT KERJA PT CHANDRA NUGRAH CIPTA</p>
+                <p style="font-size:9px; color:#555; margin:0;">Shift Operasional: 12 Jam Kerja (Siang 07:00-19:00 WIB / Malam 19:00-07:00 WIB)</p>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-size:11px; font-weight:800; background:#e0f2fe; color:#0369a1; padding:4px 10px; border-radius:6px; border:1px solid #bae6fd;">
+                Periode: ${period.from} s.d ${period.to}
+              </span>
+            </div>
+          </div>
+          
+          <table style="width:100%; font-size:10px; margin-bottom:10px; border-collapse:collapse;">
+            <tr>
+              <td style="width:15%; padding:2px; color:#000;"><b>NIK / No ID</b></td>
+              <td style="width:35%; padding:2px; color:#000;">: ${p.nik}</td>
+              <td style="width:15%; padding:2px; color:#000;"><b>Jabatan</b></td>
+              <td style="width:35%; padding:2px; color:#000;">: ${p.jabatan}</td>
+            </tr>
+            <tr>
+              <td style="padding:2px; color:#000;"><b>Nama Karyawan</b></td>
+              <td style="padding:2px; color:#000;">: <b>${p.nama}</b></td>
+              <td style="padding:2px; color:#000;"><b>Masa Kerja</b></td>
+              <td style="padding:2px; color:#000;">: ${p.masa_kerja_bulan} Bulan</td>
+            </tr>
+            <tr>
+              <td style="padding:2px; color:#000;"><b>No. WhatsApp</b></td>
+              <td style="padding:2px; color:#000;">: ${p.phone_number || '-'}</td>
+              <td style="padding:2px; color:#000;"><b>Kehadiran</b></td>
+              <td style="padding:2px; color:#000;">: Hadir ${p.total_hadir || 0} hr | Izin ${p.total_izin || 0} hr | Sakit ${p.total_sakit || 0} hr</td>
+            </tr>
+          </table>
+
+          <table style="width:100%; font-size:10px; margin-bottom:10px; border-collapse:collapse; border-top:1px solid #000; border-bottom:1px solid #000;">
+            <tr style="background:#f1f5f9;">
+              <th style="padding:6px; color:#000; width:35%;">KOMPONEN PENGHASILAN</th>
+              <th style="text-align:right; padding:6px; color:#000; width:15%;">JUMLAH (RP)</th>
+              <th style="padding:6px; color:#000; width:35%;">KOMPONEN POTONGAN</th>
+              <th style="text-align:right; padding:6px; color:#000; width:15%;">JUMLAH (RP)</th>
+            </tr>
+            <tr>
+              <td style="padding:4px 6px; color:#000;">Gaji Pokok (UMK)</td>
+              <td style="text-align:right; padding:4px 6px; color:#000;">${p.gaji_pokok.toLocaleString('id-ID')}</td>
+              <td style="padding:4px 6px; color:#000;">Potongan Absen (${p.absent_days} hr alpha)</td>
+              <td style="text-align:right; padding:4px 6px; color:#dc2626; font-weight:bold;">${p.potongan_absen > 0 ? '-' + p.potongan_absen.toLocaleString('id-ID') : '0'}</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 6px; color:#000;">Tunjangan Tetap</td>
+              <td style="text-align:right; padding:4px 6px; color:#000;">${p.tunjangan_tetap.toLocaleString('id-ID')}</td>
+              ${potonganSeragamRow || '<td style="padding:4px 6px; color:#000;">-</td><td style="text-align:right; padding:4px 6px; color:#000;">-</td>'}
+            </tr>
+            <tr>
+              <td style="padding:4px 6px; color:#000;">Insentif Kehadiran</td>
+              <td style="text-align:right; padding:4px 6px; color:#000;">${p.insentif.toLocaleString('id-ID')}</td>
+              ${potonganKasbonRow || '<td style="padding:4px 6px; color:#000;">-</td><td style="text-align:right; padding:4px 6px; color:#000;">-</td>'}
+            </tr>
+            <tr>
+              <td style="padding:4px 6px; color:#000;">BPJS Ketenagakerjaan (${tkPct}%)</td>
+              <td style="text-align:right; padding:4px 6px; color:#000; font-weight:600;">${(p.bpjs_tk || 0).toLocaleString('id-ID')}</td>
+              ${potonganLainRow || '<td style="padding:4px 6px; color:#000;">-</td><td style="text-align:right; padding:4px 6px; color:#000;">-</td>'}
+            </tr>
+            <tr>
+              <td style="padding:4px 6px; color:#000;">BPJS Kesehatan (${kesPct}%)</td>
+              <td style="text-align:right; padding:4px 6px; color:#000; font-weight:600;">${(p.bpjs_kes || 0).toLocaleString('id-ID')}</td>
+              <td style="padding:4px 6px; color:#000;">-</td>
+              <td style="text-align:right; padding:4px 6px; color:#000;">-</td>
+            </tr>
+            <tr style="font-weight:bold; border-top:1px dashed #000; background:#f8fafc;">
+              <td style="padding:6px; color:#000;">TOTAL PENGHASILAN + BPJS (TOTAL 2)</td>
+              <td style="text-align:right; padding:6px; color:#000;">${p.total_2.toLocaleString('id-ID')}</td>
+              <td style="padding:6px; color:#000;">TOTAL POTONGAN (B)</td>
+              <td style="text-align:right; padding:6px; color:#dc2626;">${totalPotonganB.toLocaleString('id-ID')}</td>
+            </tr>
+          </table>
+
+          <div style="background:#f8fafc; padding:8px 12px; border:1px solid #000; font-weight:bold; font-size:11px; display:flex; justify-content:space-between; margin-bottom:14px;">
+            <span style="color:#000;">GAJI BERSIH DITERIMA (TOTAL 2 - TOTAL POTONGAN)</span>
+            <span style="color:#0284c7; font-size:13px;">Rp ${p.jumlah_bersih.toLocaleString('id-ID')}</span>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; text-align:center; font-size:10px; color:#000;">
+            <div>Penerima / Karyawan,<br><br><br><br><b>(${p.nama})</b></div>
+            <div>Tangerang, ${period.to}<br>HR & GA PT EMJ,<br><br><br><b>(YURIS TRIMAYANTO, S.H.)</b></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openSingleSlipModal(nik) {
+      if (!globalData) return;
+      const p = globalData.personnel.find(x => x.nik.toLowerCase() === nik.toLowerCase());
+      if (!p) return;
+
+      if ((p.total_hadir || 0) === 0 && (p.jumlah_bersih || 0) === 0) {
+        alert(`⚠️ Slip Gaji Belum Diterbitkan: Personil ${p.nama} (${p.nik}) belum memiliki catatan presensi/kehadiran (0 hr) pada periode ini.`);
+        return;
+      }
+
+      currentActiveSlipPerson = p;
+      document.getElementById('slipModalTitle').innerText = `SLIP GAJI - ${p.nama} (${p.nik})`;
+      document.getElementById('slipContent').innerHTML = generateSlipTemplate(p, globalData.period);
+      document.getElementById('btnSendWa').style.display = 'inline-flex';
+      openModal('slipModal');
+    }
+
+    function printAllSlipsModal() {
+      if (!globalData || !globalData.personnel || globalData.personnel.length === 0) return alert('Tidak ada data personil');
+
+      const activePersonnel = globalData.personnel.filter(p => (p.total_hadir || 0) > 0 || (p.jumlah_bersih || 0) > 0);
+      if (activePersonnel.length === 0) {
+        alert(`⚠️ Belum ada Slip Gaji yang dapat dicetak untuk periode ini (${globalData.period.from} s.d ${globalData.period.to}) karena seluruh personil belum memiliki catatan presensi/kehadiran (0 hr).`);
+        return;
+      }
+
+      currentActiveSlipPerson = null;
+      document.getElementById('btnSendWa').style.display = 'none';
+      document.getElementById('slipModalTitle').innerText = `CETAK SELURUH SLIP GAJI (${activePersonnel.length} PERSONIL HADIR) - PERIODE ${globalData.period.from} s.d ${globalData.period.to}`;
+      
+      const allSlipsHtml = activePersonnel.map(p => generateSlipTemplate(p, globalData.period)).join('');
+      document.getElementById('slipContent').innerHTML = allSlipsHtml;
+      openModal('slipModal');
+    }
+
+    function printSlipGaji() { window.print(); }
+
+    function downloadSlipPdf() {
+      const element = document.getElementById('slipContent');
+      const filename = currentActiveSlipPerson ? 
+        `Slip_Gaji_${currentActiveSlipPerson.nik}_${globalData.period.from}_${globalData.period.to}.pdf` : 
+        `Rekap_Semua_Slip_Gaji_${globalData.period.from}_${globalData.period.to}.pdf`;
+
+      const opt = {
+        margin:       10,
+        filename:     filename,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+
+    function sendSingleSlipToWhatsApp() {
+      if (!currentActiveSlipPerson) return;
+      const p = currentActiveSlipPerson;
+      let phone = p.phone_number ? p.phone_number.replace(/[^0-9]/g, '') : '';
+      if (phone.startsWith('0')) {
+        phone = '62' + phone.slice(1);
+      }
+
+      if (!phone || phone.length < 9) {
+        const inputPhone = prompt(`Nomor WhatsApp untuk ${p.nama} belum terdaftar. Masukkan nomor WhatsApp sekarang:`, '08');
+        if (!inputPhone) return;
+        phone = inputPhone.replace(/[^0-9]/g, '');
+        if (phone.startsWith('0')) phone = '62' + phone.slice(1);
+      }
+
+      const tkPct = ((globalSettings.bpjs_tk_rate || 0.0624) * 100).toFixed(2);
+      const kesPct = ((globalSettings.bpjs_kes_rate || 0.0400) * 100).toFixed(2);
+
+      const text = `*SLIP GAJI RESMI PT. ERIK MAJU JAYA*\n` +
+        `Unit Kerja: PT Chandra Nugrah Cipta\n` +
+        `Periode: ${globalData.period.from} s.d ${globalData.period.to}\n\n` +
+        `*DATA PERSONIL*\n` +
+        `• NIK: ${p.nik}\n` +
+        `• Nama: ${p.nama}\n` +
+        `• Jabatan: ${p.jabatan}\n` +
+        `• Jam Kerja: Shift 12 Jam (WIB)\n` +
+        `• Masa Kerja: ${p.masa_kerja_bulan} Bulan\n\n` +
+        `*RINCIAN PENGHASILAN*\n` +
+        `• 1. Gaji Pokok (UMK): Rp ${p.gaji_pokok.toLocaleString('id-ID')}\n` +
+        `• 2. Tunjangan Tetap: Rp ${p.tunjangan_tetap.toLocaleString('id-ID')}\n` +
+        `• 3. Insentif Kehadiran: Rp ${p.insentif.toLocaleString('id-ID')}\n` +
+        `• 4. BPJS Ketenagakerjaan (${tkPct}%): Rp ${(p.bpjs_tk || 0).toLocaleString('id-ID')}\n` +
+        `• 5. BPJS Kesehatan (${kesPct}%): Rp ${(p.bpjs_kes || 0).toLocaleString('id-ID')}\n` +
+        `• *TOTAL PENGHASILAN + BPJS (TOTAL 2): Rp ${p.total_2.toLocaleString('id-ID')}*\n\n` +
+        `*RINCIAN POTONGAN*\n` +
+        `• Potongan Absen (${p.absent_days} hr alpha): ${p.potongan_absen > 0 ? '-Rp ' + p.potongan_absen.toLocaleString('id-ID') : 'Rp 0'}\n\n` +
+        `*💰 GAJI BERSIH DITERIMA (TOTAL 2 - POTONGAN): Rp ${p.jumlah_bersih.toLocaleString('id-ID')}*\n\n` +
+        `Terima kasih atas dedikasi dan kerja keras Anda!\n_HR & GA PT Erik Maju Jaya_`;
+
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    async function resetKYC(nik, nama) {
+      if (!confirm(`Reset KYC untuk ${nama} (${nik})?`)) return;
+      try {
+        const resp = await fetch('/api/security/admin/reset-kyc', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nik })
+        });
+        const d = await resp.json();
+        alert(d.message);
+        loadAdminSummary();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    async function handleLeaveDecision(id, action) {
+      const note = prompt(`Catatan ${action}:`, 'Disetujui Admin');
+      if (note === null) return;
+      try {
+        const resp = await fetch('/api/security/admin/leave-approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ request_id: id, action: action, approver_name: 'Admin EMJ', notes: note })
+        });
+        const d = await resp.json();
+        alert(d.message);
+        loadAdminSummary();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    function exportToExcel() {
+      window.open('/template_INVOICE CHANDRA NUGRAH CIPTA_210626-200726_2026 SECURITY.xlsx', '_blank');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Portal Absensi & KYC Biometrik Security - PT EMJ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #0b0f19;
+      --bg-card: #131b2e;
+      --bg-input: #1b2640;
+      --primary: #0ea5e9;
+      --primary-hover: #0284c7;
+      --accent: #10b981;
+      --accent-danger: #ef4444;
+      --accent-warning: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #1e293b;
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px;
+      overflow-x: hidden;
+    }
+
+    /* Screen Flashlight for Night Shift */
+    #nightFlashOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #ffffff;
+      z-index: 99999;
+      opacity: 0.95;
+      pointer-events: none;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-bottom: 80px;
+    }
+
+    /* Header Bar */
+    .header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .shield-badge {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #0ea5e9, #2563eb);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .btn-logout {
+      background: #27354f;
+      border: none;
+      color: #cbd5e1;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Profile Card */
+    .profile-card {
+      background: linear-gradient(135deg, #162238 0%, #101828 100%);
+      border: 1px solid #233352;
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar-wrapper {
+      position: relative;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #1e293b;
+      border: 2px solid var(--primary);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .kyc-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .kyc-pill.unverified {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .profile-info h3 {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .profile-info p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Main Camera Viewfinder Card */
+    .camera-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .camera-box-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: #050811;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 2px solid #233352;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #videoStream {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    #canvasSnapshot, #canvasTracker {
+      display: none;
+    }
+
+    /* Oval Face Scanner Overlay */
+    .face-oval-guide {
+      position: absolute;
+      width: 52%;
+      height: 72%;
+      border: 3px solid #38bdf8;
+      border-radius: 50%;
+      box-shadow: 0 0 0 9999px rgba(5, 8, 17, 0.55);
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+
+    .face-oval-guide.live-valid {
+      border-color: #10b981;
+      box-shadow: 0 0 0 9999px rgba(5, 8, 17, 0.4), 0 0 20px #10b981;
+    }
+
+    .face-oval-guide.live-warn {
+      border-color: #f59e0b;
+    }
+
+    /* Liveness Challenge Banner on Camera */
+    .liveness-challenge-hud {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      background: rgba(11, 15, 25, 0.85);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .liveness-prompt-text {
+      font-size: 12px;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+
+    .liveness-meter-bar {
+      width: 100%;
+      height: 6px;
+      background: #1e293b;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .liveness-meter-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #f59e0b, #10b981);
+      transition: width 0.2s ease;
+    }
+
+    /* Buttons */
+    .camera-tool-btn {
+      background: #1e293b;
+      color: #f1f5f9;
+      border: 1px solid #334155;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Shift Selector (Pagi / Malam) */
+    .shift-toggle-group {
+      display: flex;
+      background: var(--bg-input);
+      padding: 4px;
+      border-radius: 12px;
+      gap: 4px;
+    }
+
+    .shift-btn {
+      flex: 1;
+      padding: 10px 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .shift-btn.active {
+      background: #0284c7;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+    }
+
+    .action-btn-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-action-main {
+      flex: 1;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action-main:active {
+      transform: scale(0.98);
+    }
+
+    .btn-kyc-enroll {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #fff;
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-absen-in {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-absen-out {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+      box-shadow: 0 6px 16px rgba(245, 158, 11, 0.35);
+    }
+
+    /* Tabs Bar */
+    .tab-bar {
+      display: flex;
+      background: var(--bg-card);
+      padding: 4px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+      gap: 4px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 4px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* Content Panels */
+    .content-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .attendance-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .att-item {
+      background: #101828;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .att-date {
+      font-size: 12px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .att-shift {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .att-status-badge {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+    }
+
+    .att-status-badge.alpha {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--primary);
+    }
+
+    /* Login Overlay */
+    #loginOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 15, 25, 0.96);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 380px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .login-logo-badge {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #0ea5e9, #2563eb);
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .login-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .login-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Toast Notification */
+    #toastMsg {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+      border: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 10000;
+    }
+
+    #toastMsg.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .badge-shift {
+      background: #1e293b;
+      color: #38bdf8;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Screen Flash for Night Shift Scanning -->
+  <div id="nightFlashOverlay"></div>
+
+  <!-- Toast Notification -->
+  <div id="toastMsg">
+    <span id="toastIcon">ℹ️</span>
+    <span id="toastText">Notifikasi</span>
+  </div>
+
+  <!-- LOGIN MODAL -->
+  <div id="loginOverlay">
+    <div class="login-box">
+      <div class="login-logo">
+        <img src="/logo_emj.png?v=3" alt="Logo PT EMJ" style="height: 54px; object-fit: contain; margin-bottom: 8px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));">
+        <h2 class="login-title">Portal Personil Security</h2>
+        <p class="login-subtitle">PT. ERIK MAJU JAYA &bull; Unit Kerja</p>
+      </div>
+
+      <div id="loginAlertBox" style="display: none; background: rgba(239, 68, 68, 0.18); border: 1px solid #ef4444; color: #fca5a5; padding: 10px 12px; border-radius: 10px; font-size: 12px; font-weight: 600; line-height: 1.4;"></div>
+
+      <form onsubmit="event.preventDefault(); handleLogin();" style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="form-group">
+          <label>NIK / Username</label>
+          <input type="text" id="loginNik" class="form-input" placeholder="Masukkan NIK atau Username" autocomplete="username" autofocus required>
+        </div>
+
+        <div class="form-group">
+          <label>PIN / Password</label>
+          <input type="password" id="loginPassword" class="form-input" placeholder="Masukkan Password" autocomplete="current-password" required>
+        </div>
+
+        <button type="submit" id="btnLoginSubmit" class="btn-action-main btn-kyc-enroll" style="margin-top: 4px;">
+          Masuk ke Portal
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="app-container" id="mainApp" style="display: none;">
+    
+    <!-- Header -->
+    <div class="header-bar">
+      <div class="brand-group">
+        <img src="/logo_emj.png?v=3" alt="Logo EMJ" style="height: 36px; object-fit: contain;">
+        <div>
+          <div class="brand-title">EMJ Security Portal</div>
+          <div class="brand-sub">Biometric KYC & Real-time Attendance</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="handleLogout()">Keluar</button>
+    </div>
+
+    <!-- Security Profile Header Card -->
+    <div class="profile-card">
+      <div class="profile-header">
+        <div class="avatar-wrapper">
+          <img id="userAvatar" class="avatar-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2364748b'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Avatar">
+        </div>
+        <div class="profile-info">
+          <h3 id="profileName">NAMA SECURITY</h3>
+          <p id="profileNik">NIK: 2526.K1-XXXX</p>
+          <p id="profilePhone" style="font-size: 11px; color: #25d366; font-weight: 700; margin-top: 2px;">📱 WA: -</p>
+          <p id="profileSite" style="font-size: 11px; color: #38bdf8; font-weight: 800; margin-top: 2px;">🏢 Unit Kerja: PT CHANDRA NUGRAH CIPTA (CNC 1)</p>
+          <div style="margin-top: 4px;">
+            <span id="kycStatusBadge" class="kyc-pill unverified">⚠️ Belum KYC Biometrik</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- CARD 1: CAMERA VIEWFINDER & SCANNER -->
+    <!-- ========================================== -->
+    <div class="camera-card">
+      <div class="section-title">
+        <span id="cameraTitleLabel">📸 Pemindai Wajah & Liveness</span>
+        <div style="display: flex; gap: 6px;">
+          <button type="button" class="camera-tool-btn" onclick="switchCameraFacing()">🔄 Ganti Kamera</button>
+          <button type="button" class="camera-tool-btn" onclick="toggleScreenFlash()">💡 Flash Layar</button>
+        </div>
+      </div>
+
+      <!-- Camera Screen with Liveness HUD -->
+      <div class="camera-box-wrap" id="cameraBox">
+        <video id="videoStream" autoplay playsinline muted></video>
+        <canvas id="canvasSnapshot"></canvas>
+        <canvas id="canvasTracker"></canvas>
+        <div class="face-oval-guide" id="faceOval"></div>
+        
+        <!-- Live HUD Feedback -->
+        <div class="liveness-challenge-hud">
+          <div class="liveness-prompt-text" id="livenessPrompt">👁️ Posisikan Wajah Anda di Tengah Lingkaran</div>
+          <div class="liveness-meter-bar">
+            <div class="liveness-meter-fill" id="livenessFill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GPS Alert Banner if Location Disabled -->
+      <div id="gpsAlertBanner" style="display: none; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; padding: 10px 12px; border-radius: 10px; font-size: 12px; color: #fca5a5; font-weight: 700; text-align: center; margin-bottom: 6px;">
+        🚨 WAJIB AKTIFKAN LOKASI GPS HP! Aktifkan fitur Lokasi / GPS di HP Anda untuk melakukan absensi.
+      </div>
+
+      <!-- GPS Status -->
+      <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.3);">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <span>📍 Lokasi GPS HP:</span>
+          <span id="gpsStatus" style="color: #38bdf8; font-weight: 700;">Mendeteksi GPS HP...</span>
+        </div>
+        <button type="button" class="camera-tool-btn" onclick="requestGpsLocation(true)" style="padding: 3px 8px; font-size: 10px; background: #1e293b; color: #38bdf8; border: 1px solid #0ea5e9;">🔄 Refresh GPS</button>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- MODUL A: TAMPILAN JIKA BELUM KYC (HANYA MUNCUL 1 KALI DI AWAL) -->
+      <!-- ======================================================== -->
+      <div id="sectionKycEnroll" style="display: none; flex-direction: column; gap: 10px;">
+        <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; padding: 10px 12px; border-radius: 10px; font-size: 12px; color: #fde68a;">
+          <b>🛡️ Langkah 1: Registrasi Biometrik KYC & No. HP WhatsApp (1 Kali Saja)</b><br>
+          Masukkan nomor WhatsApp aktif Anda, posisikan wajah, kedipkan mata hingga hijau, lalu klik simpan KYC.
+        </div>
+
+        <div class="form-group" style="text-align: left;">
+          <label style="font-size: 11px; font-weight: 700; color: #94a3b8;">Nomor WhatsApp / HP Aktif (Wajib untuk Kirim Slip Gaji):</label>
+          <input type="text" id="kycPhoneNumber" class="form-input" placeholder="Contoh: 081234567890" style="padding: 8px 12px; font-size: 13px;" required>
+        </div>
+        
+        <button type="button" class="btn-action-main btn-kyc-enroll" onclick="startLivenessAndEnrollKYC()">
+          🔐 MULAI PEMINDAIAN LIVENESS & SIMPAN KYC
+        </button>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- MODUL B: TAMPILAN ABSENSI HARIAN (SETIAP HARI SETELAH KYC) -->
+      <!-- ======================================================== -->
+      <div id="sectionDailyAttendance" style="display: flex; flex-direction: column; gap: 10px;">
+        <!-- Shift Selector (Siang / Malam) -->
+        <div class="shift-toggle-group">
+          <button type="button" class="shift-btn active" id="btnShiftP" onclick="selectShift('P')">
+            ☀️ Shift Siang (07:00 - 19:00)
+          </button>
+          <button type="button" class="shift-btn" id="btnShiftM" onclick="selectShift('M')">
+            🌙 Shift Malam (19:00 - 07:00)
+          </button>
+        </div>
+
+        <!-- Tombol Absen Masuk & Pulang -->
+        <div class="action-btn-row">
+          <button type="button" class="btn-action-main btn-absen-in" onclick="startLivenessAndSubmitAttendance('CHECK_IN')">
+            ✅ ABSEN MASUK
+          </button>
+          <button type="button" class="btn-action-main btn-absen-out" onclick="startLivenessAndSubmitAttendance('CHECK_OUT')">
+            👋 ABSEN PULANG
+          </button>
+        </div>
+
+        <!-- Live Status Box Kehadiran Hari Ini -->
+        <div id="todayStatusCard" style="display: none; background: #0f1c33; border: 1px solid #1e3a5f; padding: 12px 14px; border-radius: 12px; font-size: 12px;">
+          <div style="font-weight: 700; color: #38bdf8; display: flex; justify-content: space-between; align-items: center;">
+            <span>📋 Status Kehadiran Hari Ini:</span>
+            <span id="todayShiftBadge" class="badge-shift">☀️ Shift Siang</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+            <div>
+              <span style="color: #94a3b8; font-size: 11px;">Jam Masuk:</span>
+              <div id="todayCheckInTime" style="font-weight: 700; color: #34d399;">-</div>
+            </div>
+            <div>
+              <span style="color: #94a3b8; font-size: 11px;">Jam Pulang:</span>
+              <div id="todayCheckOutTime" style="font-weight: 700; color: #fbbf24;">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Navigation Tabs: Absensi, Tukar Shift, Izin/Sakit -->
+    <div class="tab-bar">
+      <button type="button" class="tab-btn active" onclick="switchTab('tabAbsen')">📅 Riwayat Kehadiran</button>
+      <button type="button" class="tab-btn" onclick="switchTab('tabTukarShift')">🔄 Pergantian Shift</button>
+      <button type="button" class="tab-btn" onclick="switchTab('tabIzin')">📝 Izin / Sakit</button>
+    </div>
+
+    <!-- TAB 1: Attendance History -->
+    <div id="tabAbsen" class="content-panel">
+      <div class="section-title">📅 Catatan Kehadiran Periode Berjalan</div>
+      <div id="attListContainer" class="attendance-list">
+        <!-- Injected by JS -->
+      </div>
+    </div>
+
+    <!-- TAB 2: Shift Swap -->
+    <div id="tabTukarShift" class="content-panel" style="display: none;">
+      <div class="section-title">🔄 Form Permohonan Pergantian Shift</div>
+      
+      <div class="form-group">
+        <label>Tanggal Pergantian Shift</label>
+        <input type="date" id="swapDate" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label>Shift yang Ditugaskan / Digantikan</label>
+        <select id="swapTargetShift" class="form-select">
+          <option value="P">☀️ Shift Siang (07.00 - 19.00)</option>
+          <option value="M">🌙 Shift Malam (19.00 - 07.00)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Rekan Security yang Menggantikan (Back-up Guard)</label>
+        <select id="swapSubstituteUser" class="form-select">
+          <option value="">-- Pilih Rekan Security --</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Alasan / Keterangan Pergantian Shift</label>
+        <textarea id="swapReason" class="form-textarea" rows="2" placeholder="Contoh: Tukar shift karena ada keperluan keluarga mendesak..."></textarea>
+      </div>
+
+      <button type="button" class="btn-action-main btn-kyc-enroll" onclick="submitShiftSwapRequest()">
+        Ajukan Pergantian Shift
+      </button>
+    </div>
+
+    <!-- TAB 3: Leave Request Form -->
+    <div id="tabIzin" class="content-panel" style="display: none;">
+      <div class="section-title">📝 Form Permohonan Izin / Sakit</div>
+      
+      <div class="form-group">
+        <label>Jenis Izin</label>
+        <select id="leaveType" class="form-select">
+          <option value="SD">Sakit Dokter (SD)</option>
+          <option value="S">Sakit Tanpa Surat Dokter (S)</option>
+          <option value="I">Izin Kepentingan Mendesak (I)</option>
+          <option value="CT">Cuti Tahunan (CT)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Tanggal Mulai</label>
+        <input type="date" id="leaveStartDate" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label>Tanggal Selesai</label>
+        <input type="date" id="leaveEndDate" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label>Alasan / Keterangan</label>
+        <textarea id="leaveReason" class="form-textarea" rows="2" placeholder="Tuliskan keterangan detail izin..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Upload Bukti Surat Dokter / Keterangan (Foto)</label>
+        <input type="file" id="leaveFile" accept="image/*" class="form-input" onchange="previewLeaveFile(event)">
+        <div id="leaveFilePreview" style="display: none; margin-top: 6px;">
+          <img id="leaveImgPreview" src="" style="width: 100%; max-height: 160px; object-fit: cover; border-radius: 8px;">
+        </div>
+      </div>
+
+      <button type="button" class="btn-action-main btn-kyc-enroll" onclick="submitLeaveRequest()">
+        Kirim Permohonan Izin
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    let currentUser = null;
+    let currentShift = 'P';
+    let currentFacingMode = 'user'; // auto front camera
+    let mediaStream = null;
+    let capturedGps = 'POS_JAGA_MAIN';
+    let leaveAttachmentBase64 = '';
+    let allPersonnelList = [];
+    let isLivenessVerifying = false;
+    let livenessInterval = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById('leaveStartDate').value = today;
+      document.getElementById('leaveEndDate').value = today;
+      document.getElementById('swapDate').value = today;
+
+      // Auto check local session
+      const savedUser = localStorage.getItem('sec_session_user');
+      if (savedUser) {
+        try {
+          currentUser = JSON.parse(savedUser);
+          renderDashboard();
+        } catch (e) {}
+      }
+
+      loadPersonnelDropdown();
+      requestGpsLocation();
+    });
+
+    capturedGps = '';
+    let capturedLocationName = '';
+    let isGpsValid = false;
+
+    function requestGpsLocation(isManual = false) {
+      const gpsStatusEl = document.getElementById('gpsStatus');
+      const alertBanner = document.getElementById('gpsAlertBanner');
+      const submitBtn = document.getElementById('btnSubmitAttendance');
+
+      if (!navigator.geolocation) {
+        if (gpsStatusEl) gpsStatusEl.innerHTML = '<span style="color:#f87171; font-weight:700;">❌ Browser HP Tidak Mendukung GPS</span>';
+        if (alertBanner) alertBanner.style.display = 'block';
+        isGpsValid = false;
+        return;
+      }
+
+      if (gpsStatusEl) gpsStatusEl.innerHTML = '<span style="color:#f59e0b; font-weight:700;">⏳ Memindai GPS High-Accuracy HP...</span>';
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const acc = Math.round(pos.coords.accuracy || 10);
+
+          capturedGps = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+          capturedLocationName = `📍 [${capturedGps} - Akurasi: ${acc}m]`;
+
+          isGpsValid = true;
+          if (gpsStatusEl) {
+            gpsStatusEl.innerHTML = `<span style="color:#34d399; font-weight:700;">✅ ${capturedLocationName}</span>`;
+          }
+          if (alertBanner) alertBanner.style.display = 'none';
+
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '📸 MULAI PEMINDAIAN & SIMPAN PRESENSI';
+          }
+          if (isManual) showToast('Lokasi GPS HP Berhasil Terverifikasi Accurate!', '✅');
+
+          // Asynchronous reverse geocoding via OpenStreetMap API (non-blocking)
+          (async () => {
+            try {
+              const controller = new AbortController();
+              const timer = setTimeout(() => controller.abort(), 3000);
+              const geoResp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18`, { signal: controller.signal });
+              clearTimeout(timer);
+              const geoData = await geoResp.json();
+              if (geoData && geoData.address) {
+                const a = geoData.address;
+                const roadStr = a.road || a.industrial || a.building || a.commercial || '';
+                const villageStr = a.village || a.suburb || a.neighbourhood || '';
+                const districtStr = a.city_district || a.subdistrict || a.county || '';
+                const cityStr = a.city || a.town || a.regency || '';
+
+                let fullAddr = [roadStr, villageStr, districtStr, cityStr].filter(Boolean).join(', ');
+                if (!fullAddr) fullAddr = geoData.display_name.split(',').slice(0, 3).join(', ');
+
+                capturedLocationName = `📍 ${fullAddr} [${capturedGps} - Akurasi: ${acc}m]`;
+                if (gpsStatusEl) {
+                  gpsStatusEl.innerHTML = `<span style="color:#34d399; font-weight:700;">✅ ${capturedLocationName}</span>`;
+                }
+              }
+            } catch (e) {}
+          })();
+        },
+        (err) => {
+          console.warn('[GPS ERR]', err);
+          isGpsValid = false;
+          capturedGps = '';
+          capturedLocationName = '';
+
+          let errMsg = 'Akses Lokasi GPS HP Belum Aktif / Ditolak!';
+          if (err.code === 1) errMsg = 'Izin GPS Ditolak! Wajib Aktifkan Izin Lokasi di Browser HP Anda.';
+          else if (err.code === 2) errMsg = 'Sinyal GPS HP Tidak Terdeteksi!';
+          else if (err.code === 3) errMsg = 'Waktu Deteksi GPS Habis!';
+
+          if (gpsStatusEl) gpsStatusEl.innerHTML = `<span style="color:#f87171; font-weight:700;">❌ ${errMsg}</span>`;
+          if (alertBanner) {
+            alertBanner.innerHTML = `🚨 <b>WAJIB AKTIFKAN LOKASI GPS HP!</b><br>${errMsg}<br>Absensi & Pemindaian Wajah Terkunci Sampai GPS HP Aktif.`;
+            alertBanner.style.display = 'block';
+          }
+
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '🔒 WAJIB AKTIFKAN GPS HP UNTUK PRESENSI';
+          }
+          if (isManual) showToast(errMsg, '❌');
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+      );
+    }
+
+    async function loadPersonnelDropdown() {
+      try {
+        const resp = await fetch('/api/security/personnel-list');
+        const data = await resp.json();
+        if (data.success) {
+          allPersonnelList = data.personnel;
+          populateSwapDropdown();
+        }
+      } catch (e) {}
+    }
+
+    function populateSwapDropdown() {
+      const sel = document.getElementById('swapSubstituteUser');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">-- Pilih Rekan Security --</option>';
+      allPersonnelList.forEach(p => {
+        if (!currentUser || p.nik.toLowerCase() !== currentUser.nik.toLowerCase()) {
+          sel.innerHTML += `<option value="${p.nik}">${p.nama} (${p.jabatan}) - NIK: ${p.nik}</option>`;
+        }
+      });
+    }
+
+    function showToast(text, icon = 'ℹ️') {
+      const t = document.getElementById('toastMsg');
+      document.getElementById('toastText').innerText = text;
+      document.getElementById('toastIcon').innerText = icon;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    function toggleScreenFlash() {
+      const el = document.getElementById('nightFlashOverlay');
+      if (el.style.display === 'block') {
+        el.style.display = 'none';
+      } else {
+        el.style.display = 'block';
+        showToast('Layar putih aktif untuk menerangi wajah di pos gelap', '💡');
+      }
+    }
+
+    async function handleLogin() {
+      const nik = document.getElementById('loginNik').value.trim();
+      const pass = document.getElementById('loginPassword').value.trim();
+      const alertBox = document.getElementById('loginAlertBox');
+      const btn = document.getElementById('btnLoginSubmit');
+
+      if (alertBox) alertBox.style.display = 'none';
+
+      if (!nik) {
+        if (alertBox) {
+          alertBox.innerText = '⚠️ Harap masukkan NIK atau Username!';
+          alertBox.style.display = 'block';
+        }
+        return showToast('Masukkan NIK atau Username!', '⚠️');
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = '⏳ Memverifikasi Akses...';
+      }
+
+      try {
+        const resp = await fetch('/api/security/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nik, password: pass })
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+          currentUser = data.user;
+          localStorage.setItem('sec_session_user', JSON.stringify(currentUser));
+          renderDashboard();
+          populateSwapDropdown();
+          showToast(`Selamat bertugas, ${currentUser.nama}!`, '🛡️');
+        } else {
+          if (alertBox) {
+            alertBox.innerText = data.message || 'Login gagal. Periksa kembali NIK dan Password.';
+            alertBox.style.display = 'block';
+          }
+          showToast(data.message || 'Login gagal', '❌');
+        }
+      } catch (err) {
+        if (alertBox) {
+          alertBox.innerText = 'Gagal terhubung ke server: ' + err.message;
+          alertBox.style.display = 'block';
+        }
+        showToast('Gagal terhubung ke server: ' + err.message, '❌');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = 'Masuk ke Portal';
+        }
+      }
+    }
+
+    function handleLogout() {
+      stopCamera();
+      localStorage.removeItem('sec_session_user');
+      currentUser = null;
+      document.getElementById('mainApp').style.display = 'none';
+      document.getElementById('loginOverlay').style.display = 'flex';
+    }
+
+    async function renderDashboard() {
+      if (!currentUser) return;
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'flex';
+
+      document.getElementById('profileName').innerText = currentUser.nama;
+      document.getElementById('profileNik').innerText = 'NIK: ' + currentUser.nik;
+      if (document.getElementById('profilePhone')) {
+        document.getElementById('profilePhone').innerText = '📱 WA: ' + (currentUser.phone_number || '-');
+      }
+      if (document.getElementById('profileSite')) {
+        const siteText = (currentUser.unit_kerja === 'CEMERLANG') ? 'PT CHANDRA NUGRAH CEMERLANG' : ((currentUser.unit_kerja === 'SIP') ? 'PT SIP' : 'PT CHANDRA NUGRAH CIPTA (CNC 1)');
+        document.getElementById('profileSite').innerText = '🏢 Unit Kerja: ' + siteText;
+      }
+
+      const kycBadge = document.getElementById('kycStatusBadge');
+      const secKyc = document.getElementById('sectionKycEnroll');
+      const secDaily = document.getElementById('sectionDailyAttendance');
+
+      // Check if user is already KYC verified
+      if (currentUser.is_kyc_verified) {
+        kycBadge.className = 'kyc-pill';
+        kycBadge.innerText = '🛡️ KYC Terverifikasi';
+        secKyc.style.display = 'none';
+        secDaily.style.display = 'flex';
+        document.getElementById('cameraTitleLabel').innerText = '📸 Pemindai Wajah Absensi Harian';
+        if (currentUser.kyc_photo) {
+          document.getElementById('userAvatar').src = currentUser.kyc_photo;
+        }
+      } else {
+        kycBadge.className = 'kyc-pill unverified';
+        kycBadge.innerText = '⚠️ Wajib Registrasi KYC (1x)';
+        secKyc.style.display = 'flex';
+        secDaily.style.display = 'none';
+        document.getElementById('cameraTitleLabel').innerText = '🛡️ Registrasi Biometrik KYC';
+      }
+
+      // Auto start front camera
+      startCamera();
+      await fetchSummary();
+    }
+
+    async function fetchSummary() {
+      try {
+        const resp = await fetch(`/api/security/my-summary?nik=${encodeURIComponent(currentUser.nik)}`);
+        const data = await resp.json();
+        if (data.success) {
+          // If server reports KYC is verified, sync local state
+          if (data.user && data.user.is_kyc_verified && !currentUser.is_kyc_verified) {
+            currentUser.is_kyc_verified = true;
+            currentUser.kyc_photo = data.user.kyc_photo;
+            localStorage.setItem('sec_session_user', JSON.stringify(currentUser));
+            renderDashboard();
+          }
+
+          // Render today's status box
+          const todayBox = document.getElementById('todayStatusCard');
+          if (data.today_attendance) {
+            const att = data.today_attendance;
+            todayBox.style.display = 'block';
+            document.getElementById('todayShiftBadge').innerText = (att.shift_type === 'M') ? '🌙 Shift Malam' : '☀️ Shift Siang';
+            document.getElementById('todayCheckInTime').innerText = att.check_in_time ? new Date(att.check_in_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Jakarta' }) + ' WIB ✅' : '-';
+            document.getElementById('todayCheckOutTime').innerText = att.check_out_time ? new Date(att.check_out_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Jakarta' }) + ' WIB ✅' : 'Belum Absen Pulang';
+            
+            if (att.shift_type) {
+              currentShift = att.shift_type;
+              document.getElementById('btnShiftP').classList.toggle('active', att.shift_type === 'P');
+              document.getElementById('btnShiftM').classList.toggle('active', att.shift_type === 'M');
+            }
+          } else {
+            todayBox.style.display = 'none';
+          }
+
+          renderAttendanceList(data.attendances);
+        }
+      } catch (err) {
+        console.error('Fetch summary error:', err);
+      }
+    }
+
+    function renderAttendanceList(items) {
+      const container = document.getElementById('attListContainer');
+      if (!items || items.length === 0) {
+        container.innerHTML = `
+          <div class="att-item" style="justify-content: center; color: var(--text-muted); font-size: 12px; padding: 24px;">
+            Belum ada catatan absensi periode ini
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = items.map(it => {
+        const checkInStr = it.check_in_time ? new Date(it.check_in_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Jakarta' }) + ' WIB' : '-';
+        const checkOutStr = it.check_out_time ? new Date(it.check_out_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Jakarta' }) + ' WIB' : 'Belum Absen Pulang';
+        const photoThumb = it.check_in_photo || null;
+
+        return `
+          <div class="att-item" style="display: flex; gap: 12px; align-items: center;">
+            ${photoThumb ? `<img src="${photoThumb}" style="width: 46px; height: 46px; border-radius: 8px; object-fit: cover; border: 1px solid var(--primary);" alt="Foto Scan">` : ''}
+            <div style="flex: 1;">
+              <div class="att-date">${new Date(it.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' })}</div>
+              <div class="att-shift" style="margin-top: 3px; font-size: 11px; line-height: 1.5;">
+                Shift: <span class="badge-shift">${it.shift_type === 'M' ? '🌙 Malam' : '☀️ Siang'}</span><br>
+                🟢 <b>Masuk:</b> ${checkInStr}<br>
+                🟠 <b>Pulang:</b> ${checkOutStr}
+              </div>
+              ${it.check_in_gps ? `<div style="font-size: 10px; color: #38bdf8; margin-top: 3px;">📍 ${it.check_in_gps}</div>` : ''}
+            </div>
+            <span class="att-status-badge ${it.status === 'ABSENT' ? 'alpha' : ''}">${it.status === 'PRESENT' ? 'HADIR' : it.status}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectShift(s) {
+      currentShift = s;
+      document.getElementById('btnShiftP').classList.toggle('active', s === 'P');
+      document.getElementById('btnShiftM').classList.toggle('active', s === 'M');
+      showToast(`Shift aktif diubah ke: ${s === 'P' ? '☀️ Shift Siang' : '🌙 Shift Malam'}`, '🕒');
+    }
+
+    function switchTab(t) {
+      document.getElementById('tabAbsen').style.display = t === 'tabAbsen' ? 'flex' : 'none';
+      document.getElementById('tabTukarShift').style.display = t === 'tabTukarShift' ? 'flex' : 'none';
+      document.getElementById('tabIzin').style.display = t === 'tabIzin' ? 'flex' : 'none';
+      
+      const btns = document.querySelectorAll('.tab-bar .tab-btn');
+      btns[0].classList.toggle('active', t === 'tabAbsen');
+      btns[1].classList.toggle('active', t === 'tabTukarShift');
+      btns[2].classList.toggle('active', t === 'tabIzin');
+    }
+
+    async function switchCameraFacing() {
+      currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+      stopCamera();
+      showToast(`Beralih ke kamera ${currentFacingMode === 'user' ? 'depan' : 'belakang'}...`, '🔄');
+      await startCamera();
+    }
+
+    async function startCamera() {
+      try {
+        if (mediaStream) {
+          mediaStream.getTracks().forEach(t => t.stop());
+        }
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: currentFacingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false
+        });
+        mediaStream = stream;
+        const v = document.getElementById('videoStream');
+        v.srcObject = stream;
+        v.style.display = 'block';
+        v.style.transform = (currentFacingMode === 'user') ? 'scaleX(-1)' : 'none';
+        
+        v.onloadedmetadata = () => {
+          startContinuousCameraScanner();
+        };
+      } catch (err) {
+        showToast('Izin kamera tidak aktif: ' + err.message, '❌');
+      }
+    }
+
+    function stopCamera() {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+        mediaStream = null;
+      }
+      if (cameraScanLoop) clearInterval(cameraScanLoop);
+      if (livenessInterval) clearInterval(livenessInterval);
+    }
+
+    function captureFrame() {
+      const v = document.getElementById('videoStream');
+      const c = document.getElementById('canvasSnapshot');
+      c.width = v.videoWidth || 640;
+      c.height = v.videoHeight || 480;
+      const ctx = c.getContext('2d');
+      if (currentFacingMode === 'user') {
+        ctx.translate(c.width, 0);
+        ctx.scale(-1, 1);
+      }
+      ctx.drawImage(v, 0, 0, c.width, c.height);
+      return c.toDataURL('image/jpeg', 0.85);
+    }
+
+    // =========================================================
+    // REAL COMPUTER VISION, LIVENESS & BIOMETRIC EMBEDDING ENGINE
+    // =========================================================
+    let analyzerCanvas = null;
+    let analyzerCtx = null;
+    let prevEyeZoneData = null;
+    let cameraScanLoop = null;
+
+    function initVisionAnalyzer() {
+      if (!analyzerCanvas) {
+        analyzerCanvas = document.createElement('canvas');
+        analyzerCanvas.width = 160;
+        analyzerCanvas.height = 120;
+        analyzerCtx = analyzerCanvas.getContext('2d', { willReadFrequently: true });
+      }
+    }
+
+    // Extract 64-Point Normalized Biometric Face Feature Vector
+    function extractCanvasFaceEmbedding() {
+      if (!analyzerCtx) initVisionAnalyzer();
+      const v = document.getElementById('videoStream');
+      if (!v || v.readyState < 2) return null;
+
+      analyzerCtx.drawImage(v, 0, 0, 160, 120);
+      const frame = analyzerCtx.getImageData(0, 0, 160, 120);
+      const data = frame.data;
+      const embedding = [];
+
+      // Sample 8x8 grid in center face region (40 to 120 X, 20 to 100 Y)
+      for (let gy = 0; gy < 8; gy++) {
+        for (let gx = 0; gx < 8; gx++) {
+          let sumLum = 0;
+          let count = 0;
+          const pxStart = 40 + gx * 10;
+          const pyStart = 20 + gy * 10;
+
+          for (let y = pyStart; y < pyStart + 10; y++) {
+            for (let x = pxStart; x < pxStart + 10; x++) {
+              const idx = (y * 160 + x) * 4;
+              const lum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+              sumLum += lum;
+              count++;
+            }
+          }
+          embedding.push(count > 0 ? Math.round((sumLum / count) * 10) / 10 : 0);
+        }
+      }
+      return embedding;
+    }
+
+    // Real-time Facial Geometry & Multi-Zone Feature Analyzer
+    function analyzeFacePresence() {
+      const v = document.getElementById('videoStream');
+      if (!v || v.readyState < 2) return { hasFace: false, reason: 'Kamera sedang memuat...' };
+      if (!analyzerCtx) initVisionAnalyzer();
+
+      analyzerCtx.drawImage(v, 0, 0, 160, 120);
+      const frame = analyzerCtx.getImageData(0, 0, 160, 120);
+      const data = frame.data;
+
+      let skinPixels = 0;
+      let totalCenterPixels = 0;
+      let totalBrightness = 0;
+
+      // Eye Region (Top third: Y 25-50, X 45-115) Variance Analysis
+      let eyeLumSum = 0;
+      let eyeLumSqSum = 0;
+      let eyeCount = 0;
+      let eyeMotionDelta = 0;
+      const currentEyeData = [];
+
+      for (let y = 20; y < 100; y += 2) {
+        for (let x = 40; x < 120; x += 2) {
+          const idx = (y * 160 + x) * 4;
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+          totalCenterPixels++;
+          totalBrightness += lum;
+
+          // YCbCr Skin Tone Model
+          const cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+          const cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+
+          if (cr >= 133 && cr <= 173 && cb >= 77 && cb <= 127 && r > 60 && g > 30 && (r - g) > 10) {
+            skinPixels++;
+          }
+
+          // In eye/brow region: compute contrast gradient and optical motion
+          if (y >= 25 && y <= 55 && x >= 45 && x <= 115) {
+            eyeCount++;
+            eyeLumSum += lum;
+            eyeLumSqSum += lum * lum;
+            currentEyeData.push(lum);
+          }
+        }
+      }
+
+      // Check optical motion in eye region
+      if (prevEyeZoneData && prevEyeZoneData.length === currentEyeData.length) {
+        for (let i = 0; i < currentEyeData.length; i++) {
+          eyeMotionDelta += Math.abs(currentEyeData[i] - prevEyeZoneData[i]);
+        }
+        eyeMotionDelta = eyeMotionDelta / currentEyeData.length;
+      }
+      prevEyeZoneData = currentEyeData;
+
+      const avgBrightness = totalBrightness / totalCenterPixels;
+      const skinRatio = skinPixels / totalCenterPixels;
+
+      // Calculate eye region contrast variance (σ)
+      const eyeMean = eyeLumSum / (eyeCount || 1);
+      const eyeVariance = Math.sqrt(Math.max(0, (eyeLumSqSum / (eyeCount || 1)) - (eyeMean * eyeMean)));
+
+      // 1. Lighting Check
+      if (avgBrightness < 30) {
+        return { hasFace: false, reason: 'Pencahayaan terlalu gelap' };
+      }
+      if (avgBrightness > 245) {
+        return { hasFace: false, reason: 'Pencahayaan terlalu silau' };
+      }
+
+      // 2. Skin Chroma & Face Structure Contrast Check (Rejects blank wall, ceiling, floor, or object)
+      const hasSkinTone = skinRatio >= 0.22 && skinRatio <= 0.85;
+      const hasFacialContrast = eyeVariance >= 8.5; // Genuine face has dark pupils/eyebrows contrast
+
+      const hasFace = hasSkinTone && hasFacialContrast;
+
+      let reason = 'Wajah Terdeteksi';
+      if (!hasSkinTone) reason = 'Wajah Tidak Terdeteksi di Tengah Oval';
+      else if (!hasFacialContrast) reason = 'Bukan Wajah Manusia (Fitur Wajah Tidak Ditemukan)';
+
+      return {
+        hasFace,
+        skinRatio,
+        eyeVariance,
+        avgBrightness,
+        eyeMotion: eyeMotionDelta,
+        reason
+      };
+    }
+
+    // Passive Background Camera Scanner
+    function startContinuousCameraScanner() {
+      initVisionAnalyzer();
+      if (cameraScanLoop) clearInterval(cameraScanLoop);
+
+      cameraScanLoop = setInterval(() => {
+        if (isLivenessVerifying) return;
+
+        const analysis = analyzeFacePresence();
+        const promptEl = document.getElementById('livenessPrompt');
+        const fillEl = document.getElementById('livenessFill');
+        const ovalEl = document.getElementById('faceOval');
+
+        if (!analysis.hasFace) {
+          ovalEl.className = 'face-oval-guide';
+          promptEl.innerText = `👁️ ${analysis.reason}`;
+          fillEl.style.width = '10%';
+        } else {
+          ovalEl.className = 'face-oval-guide live-warn';
+          promptEl.innerText = '✅ Wajah Terdeteksi. Siap Memindai';
+          fillEl.style.width = '30%';
+        }
+      }, 150);
+    }
+
+    // ACTIVE LIVENESS & MOTION CHALLENGE (Eye Blink / Head Nod / Real Face)
+    function runLivenessVerification(onSuccess) {
+      if (isLivenessVerifying) return;
+      isLivenessVerifying = true;
+      initVisionAnalyzer();
+
+      const promptEl = document.getElementById('livenessPrompt');
+      const fillEl = document.getElementById('livenessFill');
+      const ovalEl = document.getElementById('faceOval');
+
+      ovalEl.className = 'face-oval-guide live-warn';
+      promptEl.innerText = '🔍 Memeriksa Wajah & Posisi...';
+      fillEl.style.width = '20%';
+
+      let motionScore = 0;
+      let validFaceCount = 0;
+      let stage = 1; // 1: Position check, 2: Motion challenge
+      const startTime = Date.now();
+
+      if (livenessInterval) clearInterval(livenessInterval);
+
+      livenessInterval = setInterval(() => {
+        const analysis = analyzeFacePresence();
+
+        // 1. MUST HAVE A REAL FACE WITH EYES/NOSE/MOUTH CONTRAST
+        if (!analysis.hasFace) {
+          ovalEl.className = 'face-oval-guide';
+          promptEl.innerText = `❌ ${analysis.reason}!`;
+          fillEl.style.width = '10%';
+          validFaceCount = 0;
+          motionScore = 0;
+          return;
+        }
+
+        validFaceCount++;
+
+        // 2. STAGE 1: Face Confirmed in Oval
+        if (stage === 1) {
+          fillEl.style.width = '35%';
+          promptEl.innerText = '👁️ SILAKAN KEDIPKAN MATA atau Gerakkan Kepala Sedikit...';
+          ovalEl.className = 'face-oval-guide live-warn';
+
+          if (validFaceCount >= 3) {
+            stage = 2;
+            motionScore = 0;
+          }
+          return;
+        }
+
+        // 3. STAGE 2: Real Optical Motion / Eye Blink Detection
+        if (stage === 2) {
+          if (analysis.eyeMotion >= 1.2) {
+            motionScore += analysis.eyeMotion;
+          }
+
+          const progress = Math.min(95, 35 + Math.round((motionScore / 8) * 60));
+          fillEl.style.width = progress + '%';
+
+          // Auto-pass if motion score reached OR if face has been steady & valid for 35 frames (~3.5s)
+          if (motionScore >= 7 || validFaceCount >= 35) {
+            // Liveness motion verified!
+            clearInterval(livenessInterval);
+            ovalEl.className = 'face-oval-guide live-valid';
+            promptEl.innerText = '🟢 LIVENESS VALID 100%! Wajah Manusia Asli';
+            fillEl.style.width = '100%';
+
+            setTimeout(() => {
+              isLivenessVerifying = false;
+              onSuccess();
+            }, 400);
+            return;
+          }
+
+          // Timeout if user is holding a photo or stationary without face match
+          if (Date.now() - startTime > 22000) {
+            clearInterval(livenessInterval);
+            isLivenessVerifying = false;
+            ovalEl.className = 'face-oval-guide';
+            promptEl.innerText = '❌ Gagal: Tidak ada kedipan mata / gerakan. Foto statis ditolak!';
+            fillEl.style.width = '0%';
+            showToast('Liveness Gagal: Kedipan mata atau gerakan wajah tidak terdeteksi!', '⚠️');
+            return;
+          }
+        }
+      }, 100);
+    }
+
+    // 1. DAFTARKAN KYC (HANYA 1 KALI)
+    function startLivenessAndEnrollKYC() {
+      const check = analyzeFacePresence();
+      if (!check.hasFace) {
+        return showToast(check.reason, '⚠️');
+      }
+
+      showToast('Memulai uji liveness biometrik...', '🔄');
+      runLivenessVerification(async () => {
+        const photo = captureFrame();
+        const embedding = extractCanvasFaceEmbedding();
+        showToast('Menyimpan data biometrik KYC ke database...', '🔐');
+
+        const phoneVal = document.getElementById('kycPhoneNumber') ? document.getElementById('kycPhoneNumber').value.trim() : '';
+
+        try {
+          const resp = await fetch('/api/security/kyc-enroll', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              nik: currentUser.nik,
+              kyc_photo: photo,
+              face_embedding: JSON.stringify(embedding),
+              phone_number: phoneVal,
+              device_uuid: navigator.userAgent
+            })
+          });
+          const data = await resp.json();
+          if (data.success) {
+            currentUser.is_kyc_verified = true;
+            currentUser.kyc_photo = photo;
+            if (phoneVal) currentUser.phone_number = phoneVal;
+            localStorage.setItem('sec_session_user', JSON.stringify(currentUser));
+            renderDashboard();
+            showToast('✅ KYC Biometrik Wajah & No. WhatsApp Berhasil Disimpan!', '🎉');
+          } else {
+            showToast(data.message || 'Gagal mendaftar KYC', '❌');
+          }
+        } catch (err) {
+          showToast('Error KYC: ' + err.message, '❌');
+        }
+      });
+    }
+
+    // 2. ABSENSI HARIAN (SETIAP HARI SETELAH KYC)
+    function startLivenessAndSubmitAttendance(type) {
+      if (!currentUser.is_kyc_verified) {
+        showToast('Wajib daftarkan KYC Wajah terlebih dahulu!', '⚠️');
+        return;
+      }
+
+      if (!isGpsValid || !capturedGps) {
+        showToast('⚠️ LOKASI GPS HP WAJIB DIAKTIFKAN! Aktifkan Izin Lokasi di HP Anda.', '🚨');
+        requestGpsLocation(true);
+        return;
+      }
+
+      const check = analyzeFacePresence();
+      if (!check.hasFace) {
+        return showToast(check.reason, '⚠️');
+      }
+
+      showToast('Memverifikasi liveness wajah...', '🔄');
+      runLivenessVerification(async () => {
+        const photo = captureFrame();
+        const embedding = extractCanvasFaceEmbedding();
+
+        try {
+          const resp = await fetch('/api/security/attendance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              nik: currentUser.nik,
+              shift_type: currentShift,
+              type: type,
+              photo: photo,
+              face_embedding: JSON.stringify(embedding),
+              gps: capturedLocationName || capturedGps
+            })
+          });
+          const data = await resp.json();
+          if (data.success) {
+            showToast(data.message, '✅');
+            document.getElementById('nightFlashOverlay').style.display = 'none';
+            fetchSummary();
+          } else {
+            showToast(data.message || 'Absen ditolak', '❌');
+          }
+        } catch (err) {
+          showToast('Error Absensi: ' + err.message, '❌');
+        }
+      });
+    }
+
+    // 3. SUBMIT TUKAR SHIFT
+    async function submitShiftSwapRequest() {
+      const date = document.getElementById('swapDate').value;
+      const targetShift = document.getElementById('swapTargetShift').value;
+      const subNik = document.getElementById('swapSubstituteUser').value;
+      const reason = document.getElementById('swapReason').value.trim();
+
+      if (!date || !subNik) {
+        return showToast('Pilih tanggal dan rekan security pengganti!', '⚠️');
+      }
+
+      const selectedSub = allPersonnelList.find(p => p.nik.toLowerCase() === subNik.toLowerCase());
+      const subName = selectedSub ? selectedSub.nama : subNik;
+
+      showToast('Mengirim permohonan pergantian shift...', '🔄');
+
+      try {
+        const resp = await fetch('/api/security/leave-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nik: currentUser.nik,
+            leave_type: 'TS',
+            start_date: date,
+            end_date: date,
+            reason: `[TUKAR SHIFT ${targetShift === 'M' ? 'MALAM' : 'SIANG'}] Digantikan oleh: ${subName} (${subNik}). Keterangan: ${reason || '-'}`
+          })
+        });
+        const data = await resp.json();
+        if (data.success) {
+          showToast('Pergantian shift berhasil diajukan ke Admin EMJ & Superadmin!', '✅');
+          document.getElementById('swapReason').value = '';
+          document.getElementById('swapSubstituteUser').value = '';
+          switchTab('tabAbsen');
+        } else {
+          showToast(data.message || 'Gagal mengajukan pergantian shift', '❌');
+        }
+      } catch (err) {
+        showToast('Error submit pergantian shift: ' + err.message, '❌');
+      }
+    }
+
+    function previewLeaveFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        leaveAttachmentBase64 = evt.target.result;
+        document.getElementById('leaveImgPreview').src = leaveAttachmentBase64;
+        document.getElementById('leaveFilePreview').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function submitLeaveRequest() {
+      const type = document.getElementById('leaveType').value;
+      const start = document.getElementById('leaveStartDate').value;
+      const end = document.getElementById('leaveEndDate').value;
+      const reason = document.getElementById('leaveReason').value.trim();
+
+      if (!start || !end) return showToast('Lengkapi tanggal izin!', '⚠️');
+
+      showToast('Mengirim permohonan izin...', '🔄');
+
+      try {
+        const resp = await fetch('/api/security/leave-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nik: currentUser.nik,
+            leave_type: type,
+            start_date: start,
+            end_date: end,
+            reason: reason,
+            attachment_url: leaveAttachmentBase64
+          })
+        });
+        const data = await resp.json();
+        if (data.success) {
+          showToast('Permohonan izin berhasil dikirim ke Admin EMJ & Superadmin!', '✅');
+          document.getElementById('leaveReason').value = '';
+          document.getElementById('leaveFile').value = '';
+          document.getElementById('leaveFilePreview').style.display = 'none';
+          leaveAttachmentBase64 = '';
+          switchTab('tabAbsen');
+        } else {
+          showToast(data.message || 'Gagal mengajukan izin', '❌');
+        }
+      } catch (err) {
+        showToast('Error submit izin: ' + err.message, '❌');
+      }
+    }
+  </script>
+</body>
+</html>

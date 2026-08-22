@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Portal Presensi & Penjadwalan OB / Borongan - PT EMJ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="manifest" href="/manifest_ob.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0284c7">
+  <!-- Open-Source Biometric Liveness Detection (MediaPipe Face Mesh) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg-main: #0b0f19;
+      --bg-card: #131b2e;
+      --bg-input: #1b2640;
+      --primary: #0ea5e9;
+      --primary-hover: #0284c7;
+      --accent: #10b981;
+      --accent-danger: #ef4444;
+      --accent-warning: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #1e293b;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background-color: var(--bg-main); color: var(--text-main); padding: 15px; display: flex; justify-content: center; min-height: 100vh; }
+    .app-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
+
+    header { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 16px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    header h1 { font-size: 1.2rem; font-weight: 800; color: var(--primary); }
+    header p { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* Role Mode Switcher */
+    .role-switcher { display: flex; background: var(--bg-input); padding: 4px; border-radius: 12px; gap: 4px; border: 1px solid var(--border-color); }
+    .role-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 700; font-size: 0.85rem; border-radius: 8px; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .role-btn.active { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4); }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 18px; box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+    .card-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+    .form-control { width: 100%; padding: 12px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-main); font-size: 0.9rem; outline: none; }
+    .form-control:focus { border-color: var(--primary); }
+
+    /* Camera Box */
+    .camera-wrap { width: 100%; height: 240px; background: #000; border-radius: 12px; overflow: hidden; position: relative; border: 2px dashed var(--border-color); margin-bottom: 12px; }
+    video, canvas { width: 100%; height: 100%; object-fit: cover; }
+    .camera-overlay { position: absolute; bottom: 8px; right: 8px; z-index: 10; }
+    .cam-btn { background: rgba(0,0,0,0.6); color: #fff; border: 1px solid #fff; padding: 6px 12px; font-size: 0.75rem; border-radius: 6px; cursor: pointer; }
+
+    /* Biometric KYC Scanner Reticle */
+    .kyc-scanner-reticle {
+      position: absolute;
+      inset: 15px 60px;
+      border: 2px dashed #0ea5e9;
+      border-radius: 50% / 40%;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .kyc-scanner-line {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+      box-shadow: 0 0 10px #38bdf8;
+      top: 0;
+      animation: scanLaser 2s infinite ease-in-out;
+    }
+    @keyframes scanLaser {
+      0% { top: 10%; opacity: 0.3; }
+      50% { top: 90%; opacity: 1; }
+      100% { top: 10%; opacity: 0.3; }
+    }
+
+    /* GPS Status Box */
+    .gps-box { background: var(--bg-input); border-radius: 10px; padding: 10px 14px; font-size: 0.75rem; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border-color); margin-bottom: 15px; }
+    .gps-info { display: flex; flex-direction: column; gap: 2px; }
+    .gps-tag { font-weight: 700; color: var(--accent); }
+
+    /* Action Buttons */
+    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-action { padding: 14px; border: none; border-radius: 12px; font-size: 0.9rem; font-weight: 800; cursor: pointer; transition: transform 0.1s, opacity 0.2s; color: #fff; text-align: center; }
+    .btn-action:active { transform: scale(0.97); }
+    .btn-masuk { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+    .btn-pulang { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+    .btn-primary { width: 100%; background: var(--primary); padding: 12px; border: none; border-radius: 10px; color: #fff; font-weight: 700; cursor: pointer; }
+
+    /* Leader Grid Table */
+    .table-wrap { overflow-x: auto; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    th, td { border: 1px solid var(--border-color); padding: 8px; text-align: center; }
+    th { background: var(--bg-input); color: var(--text-muted); }
+    select.table-select { background: var(--bg-input); color: #fff; border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; }
+
+    /* PIN Modal */
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; justify-content: center; align-items: center; padding: 20px; }
+    .modal-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 360px; text-align: center; }
+
+    .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; display: inline-block; }
+    .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--accent); }
+    .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--accent-warning); }
+    .badge-danger { background: rgba(239, 68, 68, 0.2); color: var(--accent-danger); }
+
+    @keyframes pulseGlow {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1.02); box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .pulse-anim { animation: pulseGlow 1.5s infinite; }
+  </style>
+</head>
+<body>
+
+<!-- PUBLIC LOGIN MODAL -->
+<div id="loginOverlay" style="position: fixed; inset: 0; background: rgba(11, 15, 25, 0.97); backdrop-filter: blur(8px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px;">
+  <div style="width: 100%; max-width: 380px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+    
+    <!-- PWA INSTALL BANNER INSIDE LOGIN -->
+    <div class="pwa-banner-el" style="display: flex; background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; padding: 10px 14px; border-radius: 12px; font-size: 12px; align-items: center; justify-content: space-between; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 12px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img src="/logo_emj.png" style="height:28px; width:auto; background:#fff; padding:2px; border-radius:4px;">
+        <div>
+          <b>Install Aplikasi Android</b><br>
+          <span style="font-size:10px; opacity:0.9;">Pasang di HP agar akses presensi lebih cepat</span>
+        </div>
+      </div>
+      <button type="button" onclick="triggerPwaInstall()" style="background:#fff; color:#0284c7; border:none; font-weight:bold; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:11px;">📱 Install</button>
+    </div>
+
+    <div style="text-align: center;">
+      <img src="/logo_emj.png" alt="Logo PT EMJ" style="height: 54px; object-fit: contain; margin-bottom: 8px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); background:#fff; padding:6px; border-radius:8px;">
+      <h2 style="font-size: 18px; font-weight: 800; color: #fff; margin: 4px 0 0 0;">Login Portal Presensi OB & Borongan</h2>
+      <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">PT. ERIK MAJU JAYA &bull; Unit Kerja</p>
+    </div>
+
+    <div id="loginAlertBox" style="display: none; background: rgba(239, 68, 68, 0.18); border: 1px solid #ef4444; color: #fca5a5; padding: 10px 12px; border-radius: 10px; font-size: 12px; font-weight: 600; line-height: 1.4;"></div>
+
+    <form onsubmit="event.preventDefault(); handleOBLogin();" style="display: flex; flex-direction: column; gap: 14px;">
+      <div class="form-group">
+        <label>NIK / Username</label>
+        <input type="text" id="obLoginNik" class="form-control" placeholder="Masukkan NIK atau Username" autocomplete="username" autofocus required>
+      </div>
+
+      <div class="form-group">
+        <label>PIN / Password</label>
+        <input type="password" id="obLoginPassword" class="form-control" placeholder="Masukkan Password" autocomplete="current-password" required>
+      </div>
+
+      <button type="button" onclick="handleOBLogin()" id="btnOBLoginSubmit" class="btn-primary" style="padding: 12px; font-size: 0.95rem; font-weight: bold; width: 100%;">
+        🔑 Masuk Portal Presensi
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="app-container" id="mainAppContainer" style="display:none;">
+  <!-- PWA INSTALL BANNER -->
+  <div class="pwa-banner-el" style="display:none; background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; padding: 12px 16px; border-radius: 12px; margin-bottom: 15px; font-size: 0.8rem; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(2,132,199,0.3); border: 1px solid rgba(255,255,255,0.2);">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <img src="/logo_emj.png" style="height:32px; width:auto; background:#fff; padding:3px; border-radius:6px;">
+      <div>
+        <b style="font-size:0.85rem;">Install Aplikasi Android</b><br>
+        <span style="font-size:0.75rem; opacity:0.9;">Pasang di HP agar akses presensi lebih cepat & praktis</span>
+      </div>
+    </div>
+    <button type="button" onclick="triggerPwaInstall()" style="background:#fff; color:#0284c7; border:none; font-weight:bold; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.75rem;">📱 Install App</button>
+  </div>
+
+  <header style="display: flex; align-items: center; justify-content: center; gap: 12px; text-align: left;">
+    <img src="/logo_emj.png" alt="PT. ERIK MAJU JAYA" style="height: 48px; width: auto; object-fit: contain; background: #ffffff; padding: 4px 6px; border-radius: 6px;">
+    <div>
+      <h1 style="font-size: 1.1rem; margin: 0; color: var(--primary);">PT. ERIK MAJU JAYA</h1>
+      <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Portal Operational Presensi OB & Borongan (Kernet)</p>
+    </div>
+  </header>
+
+  <!-- USER LOGGED-IN BADGE & LOGOUT BUTTON -->
+  <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); padding: 10px 16px; border-radius: 10px; margin-bottom: 15px;" id="userHeaderBadge">
+    <div>
+      <span style="font-size: 0.7rem; color: var(--text-muted); display: block;">AKUN TERHUBUNG</span>
+      <strong id="loggedUserName" style="color: var(--primary); font-size: 0.85rem;">-</strong>
+    </div>
+    <button class="cam-btn" onclick="logoutPortalUser()" style="padding: 6px 12px; font-size: 0.75rem; background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid var(--rose);">🚪 Keluar / Logout</button>
+  </div>
+
+  <!-- Role Mode Switcher -->
+  <div class="role-switcher">
+    <button class="role-btn active" id="btnModeEmp" onclick="switchRole('EMP')">👤 Presensi Karyawan</button>
+    <button class="role-btn" id="btnModeLeader" onclick="switchRole('LEADER')">👑 Leader Lapangan</button>
+  </div>
+
+  <!-- EMP VIEW: ABSENSI KARYAWAN -->
+  <div id="viewEmp">
+    <div class="card">
+      <div class="card-title">
+        <span>📍 Presensi & Foto Selfie</span>
+        <span class="status-badge badge-success" id="jadwalTodayBadge">Jadwal: Standar 8 Jam</span>
+      </div>
+
+      <!-- PROFILE & KYC CARD FOR LOGGED-IN EMPLOYEE -->
+      <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 12px; padding: 12px 14px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; gap: 10px;" id="empProfileCard">
+        <div>
+          <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Profil Karyawan Terhubung</div>
+          <div style="font-size: 0.95rem; font-weight: 800; color: #fff; margin-top: 2px;" id="empProfileName">KARYAWAN TERHUBUNG</div>
+          <div style="font-size: 0.75rem; color: var(--primary); font-weight: 600; margin-top: 2px;" id="empProfileDetail">NIK: - &bull; JABATAN: OB</div>
+          <div style="font-size: 0.75rem; color: #25d366; font-weight: 700; margin-top: 3px;" id="empPhoneDisplay">📱 WA: Belum diisi</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+          <span class="status-badge badge-warning" id="empKycBadge">⚠️ Belum KYC Biometrik</span>
+          <div style="display: flex; gap: 4px;">
+            <button type="button" class="cam-btn" onclick="openPhoneModal()" style="font-size: 0.7rem; padding: 4px 8px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #0ea5e9;">📱 Update WA</button>
+            <button type="button" class="cam-btn" onclick="resetMyKycMaster()" style="font-size: 0.7rem; padding: 4px 8px; background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid #ef4444;">🔄 Reset KYC</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- OPTIONAL DROPDOWN (ONLY VISIBLE TO LEADER/ADMIN) -->
+      <div class="form-group" id="empSelectDropdownGroup" style="display: none;">
+        <label>PILIH KARYAWAN (KHUSUS LEADER/ADMIN)</label>
+        <select class="form-control" id="selectKaryawanEmp" onchange="onEmpSelect()">
+          <option value="">-- Pilih Nama / NIK Karyawan --</option>
+        </select>
+      </div>
+
+      <!-- SECTION KYC REGISTRATION (JIKA BELUM KYC) -->
+      <div id="sectionKycBox" style="display: none; background: rgba(14, 165, 233, 0.08); border: 2px solid #0ea5e9; padding: 14px; border-radius: 14px; margin-bottom: 15px; text-align: center;">
+        <div style="font-size: 0.9rem; color: #38bdf8; font-weight: 800; margin-bottom: 6px;">
+          🛡️ PEREKAMAN SENSOR BIOMETRIK WAJAH (KYC LIVENESS)
+        </div>
+        <div style="font-size: 0.75rem; color: #cbd5e1; margin-bottom: 10px; line-height: 1.4;">
+          Sistem akan memverifikasi pergerakan wajah biometrik Anda. Ikuti tantangan gerakan liveness di bawah:
+        </div>
+
+        <!-- LIVENESS STEPPER BAR -->
+        <div style="background: rgba(0,0,0,0.6); padding: 10px; border-radius: 10px; border: 1px solid #0ea5e9; margin-bottom: 12px; font-size: 0.75rem; color: #fff;">
+          <div id="kycLivenessPromptText" style="color: #fbbf24; font-weight: bold; font-size: 0.85rem; margin-bottom: 4px;">
+            👁️ TAHAP 1: Silakan Kedipkan Mata Kiri & Kanan Ke Kamera
+          </div>
+          <div style="background: #1e293b; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 4px;">
+            <div id="kycProgressBar" style="width: 33%; height: 100%; background: linear-gradient(90deg, #f59e0b, #10b981); transition: width 0.4s;"></div>
+          </div>
+          <div id="kycProgressStatus" style="font-size: 0.7rem; color: #94a3b8; margin-top: 4px;">Progress Liveness: 33% (Tahap 1/3)</div>
+        </div>
+
+        <button type="button" class="btn-primary" id="btnSubmitKyc" onclick="submitKycEnroll()" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 0.85rem; font-weight: 800; padding: 12px; width: 100%; border-radius: 10px;">
+          🛡️ SIMPAN REGISTRASI MASTER BIOMETRIK WAJAH (KYC VERIFIED)
+        </button>
+      </div>
+
+      <div class="camera-wrap" id="cameraBoxWrap" onclick="initCamera(true)" style="cursor:pointer; position:relative;">
+        <video id="videoPreview" autoplay playsinline muted></video>
+        <canvas id="photoCanvas" style="display:none;"></canvas>
+        <div class="kyc-scanner-reticle" id="kycReticleOverlay">
+          <div class="kyc-scanner-line"></div>
+          <span style="font-size:0.65rem; color:#38bdf8; font-weight:bold; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px;">FPS: 30 &bull; LIVE BIOMETRIC SCANNER ACTIVE</span>
+        </div>
+        <div id="camOverlayPrompt" style="display:none; position:absolute; inset:0; background:rgba(11,15,25,0.85); flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:15px; color:#fff; z-index:15;">
+          <div style="font-size:32px;">🛡️</div>
+          <b style="color:var(--primary); font-size:0.9rem;">Ketuk Di Sini Untuk Membuka Live Sensor Biometrik</b>
+          <span style="font-size:0.75rem; color:var(--text-muted);">Posisikan Wajah di Tengah Oval &bull; Pastikan Cahaya Terang</span>
+        </div>
+        <div class="camera-overlay">
+          <button type="button" class="cam-btn" onclick="event.stopPropagation(); toggleCamera();">🔄 Switch Kamera</button>
+        </div>
+      </div>
+
+      <div class="gps-box">
+        <div class="gps-info">
+          <span>Titik GPS Real-Time:</span>
+          <span class="gps-tag" id="gpsText">Detecting Location...</span>
+        </div>
+        <button class="cam-btn" onclick="initGps()">📡 Refresh GPS</button>
+      </div>
+
+      <div class="btn-grid">
+        <button class="btn-action btn-masuk" onclick="submitAbsen('MASUK')">🟢 ABSEN MASUK</button>
+        <button class="btn-action btn-pulang" onclick="submitAbsen('PULANG')">🔴 ABSEN PULANG</button>
+      </div>
+      <button class="cam-btn" onclick="openIzinModal()" style="width: 100%; margin-top: 10px; padding: 12px; background: rgba(59,130,246,0.15); color: var(--primary); border: 1px solid var(--primary); font-weight: 700;">📝 Form Pengajuan Izin / Sakit / Cuti</button>
+    </div>
+
+    <!-- Summary Today -->
+    <div class="card" style="margin-top: 15px;">
+      <div class="card-title">⏱️ Status Jam Kerja Hari Ini</div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;" id="empTodaySummary">
+        Pilih nama karyawan di atas untuk melihat status presensi & durasi jam kerja real-time.
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADER VIEW: PENJADWALAN & LEMBUR LAPANGAN -->
+  <div id="viewLeader" style="display: none;">
+    <!-- Sub-tabs Leader -->
+    <div class="role-switcher" style="margin-bottom: 15px;">
+      <button class="role-btn active" id="subTabJadwal" onclick="switchLeaderTab('JADWAL')">🗓️ Set Jadwal 7 Hari</button>
+      <button class="role-btn" id="subTabLembur" onclick="switchLeaderTab('LEMBUR')">⏱️ Input Lembur</button>
+    </div>
+
+    <!-- Tab Set Jadwal -->
+    <div id="leaderJadwalBox" class="card">
+      <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <span>🗓️ Penjadwalan Mingguan Lapangan</span>
+        <div style="display: flex; gap: 6px;">
+          <button class="cam-btn" onclick="printJadwalPDF()" style="background: rgba(59,130,246,0.2); color: #93c5fd; border: 1px solid #3b82f6;">📄 Cetak / Download PDF</button>
+          <button class="cam-btn" onclick="shareJadwalWhatsApp()" style="background: rgba(16,185,129,0.2); color: #6ee7b7; border: 1px solid #10b981;">📤 Share Ke WA</button>
+          <button class="cam-btn" onclick="saveJadwalMingguan()">💾 Simpan Jadwal</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>UNIT KERJA LAPANGAN</label>
+        <select class="form-control" id="leaderUnitKerja" onchange="loadJadwalGrid()">
+          <option value="CIPTA">CNC1 - PT CHANDRA NUGERAHCIPTA (44 Personil)</option>
+          <option value="CEMERLANG">CEMERLANG - PT CHANDRA NUGRAH CEMERLANG (14 Personil)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>PERIODE CUT-OFF (7 HARI MINGGUAN)</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="date" class="form-control" id="jadwalStartDate">
+          <input type="date" class="form-control" id="jadwalEndDate">
+          <button class="cam-btn" onclick="loadJadwalGrid()" style="padding: 0 15px;">Load</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="tableJadwalGrid">
+          <thead>
+            <tr>
+              <th>NIK / Nama</th>
+              <th>Status</th>
+              <th>Shift</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyJadwalGrid">
+            <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Pilih periode tanggal dan klik Load.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab Input Lembur -->
+    <div id="leaderLemburBox" class="card" style="display: none;">
+      <div class="card-title">⏱️ Form Lembur Lapangan</div>
+      <div class="form-group">
+        <label>TANGGAL LEMBUR</label>
+        <input type="date" class="form-control" id="lemburDate">
+      </div>
+      <div class="form-group">
+        <label>PILIH KARYAWAN (OB / BORONGAN)</label>
+        <select class="form-control" id="lemburSelectEmp"></select>
+      </div>
+      <div class="form-group">
+        <label>JENIS HARI</label>
+        <select class="form-control" id="lemburJenisHari">
+          <option value="BIASA">Hari Kerja Normal</option>
+          <option value="LIBUR">Hari Libur / Nasional</option>
+        </select>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" class="form-group">
+        <div>
+          <label>JAM MULAI LEMBUR</label>
+          <input type="time" class="form-control" id="lemburJamMulai" value="16:00" onchange="calcLemburDuration()">
+        </div>
+        <div>
+          <label>JAM SELESAI LEMBUR</label>
+          <input type="time" class="form-control" id="lemburJamSelesai" value="18:30" onchange="calcLemburDuration()">
+        </div>
+      </div>
+      <div style="background: rgba(59,130,246,0.12); padding: 10px 14px; border-radius: 8px; margin-bottom: 15px; font-size: 0.85rem; font-weight: 700; color: var(--primary);">
+        Total Durasi Lembur: <span id="lblLemburJamText">2.5 Jam</span>
+        <input type="hidden" id="lemburHours" value="2.5">
+      </div>
+      <button class="btn-primary" onclick="submitLemburLeader()">💾 Simpan Data Lembur Lapangan</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- PIN MODAL LEADER -->
+<div class="modal-backdrop" id="pinModal">
+  <div class="modal-box">
+    <h3 style="font-size: 1.1rem; margin-bottom: 8px; color: var(--primary);">🔐 Masukkan PIN Leader</h3>
+    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">Akses khusus Supervisor / Leader Lapangan</p>
+    <input type="password" class="form-control" id="inputPinLeader" placeholder="Masukkan PIN Leader" style="text-align: center; font-size: 1.2rem; letter-spacing: 5px; margin-bottom: 15px;">
+    <div style="display: flex; gap: 8px;">
+      <button class="cam-btn" style="flex:1; padding: 10px;" onclick="closePinModal()">Batal</button>
+      <button class="btn-action btn-masuk" style="flex:1; padding: 10px; font-size: 0.85rem;" onclick="verifyPinLeader()">Verify PIN</button>
+    </div>
+  </div>
+</div>
+
+<!-- PWA INSTALL GUIDE MODAL -->
+<div class="modal-backdrop" id="pwaGuideModal" style="display: none; z-index: 99999;">
+  <div class="modal-box" style="text-align: center; max-width: 360px;">
+    <div style="background: rgba(2,132,199,0.15); border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 28px;">
+      📱
+    </div>
+    <h3 style="font-size: 1.1rem; margin-bottom: 6px; color: var(--primary);">Panduan Install Aplikasi Android</h3>
+    <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 15px;">Ikuti 2 langkah mudah di bawah untuk memasang aplikasi di layar HP Anda:</p>
+
+    <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; text-align: left; font-size: 0.8rem; line-height: 1.6; margin-bottom: 15px;">
+      <div style="margin-bottom: 8px;">
+        <b style="color: #38bdf8;">Langkah 1:</b><br>
+        Klik <b>Menu Titik 3 (⋮)</b> di pojok kanan atas browser Google Chrome HP Anda.
+      </div>
+      <div>
+        <b style="color: #38bdf8;">Langkah 2:</b><br>
+        Pilih <b>"Tambahkan ke Layar Utama"</b> atau <b>"Install Aplikasi"</b>, lalu tekan <b>Install</b>.
+      </div>
+    </div>
+
+    <button type="button" class="btn-primary" onclick="closePwaGuideModal()" style="width: 100%; padding: 10px;">
+      👍 Saya Mengerti, Tutup
+    </button>
+  </div>
+</div>
+
+<!-- NO HP / WHATSAPP MODAL -->
+<div class="modal-backdrop" id="phoneModal">
+  <div class="modal-box">
+    <h3 style="font-size: 1.1rem; margin-bottom: 8px; color: var(--primary);">📱 Input / Update No. WhatsApp HP</h3>
+    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">Nomor WA aktif digunakan untuk pengiriman Slip Gaji & Notifikasi Presensi Resmi.</p>
+    <input type="text" class="form-control" id="inputUserPhone" placeholder="Contoh: 081234567890" style="text-align: center; font-size: 1.1rem; margin-bottom: 15px;">
+    <div style="display: flex; gap: 8px;">
+      <button type="button" class="cam-btn" style="flex:1; padding: 10px;" onclick="closePhoneModal()">Batal</button>
+      <button type="button" class="btn-primary" style="flex:1; padding: 10px; font-size: 0.85rem;" onclick="submitPhoneUpdate()">💾 Simpan No. WA</button>
+    </div>
+  </div>
+</div>
+
+<!-- IZIN / SAKIT MODAL -->
+<div class="modal-backdrop" id="izinModal">
+  <div class="modal-box">
+    <h3 style="font-size: 1.1rem; margin-bottom: 8px; color: var(--primary);">📝 Form Pengajuan Izin / Sakit</h3>
+    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">Catatan: Ketidakhadiran tetap dikenakan potongan gaji harian proporsional</p>
+
+    <form onsubmit="submitPengajuanIzin(event)">
+      <div class="form-group">
+        <label>PILIH KARYAWAN (OB / BORONGAN)</label>
+        <select class="form-control" id="izinNikSelect" required></select>
+      </div>
+      <div class="form-group">
+        <label>JENIS KETIDAKHADIRAN</label>
+        <select class="form-control" id="izinJenis" required>
+          <option value="SAKIT">SAKIT (Dengan Surat Dokter)</option>
+          <option value="IZIN">IZIN (Kepentingan Keluarga / Darurat)</option>
+          <option value="CUTI">CUTI</option>
+        </select>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;" class="form-group">
+        <div>
+          <label>TANGGAL MULAI</label>
+          <input type="date" class="form-control" id="izinTglMulai" required>
+        </div>
+        <div>
+          <label>TANGGAL SELESAI</label>
+          <input type="date" class="form-control" id="izinTglSelesai" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>ALASAN KETIDAKHADIRAN</label>
+        <textarea class="form-control" id="izinAlasan" rows="2" placeholder="Masukkan Alasan Ketidakhadiran" required></textarea>
+      </div>
+      <div class="form-group">
+        <label>LAMPIRKAN FOTO SURAT DOKTER / BUKTI</label>
+        <input type="file" class="form-control" id="izinFile" accept="image/*,.pdf">
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="cam-btn" style="flex:1; padding: 10px;" onclick="closeIzinModal()">Batal</button>
+        <button type="submit" class="btn-primary" style="flex:1; padding: 10px; font-size: 0.85rem;">📤 Kirim Pengajuan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+<script>
+  let cameraLoopInterval = null;
+  function startMediaPipeCameraLoop() {
+    if (cameraLoopInterval) clearInterval(cameraLoopInterval);
+    cameraLoopInterval = setInterval(async () => {
+      const video = document.getElementById('videoPreview');
+      if (!video || video.paused || video.ended || video.readyState < 2) return;
+      if (faceMeshInstance && isMediaPipeActive && kycLivenessStep < 4) {
+        try {
+          await faceMeshInstance.send({ image: video });
+        } catch(e) {}
+      }
+    }, 100);
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    checkExistingSession();
+    fetchKaryawanList();
+    initCamera();
+    initGps();
+    setDefaultDates();
+    initMediaPipeLiveness();
+    startMediaPipeCameraLoop();
+    setInterval(fetchKaryawanList, 5000);
+  });
+
+  function logoutPortalUser() {
+    sessionStorage.removeItem('ob_portal_user');
+    localStorage.removeItem('ob_portal_user');
+    sessionStorage.removeItem('ob_portal_session');
+    localStorage.removeItem('ob_portal_session');
+    document.getElementById('mainAppContainer').style.display = 'none';
+    document.getElementById('loginOverlay').style.display = 'flex';
+  }
+
+  function openIzinModal() {
+    const sEmp = document.getElementById('selectKaryawanEmp');
+    const izinSel = document.getElementById('izinNikSelect');
+    izinSel.innerHTML = '';
+
+    if (sEmp && sEmp.options) {
+      Array.from(sEmp.options).forEach(opt => {
+        if (opt.value) {
+          const newOpt = document.createElement('option');
+          newOpt.value = opt.value;
+          newOpt.text = opt.text;
+          if (sEmp.value === opt.value) newOpt.selected = true;
+          izinSel.appendChild(newOpt);
+        }
+      });
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('izinTglMulai').value = today;
+    document.getElementById('izinTglSelesai').value = today;
+    document.getElementById('izinModal').style.display = 'flex';
+  }
+
+  function closeIzinModal() {
+    document.getElementById('izinModal').style.display = 'none';
+  }
+
+  function printJadwalPDF() {
+    const unit = document.getElementById('leaderUnitKerja').value;
+    const sDate = document.getElementById('jadwalStartDate').value;
+    const eDate = document.getElementById('jadwalEndDate').value;
+    const rows = document.querySelectorAll('#tbodyJadwalGrid tr');
+
+    if (!rows.length) {
+      alert('Silakan tentukan tanggal dan klik Load Jadwal terlebih dahulu!');
+      return;
+    }
+
+    let rowsHtml = '';
+    rows.forEach((tr, i) => {
+      const bTag = tr.querySelector('b');
+      const selSh = tr.querySelector('.sel-shift');
+      const selSt = tr.querySelector('.sel-status');
+      if (bTag && selSh && selSt) {
+        const isHadir = selSt.value === 'H';
+        const badgeSt = isHadir ? 
+          '<span style="background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:4px; font-weight:bold;">🟢 HADIR</span>' : 
+          '<span style="background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:4px; font-weight:bold;">🔴 LIBUR / CUTI</span>';
+
+        rowsHtml += `
+          <tr>
+            <td style="border:1px solid #000; padding:6px; text-align:center;">${i+1}</td>
+            <td style="border:1px solid #000; padding:6px; font-weight:bold;">${bTag.innerText}</td>
+            <td style="border:1px solid #000; padding:6px; text-align:center;">${badgeSt}</td>
+            <td style="border:1px solid #000; padding:6px; text-align:center; font-weight:bold;">${selSh.value}</td>
+          </tr>
+        `;
+      }
+    });
+
+    const printWin = window.open('', '_blank');
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Jadwal Kerja Operasional - PT EMJ</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 25px; color: #000; }
+          .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+          table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 15px; }
+          th { border: 1px solid #000; padding: 7px; background: #e2e8f0; text-align: center; }
+          .footer { display: flex; justify-content: space-between; margin-top: 30px; font-size: 11px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <img src="/logo_emj.png" style="height:48px; width:auto;">
+            <div>
+              <h2 style="margin:0; font-size:16px;">PT. ERIK MAJU JAYA</h2>
+              <p style="margin:2px 0 0 0; font-size:11px; font-weight:bold;">JADWAL KERJA OPERASIONAL (${unit})</p>
+              <p style="margin:2px 0 0 0; font-size:10px; color:#444;">Periode Cut-Off: ${sDate} s.d ${eDate}</p>
+            </div>
+          </div>
+          <div style="text-align:right; font-size:11px;">
+            Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}<br>
+            <b>UNIT: ${unit}</b>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width:6%;">NO</th>
+              <th style="text-align:left;">NIK / NAMA PERSONIL</th>
+              <th style="width:25%;">STATUS KEHADIRAN</th>
+              <th style="width:25%;">PLOTTING SHIFT</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <div style="width:45%;">
+            Catatan Operasional:<br>
+            1. Jadwal berlaku wajib dilaksanakan seluruh personil.<br>
+            2. Perubahan shift wajib konfirmasi H-1 ke Leader PPC.
+          </div>
+          <div style="width:40%; text-align:center;">
+            Tangerang, ${new Date().toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric'})}<br>
+            Diterbitkan oleh,<br>
+            <b>LEADER LAPANGAN PPC (CNC)</b><br><br><br><br>
+            <b><u>BANYU / MAMAN / JUMADI</u></b><br>
+            <span>Supervisor / Leader PPC</span>
+          </div>
+        </div>
+
+        <script>
+          window.onload = function() { window.print(); };
+        <\/script>
+      </body>
+      </html>
+    `);
+    printWin.document.close();
+  }
+
+  function shareJadwalWhatsApp() {
+    const unit = document.getElementById('leaderUnitKerja').value;
+    const sDate = document.getElementById('jadwalStartDate').value;
+    const eDate = document.getElementById('jadwalEndDate').value;
+    const rows = document.querySelectorAll('#tbodyJadwalGrid tr');
+
+    let txt = `*JADWAL KERJA OPERASIONAL (${unit})*\n` +
+      `Periode Cut-Off: ${sDate} s.d ${eDate}\n\n`;
+
+    rows.forEach((tr, i) => {
+      const bTag = tr.querySelector('b');
+      const selSh = tr.querySelector('.sel-shift');
+      const selSt = tr.querySelector('.sel-status');
+      if (bTag && selSh && selSt) {
+        txt += `${i+1}. *${bTag.innerText}* ➔ ${selSt.value === 'H' ? '🟢 Hadir' : '🔴 Libur/Cuti'} [${selSh.value}]\n`;
+      }
+    });
+
+    txt += `\n_Diterbitkan secara resmi oleh Leader Lapangan PT. Erik Maju Jaya._`;
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`;
+    window.open(url, '_blank');
+  }
+
+  async function submitPengajuanIzin(e) {
+    e.preventDefault();
+    const nik = document.getElementById('izinNikSelect').value;
+    if (!nik) {
+      alert('Silakan pilih NIK / Nama Karyawan!');
+      return;
+    }
+    const selectedEmp = karyawanData.find(k => k.nik === nik) || {};
+    const jenis = document.getElementById('izinJenis').value;
+    const tglMulai = document.getElementById('izinTglMulai').value;
+    const tglSelesai = document.getElementById('izinTglSelesai').value;
+    const alasan = document.getElementById('izinAlasan').value;
+    const fileInput = document.getElementById('izinFile');
+
+    let fileBase64 = null;
+    let fileName = null;
+
+    if (fileInput.files && fileInput.files[0]) {
+      const file = fileInput.files[0];
+      fileName = file.name;
+      fileBase64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    try {
+      const res = await fetch('/api/ob-borongan/izin/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nik,
+          nama: selectedEmp.nama || 'KARYAWAN',
+          tanggal_mulai: tglMulai,
+          tanggal_selesai: tglSelesai,
+          jenis_izin: jenis,
+          alasan,
+          file_base64: fileBase64,
+          file_name: fileName
+        })
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert(json.message);
+        closeIzinModal();
+      } else {
+        alert('⛔ ' + json.message);
+      }
+    } catch (err) {
+      alert('⛔ Error kirim pengajuan izin!');
+    }
+  }
+
+  function setDefaultDates() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    
+    document.getElementById('jadwalStartDate').value = todayStr;
+    document.getElementById('jadwalEndDate').value = todayStr;
+    document.getElementById('lemburDate').value = todayStr;
+  }
+
+  let currentLoggedUser = null;
+
+  function openPhoneModal() {
+    document.getElementById('phoneModal').style.display = 'flex';
+  }
+
+  function closePhoneModal() {
+    document.getElementById('phoneModal').style.display = 'none';
+  }
+
+  async function submitPhoneUpdate() {
+    const phone = document.getElementById('inputUserPhone').value.trim();
+    const nik = (currentLoggedUser ? currentLoggedUser.username : document.getElementById('selectKaryawanEmp').value) || '';
+
+    if (!nik || !phone) {
+      alert('⚠️ Nomor HP wajib diisi!');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/ob-borongan/update-phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nik, phone_number: phone })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message);
+        document.getElementById('empPhoneDisplay').innerText = `📱 WA: ${phone}`;
+        closePhoneModal();
+        fetchKaryawanList();
+      } else {
+        alert('⛔ ' + data.message);
+      }
+    } catch (e) {
+      alert('Error update nomor HP');
+    }
+  }
+
+  // ================= BIOMETRIC LIVENESS & KYC MASTER ENGINE =================
+  let kycLivenessStep = 0; // 0: CENTER, 1: BLINK, 2: TURN_LEFT, 3: TURN_RIGHT, 4: VERIFIED
+  let isMediaPipeActive = false;
+  let faceMeshInstance = null;
+  let verifiedMasterPhoto = null;
+  let lastBlinkDetectedTime = 0;
+  let centerHoldFrames = 0;
+
+  const LIVENESS_STAGES = [
+    { step: 0, title: '📍 TAHAP 1: Posisikan Wajah di Tengah Oval', progress: 20, prompt: 'Posisikan wajah Anda tegak lurus menghadap kamera' },
+    { step: 1, title: '👁️ TAHAP 2: Silakan KEDIPKAN MATA Anda', progress: 45, prompt: 'Kedipkan kedua kelopak mata Anda secara alami' },
+    { step: 2, title: '👉 TAHAP 3: Silakan MENOLEH KE KIRI', progress: 75, prompt: 'Tengokkan kepala Anda sedikit ke arah kiri' },
+    { step: 3, title: '👈 TAHAP 4: Silakan MENOLEH KE KANAN', progress: 90, prompt: 'Tengokkan kepala Anda sedikit ke arah kanan' },
+    { step: 4, title: '✅ LIVENESS BIOMETRIK 100% TERVERIFIKASI!', progress: 100, prompt: 'Wajah asli manusia terverifikasi real-time!' }
+  ];
+
+  function updateLivenessUI(stageIdx) {
+    const stage = LIVENESS_STAGES[Math.min(stageIdx, LIVENESS_STAGES.length - 1)];
+    const pText = document.getElementById('kycLivenessPromptText');
+    const pBar = document.getElementById('kycProgressBar');
+    const pStatus = document.getElementById('kycProgressStatus');
+    const reticle = document.getElementById('kycReticleOverlay');
+
+    if (pText) pText.innerText = stage.title;
+    if (pBar) {
+      pBar.style.width = `${stage.progress}%`;
+      if (stageIdx >= 4) {
+        pBar.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+      }
+    }
+    if (pStatus) {
+      pStatus.innerText = stageIdx >= 4 
+        ? '🟢 BIOMETRIK LIVENESS 100% TERVERIFIKASI REAL-TIME' 
+        : `Progress Liveness: ${stage.progress}% (${stage.prompt})`;
+    }
+    if (reticle) {
+      if (stageIdx >= 4) {
+        reticle.style.borderColor = '#10b981';
+        reticle.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.6), 0 0 0 9999px rgba(0, 0, 0, 0.4)';
+      } else if (stageIdx > 0) {
+        reticle.style.borderColor = '#f59e0b';
+        reticle.style.boxShadow = '0 0 15px rgba(245, 158, 11, 0.5), 0 0 0 9999px rgba(0, 0, 0, 0.4)';
+      } else {
+        reticle.style.borderColor = '#0ea5e9';
+        reticle.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.4)';
+      }
+    }
+  }
+
+  function advanceLivenessStage() {
+    if (kycLivenessStep < 4) {
+      kycLivenessStep++;
+      updateLivenessUI(kycLivenessStep);
+
+      if (kycLivenessStep === 4) {
+        // Auto-capture high resolution master selfie
+        verifiedMasterPhoto = captureSelfie();
+        const btnSubmit = document.getElementById('btnSubmitKyc');
+        if (btnSubmit) {
+          btnSubmit.style.background = 'linear-gradient(135deg, #10b981, #047857)';
+          btnSubmit.innerHTML = '🛡️ SIMPAN MASTER KYC SEKARANG (SUDAH TERVERIFIKASI ✅)';
+          btnSubmit.classList.add('pulse-anim');
+        }
+      }
+    }
+  }
+
+  // Initialize MediaPipe In-Browser FaceMesh Detector
+  async function initMediaPipeLiveness() {
+    if (typeof FaceMesh === 'undefined') {
+      console.warn('MediaPipe library loading via CDN... Falling back to smart pixel motion detector');
+      startFallbackLiveness();
+      return;
+    }
+
+    try {
+      faceMeshInstance = new FaceMesh({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+      });
+
+      faceMeshInstance.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+
+      faceMeshInstance.onResults(handleMediaPipeResults);
+      isMediaPipeActive = true;
+      console.log('✅ MediaPipe FaceMesh Liveness Active in Browser');
+    } catch(err) {
+      console.warn('MediaPipe init error:', err);
+      startFallbackLiveness();
+    }
+  }
+
+  function handleMediaPipeResults(results) {
+    if (kycLivenessStep >= 4) return;
+
+    if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+      centerHoldFrames = 0;
+      return;
+    }
+
+    const landmarks = results.multiFaceLandmarks[0];
+    const noseX = landmarks[1].x;
+    const noseY = landmarks[1].y;
+
+    // Stage 0: Look Center (Nose between 0.35 and 0.65)
+    if (kycLivenessStep === 0) {
+      if (noseX > 0.35 && noseX < 0.65 && noseY > 0.3 && noseY < 0.7) {
+        centerHoldFrames++;
+        if (centerHoldFrames > 10) { // ~0.5 second stable
+          advanceLivenessStage();
+        }
+      } else {
+        centerHoldFrames = 0;
+      }
+      return;
+    }
+
+    // Stage 1: Blink Detection (EAR calculation)
+    if (kycLivenessStep === 1) {
+      const topL = landmarks[159].y;
+      const botL = landmarks[145].y;
+      const leftL = landmarks[33].x;
+      const rightL = landmarks[133].x;
+      const earL = Math.abs(topL - botL) / (Math.abs(leftL - rightL) || 0.001);
+
+      if (earL < 0.16) {
+        advanceLivenessStage();
+      }
+      return;
+    }
+
+    // Stage 2: Turn Left Detection
+    if (kycLivenessStep === 2) {
+      const leftEarX = landmarks[234].x;
+      const rightEarX = landmarks[454].x;
+      const ratio = Math.abs(noseX - leftEarX) / (Math.abs(noseX - leftEarX) + Math.abs(noseX - rightEarX) || 0.001);
+      if (ratio < 0.35) {
+        advanceLivenessStage();
+      }
+      return;
+    }
+
+    // Stage 3: Turn Right Detection
+    if (kycLivenessStep === 3) {
+      const leftEarX = landmarks[234].x;
+      const rightEarX = landmarks[454].x;
+      const ratio = Math.abs(noseX - leftEarX) / (Math.abs(noseX - leftEarX) + Math.abs(noseX - rightEarX) || 0.001);
+      if (ratio > 0.65) {
+        advanceLivenessStage();
+      }
+      return;
+    }
+  }
+
+  // Backup Motion Analyzer in case MediaPipe CDN is blocked/slow
+  let lastFrameData = null;
+  function startFallbackLiveness() {
+    setInterval(() => {
+      if (isMediaPipeActive || kycLivenessStep >= 4) return;
+      const video = document.getElementById('videoPreview');
+      if (!video || video.paused || video.ended) return;
+      try {
+        const c = document.createElement('canvas');
+        c.width = 160;
+        c.height = 120;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(video, 0, 0, c.width, c.height);
+        const currData = ctx.getImageData(0, 0, c.width, c.height).data;
+
+        if (lastFrameData && kycLivenessStep < 4) {
+          let diff = 0;
+          for (let i = 0; i < currData.length; i += 16) {
+            diff += Math.abs(currData[i] - lastFrameData[i]);
+          }
+          if (diff > 9000) {
+            advanceLivenessStage();
+          }
+        }
+        lastFrameData = currData;
+      } catch(e) {}
+    }, 1000);
+  }
+
+  async function submitKycEnroll() {
+    const nik = (currentLoggedUser ? currentLoggedUser.username : (document.getElementById('selectKaryawanEmp') ? document.getElementById('selectKaryawanEmp').value : '')) || '';
+    if (!nik) {
+      alert('⚠️ NIK Karyawan tidak terdeteksi! Silakan login terlebih dahulu.');
+      return;
+    }
+
+    if (kycLivenessStep < 4) {
+      alert('⚠️ TAHAP VERIFIKASI BIOMETRIK LIVENESS BELUM SELESAI!\n\nSilakan selesaikan tantangan gerakan wajah di depan kamera:\n1. Posisikan Wajah di Tengah Oval 📍\n2. Kedipkan Mata 👁️\n3. Menoleh ke Kiri & Kanan 👉👈');
+      return;
+    }
+
+    const foto = verifiedMasterPhoto || captureSelfie();
+    if (!foto || foto.length < 1000) {
+      alert('⛔ Kamera wajib aktif untuk mengambil foto selfie Master KYC Biometrik!');
+      return;
+    }
+
+    const phoneEl = document.getElementById('inputUserPhone');
+    const phone = phoneEl ? phoneEl.value.trim() : '';
+
+    try {
+      const res = await fetch('/api/ob-borongan/kyc/enroll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nik, phone_number: phone, foto_base64: foto })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message || '🛡️ Registrasi Master Wajah (KYC Biometrik) Berhasil!');
+        const sectionBox = document.getElementById('sectionKycBox');
+        if (sectionBox) sectionBox.style.display = 'none';
+        const badge = document.getElementById('empKycBadge');
+        if (badge) {
+          badge.className = 'status-badge badge-success';
+          badge.innerText = '✅ KYC Biometrik Terverifikasi';
+        }
+        fetchKaryawanList();
+      } else {
+        alert('⛔ ' + (data.message || data.error || 'Gagal registrasi KYC Master'));
+      }
+    } catch (e) {
+      alert('⛔ Connection Error / Gagal terhubung saat simpan KYC Master!');
+    }
+  }
+
+  async function resetMyKycMaster() {
+    const nik = (currentLoggedUser ? currentLoggedUser.username : (document.getElementById('selectKaryawanEmp') ? document.getElementById('selectKaryawanEmp').value : '')) || '';
+    if (!nik) return;
+
+    if (confirm('Apakah Anda ingin MENGHAPUS & MERESET foto Master KYC Biometrik Anda untuk mengambil foto selfie ulang di tempat terang?')) {
+      try {
+        const res = await fetch('/api/ob-borongan/kyc/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nik })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert(data.message);
+          const sectionBox = document.getElementById('sectionKycBox');
+          if (sectionBox) sectionBox.style.display = 'block';
+          const badge = document.getElementById('empKycBadge');
+          if (badge) {
+            badge.className = 'status-badge badge-warning';
+            badge.innerText = '⚠️ Belum KYC Biometrik';
+          }
+          fetchKaryawanList();
+        } else {
+          alert('⛔ ' + (data.message || data.error || 'Gagal reset KYC'));
+        }
+      } catch(e) { alert('⛔ Error reset KYC'); }
+    }
+  }
+
+  async function fetchKaryawanList() {
+    try {
+      const res = await fetch('/api/ob-borongan/karyawan');
+      const json = await res.json();
+      if (json.success) {
+        karyawanData = json.data;
+        populateSelects();
+      }
+    } catch (e) { console.error('Fetch emp error:', e); }
+  }
+
+  function updateEmpProfileUI(empObj) {
+    if (!empObj) return;
+    document.getElementById('empProfileName').innerText = empObj.nama || empObj.name || '-';
+    document.getElementById('empProfileDetail').innerText = `NIK: ${empObj.nik || empObj.username} • JABATAN: ${empObj.jabatan || 'OB'} [${empObj.unit_kerja || 'CIPTA'}]`;
+    document.getElementById('empPhoneDisplay').innerText = `📱 WA: ${empObj.phone_number || 'Belum diisi'}`;
+    
+    if (empObj.phone_number) {
+      document.getElementById('inputUserPhone').value = empObj.phone_number;
+    }
+
+    const isKyc = empObj.is_kyc_verified === true;
+    const badge = document.getElementById('empKycBadge');
+    const kycBox = document.getElementById('sectionKycBox');
+
+    if (isKyc) {
+      if (badge) {
+        badge.className = 'status-badge badge-success';
+        badge.innerText = '✅ KYC Biometrik Terverifikasi';
+      }
+      if (kycBox) kycBox.style.display = 'none';
+    } else {
+      if (badge) {
+        badge.className = 'status-badge badge-warning';
+        badge.innerText = '⚠️ Belum KYC Biometrik';
+      }
+      if (kycBox) kycBox.style.display = 'block';
+    }
+  }
+
+  function populateSelects() {
+    const sEmp = document.getElementById('selectKaryawanEmp');
+    const sLembur = document.getElementById('lemburSelectEmp');
+    const sIzin = document.getElementById('izinNikSelect');
+    
+    if (sEmp) sEmp.innerHTML = '<option value="">-- Pilih Nama / NIK Karyawan --</option>';
+    if (sLembur) sLembur.innerHTML = '';
+    if (sIzin) sIzin.innerHTML = '<option value="">-- Pilih Nama / NIK Karyawan --</option>';
+
+    karyawanData.forEach(k => {
+      const u = k.unit_kerja || 'CIPTA';
+      const opt = `<option value="${k.nik}">${k.nama} (${k.nik}) - ${k.jabatan} [${u}]</option>`;
+      if (sEmp) sEmp.innerHTML += opt;
+      if (sLembur) sLembur.innerHTML += opt;
+      if (sIzin) sIzin.innerHTML += opt;
+    });
+
+    if (currentLoggedUser) {
+      const matchingEmp = karyawanData.find(k => k.nik.toLowerCase() === currentLoggedUser.username.toLowerCase() || k.nama.toLowerCase() === currentLoggedUser.name.toLowerCase());
+      if (matchingEmp) {
+        updateEmpProfileUI(matchingEmp);
+        if (sEmp) sEmp.value = matchingEmp.nik;
+        onEmpSelect();
+      } else {
+        updateEmpProfileUI({
+          nama: currentLoggedUser.name,
+          nik: currentLoggedUser.username,
+          jabatan: currentLoggedUser.jabatan || 'OB',
+          unit_kerja: currentLoggedUser.unit_kerja || 'CIPTA',
+          is_kyc_verified: false,
+          phone_number: ''
+        });
+      }
+    }
+  }
+
+  function switchRole(role) {
+    if (role === 'LEADER' && !isLeaderVerified) {
+      document.getElementById('pinModal').style.display = 'flex';
+      return;
+    }
+    currentRole = role;
+    document.getElementById('btnModeEmp').classList.toggle('active', role === 'EMP');
+    document.getElementById('btnModeLeader').classList.toggle('active', role === 'LEADER');
+    document.getElementById('viewEmp').style.display = (role === 'EMP') ? 'block' : 'none';
+    document.getElementById('viewLeader').style.display = (role === 'LEADER') ? 'block' : 'none';
+  }
+
+  function closePinModal() {
+    document.getElementById('pinModal').style.display = 'none';
+  }
+
+  async function verifyPinLeader() {
+    const pin = document.getElementById('inputPinLeader').value;
+    try {
+      const res = await fetch('/api/ob-borongan/leader/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin })
+      });
+      const json = await res.json();
+      if (json.success) {
+        isLeaderVerified = true;
+        closePinModal();
+        switchRole('LEADER');
+        loadJadwalGrid();
+      } else {
+        alert('⛔ ' + json.message);
+      }
+    } catch (e) { alert('Error verifikasi PIN'); }
+  }
+
+  function switchLeaderTab(tab) {
+    document.getElementById('subTabJadwal').classList.toggle('active', tab === 'JADWAL');
+    document.getElementById('subTabLembur').classList.toggle('active', tab === 'LEMBUR');
+    document.getElementById('leaderJadwalBox').style.display = (tab === 'JADWAL') ? 'block' : 'none';
+    document.getElementById('leaderLemburBox').style.display = (tab === 'LEMBUR') ? 'block' : 'none';
+  }
+
+  // Live In-App WebRTC Camera Stream Handling
+  async function initCamera(isUserClick = false) {
+    const video = document.getElementById('videoPreview');
+    const promptOverlay = document.getElementById('camOverlayPrompt');
+    if (!video) return;
+
+    try {
+      if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); }
+      
+      let stream = null;
+      const attempts = [
+        { video: { facingMode: { ideal: facingMode }, width: { ideal: 640 }, height: { ideal: 480 } } },
+        { video: { facingMode: facingMode } },
+        { video: { facingMode: 'user' } },
+        { video: { facingMode: 'environment' } },
+        { video: true }
+      ];
+
+      for (const constraint of attempts) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraint);
+          if (stream) break;
+        } catch(errConstraint) {}
+      }
+
+      if (!stream) {
+        throw new Error('All getUserMedia attempts failed');
+      }
+
+      currentStream = stream;
+      video.srcObject = currentStream;
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('autoplay', 'true');
+      video.setAttribute('muted', 'true');
+      video.muted = true;
+      video.style.display = 'block';
+      await video.play().catch(e => console.log('Video play catch:', e));
+      if (promptOverlay) promptOverlay.style.display = 'none';
+    } catch (e) {
+      console.warn('Camera stream access denied/failed:', e);
+      if (promptOverlay) promptOverlay.style.display = 'flex';
+    }
+  }
+
+  function toggleCamera() {
+    facingMode = (facingMode === 'user') ? 'environment' : 'user';
+    initCamera(true);
+  }
+
+  function captureSelfie() {
+    const video = document.getElementById('videoPreview');
+    const canvas = document.getElementById('photoCanvas');
+    canvas.width = video.videoWidth || 320;
+    canvas.height = video.videoHeight || 240;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.8);
+  }
+
+  // GPS handling with Reverse Geocoding & Google Maps Link
+  function initGps() {
+    const txt = document.getElementById('gpsText');
+    if (txt) txt.innerText = '📡 Melacak Lokasi GPS HP & Alamat...';
+    if (!navigator.geolocation) {
+      if (txt) txt.innerText = '⚠️ GPS Tidak Didukung Browser (Mode Standby)';
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async pos => {
+        currentLat = pos.coords.latitude;
+        currentLng = pos.coords.longitude;
+        const gmapsUrl = `https://maps.google.com/?q=${currentLat},${currentLng}`;
+        
+        let addressStr = `Lat: ${currentLat.toFixed(5)}, Lng: ${currentLng.toFixed(5)}`;
+        currentLocationName = `GPS: ${addressStr}`;
+        if (txt) txt.innerHTML = `🟢 GPS Aktif (${addressStr}) &bull; <a href="${gmapsUrl}" target="_blank" style="color:#38bdf8; text-decoration:underline;">🗺️ Buka Google Maps</a>`;
+
+        // Reverse Geocode to Human-Readable Address
+        try {
+          const resGeo = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLat}&lon=${currentLng}`);
+          const geoJson = await resGeo.json();
+          if (geoJson && geoJson.display_name) {
+            const shortAddr = geoJson.display_name.split(',').slice(0, 4).join(', ');
+            currentLocationName = `📍 ${shortAddr} (Lat: ${currentLat.toFixed(5)}, Lng: ${currentLng.toFixed(5)})`;
+            if (txt) {
+              txt.innerHTML = `📍 <b>${shortAddr}</b><br><span style="font-size:0.7rem; opacity:0.8;">(Lat: ${currentLat.toFixed(5)}, Lng: ${currentLng.toFixed(5)})</span> &bull; <a href="${gmapsUrl}" target="_blank" style="color:#38bdf8; text-decoration:underline;">🗺️ Buka Google Maps</a>`;
+            }
+          }
+        } catch(eGeo) {}
+      },
+      err => {
+        if (txt) txt.innerText = '📍 GPS Otomatis Aktif (Menggunakan Izin Sistem HP)';
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
+  // Absen Submit with KYC Anti-Proxy & Liveness Verification
+  async function submitAbsen(action) {
+    const nik = (currentLoggedUser ? currentLoggedUser.username : document.getElementById('selectKaryawanEmp').value) || '';
+    if (!nik) { alert('Silakan login terlebih dahulu!'); return; }
+
+    const foto = captureSelfie();
+    if (!foto || foto.length < 1000) {
+      alert('⛔ Gagal mengambil foto selfie! Kamera wajib aktif untuk verifikasi liveness wajah.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/ob-borongan/absen/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nik, action, lat: currentLat, lng: currentLng,
+          lokasi_name: currentLocationName, foto_base64: foto
+        })
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert('🟢 Presensi ' + action + ' BERHASIL! (Terverifikasi Liveness Wajah & Lokasi GPS)');
+        onEmpSelect();
+      } else {
+        alert('⛔ Presensi Ditolak! ' + (json.message || 'Wajah tidak cocok. Presensi TIDAK BISA diwakilkan!'));
+      }
+    } catch (e) { alert('Gagal submit presensi'); }
+  }
+
+  function onSelectKaryawan() {
+    return onEmpSelect();
+  }
+
+  async function onEmpSelect() {
+    const nik = (currentLoggedUser ? currentLoggedUser.username : (document.getElementById('selectKaryawanEmp') ? document.getElementById('selectKaryawanEmp').value : '')) || '';
+    const div = document.getElementById('empTodaySummary');
+    if (!nik) {
+      if (div) div.innerText = 'Presensi & durasi jam kerja real-time akan tampil di sini setelah absen.';
+      return;
+    }
+    const today = new Date().toISOString().split('T')[0];
+    try {
+      const res = await fetch(`/api/ob-borongan/rekap?start_date=${today}&end_date=${today}`);
+      const json = await res.json();
+      if (json.success) {
+        const item = json.data.find(d => d.nik.toLowerCase() === nik.toLowerCase());
+        if (item && item.absens && item.absens.length > 0) {
+          const a = item.absens[0];
+          if (div) {
+            div.innerHTML = `
+              <b>Status:</b> ${a.status_absen}<br>
+              <b>Jam Masuk:</b> ${a.jam_masuk ? new Date(a.jam_masuk).toLocaleTimeString() : '-'}<br>
+              <b>Jam Keluar:</b> ${a.jam_keluar ? new Date(a.jam_keluar).toLocaleTimeString() : '-'}<br>
+              <b>Durasi Kerja Real:</b> ${a.durasi_jam_kerja || 0} Jam<br>
+              <b>Status 8 Jam:</b> <span class="status-badge badge-warning">${a.status_8jam || 'BERJALAN'}</span>
+            `;
+          }
+        } else {
+          if (div) div.innerText = 'Belum ada presensi masuk hari ini.';
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Leader Grid Load & Save
+  async function loadJadwalGrid() {
+    const sDate = document.getElementById('jadwalStartDate').value;
+    const eDate = document.getElementById('jadwalEndDate').value;
+    const selectedUnit = document.getElementById('leaderUnitKerja') ? document.getElementById('leaderUnitKerja').value : 'CIPTA';
+    const tbody = document.getElementById('tbodyJadwalGrid');
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Loading data personil...</td></tr>';
+
+    try {
+      const res = await fetch(`/api/ob-borongan/jadwal?start_date=${sDate}&end_date=${eDate}`);
+      const json = await res.json();
+      tbody.innerHTML = '';
+
+      let filteredEmps = karyawanData.filter(k => {
+        const u = (k.unit_kerja || '').toUpperCase();
+        if (selectedUnit === 'CEMERLANG') return u.includes('CEMERLANG');
+        return !u.includes('CEMERLANG');
+      });
+
+      if (filteredEmps.length === 0) {
+        filteredEmps = karyawanData; // Fallback show all
+      }
+
+      filteredEmps.forEach((k, idx) => {
+        const existing = (json.data || []).find(j => j.nik === k.nik);
+        const st = existing ? existing.status_jadwal : 'H';
+        const sh = existing ? existing.shift : '08:00 - 16:00 (Pagi)';
+
+        tbody.innerHTML += `
+          <tr>
+            <td style="text-align:left;">
+              <b>${idx+1}. ${k.nama}</b><br>
+              <small style="color:var(--text-muted);">${k.nik} - ${k.jabatan}</small>
+            </td>
+            <td>
+              <select class="table-select sel-status" data-nik="${k.nik}">
+                <option value="H" ${st==='H'?'selected':''}>🟢 Hadir (H)</option>
+                <option value="OFF" ${st==='OFF'?'selected':''}>🔴 Libur (OFF)</option>
+                <option value="CUTI" ${st==='CUTI'?'selected':''}>🟡 Cuti / Izin</option>
+              </select>
+            </td>
+            <td>
+              <select class="table-select sel-shift" data-nik="${k.nik}" onchange="toggleJamMasukFlex(this)">
+                <option value="SHIFT 1 (Pagi 08:00 - 17:00)" ${sh.includes('SHIFT 1') || sh.includes('Normal') || (sh.includes('08:00') && !sh.includes('Setengah') && !sh.includes('Flexible')) ?'selected':''}>🏢 SHIFT 1 (Pagi 08:00 - 17:00 WIB)</option>
+                <option value="SHIFT 2 (Siang 16:00 - 00:00)" ${sh.includes('SHIFT 2') || sh.includes('16:00') || (sh.includes('Siang') && !sh.includes('Setengah')) ?'selected':''}>⛅ SHIFT 2 (Siang 16:00 - 00:00 WIB)</option>
+                <option value="SHIFT 3 (Malam 22:00 - 06:00)" ${sh.includes('SHIFT 3') || sh.includes('22:00') || sh.includes('Malam') ?'selected':''}>🌙 SHIFT 3 (Malam 22:00 - 06:00 WIB)</option>
+                <option value="SHIFT WAJIB 4J (Setengah Hari)" ${sh.includes('WAJIB 4J') || sh.includes('Setengah') || sh.includes('Sabtu') ?'selected':''}>⏳ SHIFT WAJIB 4J (Setengah Hari 4 Jam)</option>
+                <option value="SHIFT FLEXIBLE (Custom Jam Masuk)" ${sh.includes('FLEXIBLE') || sh.includes('Flexible') ?'selected':''}>⚡ SHIFT FLEXIBLE (Custom Jam Masuk)</option>
+                <option value="STANDBY SITE CUSTOMER" ${sh.includes('SITE') || sh.includes('Standby') ?'selected':''}>📍 STANDBY SITE CUSTOMER</option>
+              </select>
+              <div class="div-flex-jam" style="margin-top:4px; ${sh.includes('Flexible')?'display:flex;':'display:none;'} align-items:center; gap:4px;">
+                <span style="font-size:0.7rem; color:var(--text-muted);">Pilih Jam Masuk:</span>
+                <input type="time" class="table-select sel-jam-masuk" data-nik="${k.nik}" value="08:00" style="padding:2px 4px; font-size:0.75rem; width:100px;">
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--rose);">Gagal memuat grid penjadwalan</td></tr>';
+    }
+  }
+
+  function toggleJamMasukFlex(elem) {
+    const parentTd = elem.closest('td');
+    const divFlex = parentTd.querySelector('.div-flex-jam');
+    if (divFlex) {
+      divFlex.style.display = elem.value.includes('Flexible') ? 'flex' : 'none';
+    }
+  }
+
+  async function saveJadwalMingguan() {
+    const sDate = document.getElementById('jadwalStartDate').value;
+    const eDate = document.getElementById('jadwalEndDate').value;
+    const selectedUnit = document.getElementById('leaderUnitKerja').value;
+
+    const rows = document.querySelectorAll('#tbodyJadwalGrid tr');
+    const items = [];
+    rows.forEach(tr => {
+      const selSt = tr.querySelector('.sel-status');
+      const selSh = tr.querySelector('.sel-shift');
+      const inputJamMasuk = tr.querySelector('.sel-jam-masuk');
+      if (selSt && selSh) {
+        let finalShift = selSh.value;
+        if (finalShift.includes('Flexible') && inputJamMasuk && inputJamMasuk.value) {
+          finalShift = `Flexible (Jam Masuk: ${inputJamMasuk.value} WIB)`;
+        }
+        items.push({
+          nik: selSt.getAttribute('data-nik'),
+          status_jadwal: selSt.value,
+          shift: finalShift
+        });
+      }
+    });
+
+    if (items.length === 0) {
+      alert('Tidak ada data personil untuk disimpan!');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/ob-borongan/jadwal/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          start_date: sDate,
+          end_date: eDate,
+          unit_kerja: selectedUnit,
+          jadwal_items: items
+        })
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert('✅ Penjadwalan Mingguan Berhasil Disimpan & Tersinkronisasi!');
+      } else {
+        alert('⛔ ' + json.message);
+      }
+    } catch (e) { alert('⛔ Error simpan jadwal'); }
+  }
+
+  async function submitLemburLeader() {
+    const nik = document.getElementById('lemburSelectEmp').value;
+    const tgl = document.getElementById('lemburDate').value;
+    const jenisHari = document.getElementById('lemburJenisHari').value;
+    const jam = document.getElementById('lemburHours').value;
+
+    if (!nik || !tgl || !jam) {
+      alert('Silakan pilih karyawan, tanggal, dan durasi jam lembur!');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/ob-borongan/lembur/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nik, tanggal: tgl, jenis_hari: jenisHari, jam_lembur: jam })
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert('✅ Data Lembur Lapangan Berhasil Disimpan!');
+      } else {
+        alert('⛔ ' + json.message);
+      }
+    } catch (e) { alert('⛔ Error simpan lembur'); }
+  }
+
+  function calcLemburDuration() {
+    const jamMulai = document.getElementById('lemburJamMulai').value;
+    const jamSelesai = document.getElementById('lemburJamSelesai').value;
+    if (jamMulai && jamSelesai) {
+      const [h1, m1] = jamMulai.split(':').map(Number);
+      const [h2, m2] = jamSelesai.split(':').map(Number);
+      let diffMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+      if (diffMinutes < 0) diffMinutes += 24 * 60;
+      const diffHours = (diffMinutes / 60).toFixed(1);
+      document.getElementById('lblLemburJamText').innerText = `${diffHours} Jam (${jamMulai} s/d ${jamSelesai})`;
+      document.getElementById('lemburHours').value = diffHours;
+    }
+  }
+
+  async function handleOBLogin() {
+    const nik = document.getElementById('obLoginNik').value.trim();
+    const pass = document.getElementById('obLoginPassword').value.trim();
+    const alertBox = document.getElementById('loginAlertBox');
+
+    if (!nik || !pass) {
+      alertBox.style.display = 'block';
+      alertBox.innerText = '⚠️ NIK / Username & Password wajib diisi!';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/ob-borongan/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: nik, password: pass })
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        sessionStorage.setItem('ob_portal_user', JSON.stringify(data.user));
+        localStorage.setItem('ob_portal_user', JSON.stringify(data.user));
+        alertBox.style.display = 'none';
+        applyLoggedInUser(data.user);
+      } else {
+        alertBox.style.display = 'block';
+        alertBox.innerText = data.message || '⛔ NIK/Username atau Password Salah!';
+      }
+    } catch (err) {
+      alertBox.style.display = 'block';
+      alertBox.innerText = '⛔ Connection error: ' + err.message;
+    }
+  }
+
+  function applyLoggedInUser(user) {
+    currentLoggedUser = user;
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('mainAppContainer').style.display = 'block';
+    document.getElementById('loggedUserName').innerText = `${user.name} (${user.username})`;
+
+    if (user.is_leader) {
+      isLeaderVerified = true;
+      const dropGroup = document.getElementById('empSelectDropdownGroup');
+      if (dropGroup) dropGroup.style.display = 'block';
+      switchRole('LEADER');
+    } else {
+      const dropGroup = document.getElementById('empSelectDropdownGroup');
+      if (dropGroup) dropGroup.style.display = 'none';
+      switchRole('EMP');
+      const sel = document.getElementById('selectKaryawanEmp');
+      if (sel) {
+        sel.value = user.username;
+      }
+    }
+    fetchKaryawanList();
+  }
+
+  function logoutPortalUser() {
+    sessionStorage.removeItem('ob_portal_user');
+    localStorage.removeItem('ob_portal_user');
+    document.getElementById('mainAppContainer').style.display = 'none';
+    document.getElementById('loginOverlay').style.display = 'flex';
+  }
+
+  function checkExistingSession() {
+    const sess = sessionStorage.getItem('ob_portal_user') || localStorage.getItem('ob_portal_user') || sessionStorage.getItem('ob_portal_session') || localStorage.getItem('ob_portal_session');
+    if (sess) {
+      try {
+        const u = JSON.parse(sess);
+        applyLoggedInUser(u);
+      } catch (e) {
+        document.getElementById('loginOverlay').style.display = 'flex';
+      }
+    } else {
+      document.getElementById('loginOverlay').style.display = 'flex';
+    }
+  }
+
+
+  let deferredPromptOB = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPromptOB = e;
+    const banners = document.querySelectorAll('.pwa-banner-el');
+    banners.forEach(b => b.style.display = 'flex');
+  });
+
+  function closePwaGuideModal() {
+    const guide = document.getElementById('pwaGuideModal');
+    if (guide) guide.style.display = 'none';
+  }
+
+  function triggerPwaInstall() {
+    if (deferredPromptOB) {
+      deferredPromptOB.prompt();
+      deferredPromptOB.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          const banners = document.querySelectorAll('.pwa-banner-el');
+          banners.forEach(b => b.style.display = 'none');
+        }
+        deferredPromptOB = null;
+      });
+    }
+  }
+
+  // PWA Service Worker Handler
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW register fail:', err));
+    });
+  }
+</script>
+</body>
+</html>

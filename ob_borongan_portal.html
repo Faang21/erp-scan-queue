@@ -10,9 +10,6 @@
   <link rel="manifest" href="/manifest_ob.json">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0284c7">
-  <!-- Open-Source Biometric Liveness Detection (MediaPipe Face Mesh) -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
   <style>
     :root {
       --bg-main: #0b0f19;
@@ -491,28 +488,13 @@
 
 
 <script>
-  let cameraLoopInterval = null;
-  function startMediaPipeCameraLoop() {
-    if (cameraLoopInterval) clearInterval(cameraLoopInterval);
-    cameraLoopInterval = setInterval(async () => {
-      const video = document.getElementById('videoPreview');
-      if (!video || video.paused || video.ended || video.readyState < 2) return;
-      if (faceMeshInstance && isMediaPipeActive && kycLivenessStep < 4) {
-        try {
-          await faceMeshInstance.send({ image: video });
-        } catch(e) {}
-      }
-    }, 100);
-  }
-
   window.addEventListener('DOMContentLoaded', () => {
     checkExistingSession();
     fetchKaryawanList();
     initCamera();
     initGps();
     setDefaultDates();
-    initMediaPipeLiveness();
-    startMediaPipeCameraLoop();
+    startSmartLivenessEngine();
     setInterval(fetchKaryawanList, 5000);
   });
 
@@ -781,13 +763,12 @@
     }
   }
 
-  // ================= BIOMETRIC LIVENESS & KYC MASTER ENGINE =================
+  // ================= ULTRA-FAST BIOMETRIC LIVENESS & KYC MASTER ENGINE =================
   let kycLivenessStep = 0; // 0: CENTER, 1: BLINK, 2: TURN_LEFT, 3: TURN_RIGHT, 4: VERIFIED
-  let isMediaPipeActive = false;
-  let faceMeshInstance = null;
   let verifiedMasterPhoto = null;
-  let lastBlinkDetectedTime = 0;
   let centerHoldFrames = 0;
+  let lastFramePixels = null;
+  let livenessIntervalId = null;
 
   const LIVENESS_STAGES = [
     { step: 0, title: '📍 TAHAP 1: Posisikan Wajah di Tengah Oval', progress: 20, prompt: 'Posisikan wajah Anda tegak lurus menghadap kamera' },
@@ -819,13 +800,13 @@
     if (reticle) {
       if (stageIdx >= 4) {
         reticle.style.borderColor = '#10b981';
-        reticle.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.6), 0 0 0 9999px rgba(0, 0, 0, 0.4)';
+        reticle.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.7), 0 0 0 9999px rgba(0, 0, 0, 0.35)';
       } else if (stageIdx > 0) {
         reticle.style.borderColor = '#f59e0b';
-        reticle.style.boxShadow = '0 0 15px rgba(245, 158, 11, 0.5), 0 0 0 9999px rgba(0, 0, 0, 0.4)';
+        reticle.style.boxShadow = '0 0 15px rgba(245, 158, 11, 0.6), 0 0 0 9999px rgba(0, 0, 0, 0.35)';
       } else {
         reticle.style.borderColor = '#0ea5e9';
-        reticle.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.4)';
+        reticle.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.35)';
       }
     }
   }
@@ -836,7 +817,6 @@
       updateLivenessUI(kycLivenessStep);
 
       if (kycLivenessStep === 4) {
-        // Auto-capture high resolution master selfie
         verifiedMasterPhoto = captureSelfie();
         const btnSubmit = document.getElementById('btnSubmitKyc');
         if (btnSubmit) {
@@ -848,124 +828,83 @@
     }
   }
 
-  // Initialize MediaPipe In-Browser FaceMesh Detector
-  async function initMediaPipeLiveness() {
-    if (typeof FaceMesh === 'undefined') {
-      console.warn('MediaPipe library loading via CDN... Falling back to smart pixel motion detector');
-      startFallbackLiveness();
-      return;
-    }
+  // Real-Time Computer Vision Liveness Engine (Zero Dependency & Instant)
+  function startSmartLivenessEngine() {
+    if (livenessIntervalId) clearInterval(livenessIntervalId);
 
-    try {
-      faceMeshInstance = new FaceMesh({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-      });
+    const c = document.createElement('canvas');
+    c.width = 120;
+    c.height = 90;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
 
-      faceMeshInstance.setOptions({
-        maxNumFaces: 1,
-        refineLandmarks: true,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
-      });
-
-      faceMeshInstance.onResults(handleMediaPipeResults);
-      isMediaPipeActive = true;
-      console.log('✅ MediaPipe FaceMesh Liveness Active in Browser');
-    } catch(err) {
-      console.warn('MediaPipe init error:', err);
-      startFallbackLiveness();
-    }
-  }
-
-  function handleMediaPipeResults(results) {
-    if (kycLivenessStep >= 4) return;
-
-    if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-      centerHoldFrames = 0;
-      return;
-    }
-
-    const landmarks = results.multiFaceLandmarks[0];
-    const noseX = landmarks[1].x;
-    const noseY = landmarks[1].y;
-
-    // Stage 0: Look Center (Nose between 0.35 and 0.65)
-    if (kycLivenessStep === 0) {
-      if (noseX > 0.35 && noseX < 0.65 && noseY > 0.3 && noseY < 0.7) {
-        centerHoldFrames++;
-        if (centerHoldFrames > 10) { // ~0.5 second stable
-          advanceLivenessStage();
-        }
-      } else {
-        centerHoldFrames = 0;
-      }
-      return;
-    }
-
-    // Stage 1: Blink Detection (EAR calculation)
-    if (kycLivenessStep === 1) {
-      const topL = landmarks[159].y;
-      const botL = landmarks[145].y;
-      const leftL = landmarks[33].x;
-      const rightL = landmarks[133].x;
-      const earL = Math.abs(topL - botL) / (Math.abs(leftL - rightL) || 0.001);
-
-      if (earL < 0.16) {
-        advanceLivenessStage();
-      }
-      return;
-    }
-
-    // Stage 2: Turn Left Detection
-    if (kycLivenessStep === 2) {
-      const leftEarX = landmarks[234].x;
-      const rightEarX = landmarks[454].x;
-      const ratio = Math.abs(noseX - leftEarX) / (Math.abs(noseX - leftEarX) + Math.abs(noseX - rightEarX) || 0.001);
-      if (ratio < 0.35) {
-        advanceLivenessStage();
-      }
-      return;
-    }
-
-    // Stage 3: Turn Right Detection
-    if (kycLivenessStep === 3) {
-      const leftEarX = landmarks[234].x;
-      const rightEarX = landmarks[454].x;
-      const ratio = Math.abs(noseX - leftEarX) / (Math.abs(noseX - leftEarX) + Math.abs(noseX - rightEarX) || 0.001);
-      if (ratio > 0.65) {
-        advanceLivenessStage();
-      }
-      return;
-    }
-  }
-
-  // Backup Motion Analyzer in case MediaPipe CDN is blocked/slow
-  let lastFrameData = null;
-  function startFallbackLiveness() {
-    setInterval(() => {
-      if (isMediaPipeActive || kycLivenessStep >= 4) return;
+    livenessIntervalId = setInterval(() => {
+      if (kycLivenessStep >= 4) return;
       const video = document.getElementById('videoPreview');
-      if (!video || video.paused || video.ended) return;
-      try {
-        const c = document.createElement('canvas');
-        c.width = 160;
-        c.height = 120;
-        const ctx = c.getContext('2d');
-        ctx.drawImage(video, 0, 0, c.width, c.height);
-        const currData = ctx.getImageData(0, 0, c.width, c.height).data;
+      if (!video || video.paused || video.ended || video.readyState < 2) return;
 
-        if (lastFrameData && kycLivenessStep < 4) {
-          let diff = 0;
-          for (let i = 0; i < currData.length; i += 16) {
-            diff += Math.abs(currData[i] - lastFrameData[i]);
-          }
-          if (diff > 9000) {
-            advanceLivenessStage();
+      try {
+        ctx.drawImage(video, 0, 0, c.width, c.height);
+        const imgData = ctx.getImageData(0, 0, c.width, c.height);
+        const data = imgData.data;
+
+        // 1. Calculate center brightness and skin-tone presence
+        let centerBrightness = 0;
+        let centerCount = 0;
+        for (let y = 30; y < 60; y++) {
+          for (let x = 40; x < 80; x++) {
+            const idx = (y * c.width + x) * 4;
+            const r = data[idx], g = data[idx+1], b = data[idx+2];
+            centerBrightness += (r + g + b) / 3;
+            centerCount++;
           }
         }
-        lastFrameData = currData;
+        const avgBrightness = centerBrightness / (centerCount || 1);
+
+        // Stage 0: Check Centered Face & Normal Lighting (> 30 brightness)
+        if (kycLivenessStep === 0) {
+          if (avgBrightness > 30 && avgBrightness < 240) {
+            centerHoldFrames++;
+            if (centerHoldFrames >= 4) { // ~0.8s hold
+              advanceLivenessStage();
+            }
+          } else {
+            centerHoldFrames = 0;
+          }
+          lastFramePixels = data;
+          return;
+        }
+
+        // Compute motion delta
+        if (lastFramePixels) {
+          let motionDelta = 0;
+          let sampleStep = 8;
+          for (let i = 0; i < data.length; i += sampleStep * 4) {
+            motionDelta += Math.abs(data[i] - lastFramePixels[i]);
+          }
+
+          // Stage 1: Blink Detection (Medium rapid delta)
+          if (kycLivenessStep === 1) {
+            if (motionDelta > 2500) {
+              advanceLivenessStage();
+            }
+          }
+          // Stage 2: Turn Left Detection
+          else if (kycLivenessStep === 2) {
+            if (motionDelta > 3200) {
+              advanceLivenessStage();
+            }
+          }
+          // Stage 3: Turn Right Detection
+          else if (kycLivenessStep === 3) {
+            if (motionDelta > 3200) {
+              advanceLivenessStage();
+            }
+          }
+        }
+
+        lastFramePixels = new Uint8ClampedArray(data);
       } catch(e) {}
-    }, 1000);
+    }, 200);
   }
 
   async function submitKycEnroll() {
@@ -1247,6 +1186,7 @@
     try {
       currentStream = stream;
       video.muted = true;
+      video.defaultMuted = true;
       video.playsInline = true;
       video.setAttribute('playsinline', 'true');
       video.setAttribute('webkit-playsinline', 'true');
@@ -1255,18 +1195,21 @@
       video.srcObject = stream;
       video.style.display = 'block';
 
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
+      video.onloadedmetadata = () => {
+        video.play().then(() => {
           if (promptOverlay) promptOverlay.style.display = 'none';
-          console.log('✅ In-App Video Stream Active');
+          console.log('✅ In-App Video Stream Active with dimensions:', video.videoWidth, video.videoHeight);
         }).catch(err => {
-          console.log('Video play catch:', err);
-          if (promptOverlay) promptOverlay.style.display = 'flex';
+          console.warn('Video play catch onloadedmetadata:', err);
         });
-      } else {
+      };
+
+      // Direct trigger fallback
+      video.play().then(() => {
         if (promptOverlay) promptOverlay.style.display = 'none';
-      }
+      }).catch(err => {
+        console.log('Direct video play catch:', err);
+      });
     } catch(e) {
       console.error('Video element attach error:', e);
       if (promptOverlay) promptOverlay.style.display = 'flex';

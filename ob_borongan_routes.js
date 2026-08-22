@@ -370,14 +370,27 @@ module.exports = function(pool) {
         return res.status(400).json({ success: false, message: '⛔ Foto Selfie Wajah Live wajib diambil untuk Master KYC Biometrik!' });
       }
 
-      await pool.query(`
+      const updateRes = await pool.query(`
         UPDATE ob_borongan_karyawan
         SET phone_number = COALESCE(NULLIF($1, ''), phone_number),
             foto_kyc_master = $2,
             is_kyc_verified = TRUE,
             kyc_verified_at = CURRENT_TIMESTAMP
-        WHERE LOWER(nik) = $3;
+        WHERE LOWER(nik) = $3 OR LOWER(nama) = $3;
       `, [phone_number || '', foto_base64, cleanNik]);
+
+      // If user wasn't in ob_borongan_karyawan yet (e.g. aang.js or admin user), insert them
+      if (updateRes.rowCount === 0) {
+        await pool.query(`
+          INSERT INTO ob_borongan_karyawan (nik, nama, jk, bagian, jabatan, jenis_karyawan, is_leader, pin, phone_number, foto_kyc_master, is_kyc_verified, kyc_verified_at)
+          VALUES ($1, $2, 'L', 'MANAGEMENT', 'ADMIN', 'OB', TRUE, '1234', $3, $4, TRUE, CURRENT_TIMESTAMP)
+          ON CONFLICT (nik) DO UPDATE SET 
+            foto_kyc_master = EXCLUDED.foto_kyc_master,
+            is_kyc_verified = TRUE,
+            kyc_verified_at = CURRENT_TIMESTAMP,
+            phone_number = COALESCE(NULLIF(EXCLUDED.phone_number, ''), ob_borongan_karyawan.phone_number);
+        `, [nik, nik.toUpperCase(), phone_number || '', foto_base64]);
+      }
 
       res.json({ success: true, message: '🛡️ Registrasi Master Wajah (KYC Biometrik) Berhasil Terverifikasi! Anda sekarang dapat melakukan Absen Masuk/Pulang Harian.' });
     } catch (err) {

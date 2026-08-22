@@ -1069,83 +1069,62 @@
         }
 
         // ============================================================
-        // STAGE 2: Toleh Kiri — wajah harus bergerak ke kiri nyata
+        // STAGE 2: Toleh Kiri — gerakkan kepala ke kiri
         // ============================================================
         else if (kycLivenessStep === 2) {
           stageTimerEl.style.color = '#f97316';
-          // Normalisasi: hitung per-pixel average bukan total
-          const leftPx = 55 * 120; // jumlah pixel sisi kiri
-          const rightPx = 55 * 120; // jumlah pixel sisi kanan
-          const leftAvg = leftMotion / leftPx;
-          const rightAvg = rightMotion / rightPx;
-          const asymmetry = rightAvg - leftAvg; // positif = sisi kanan lebih bergerak = toleh kiri
-          const isMovingLeft = asymmetry > 0.8 && fullMotion > 1.5;
+          const isMoving = fullMotion > 2.0;
 
-          stageTimerEl.innerText = isMovingLeft
-            ? `👉 Terus menoleh kiri! (${consecutiveMotion}/5)`
-            : `👉 TOLEH KIRI (asym: ${asymmetry.toFixed(2)})`;
-
-          if (isMovingLeft) {
+          if (isMoving) {
             consecutiveMotion++;
-            if (consecutiveMotion >= 5) {
+            stageTimerEl.innerText = `👉 Bagus, terus toleh kiri! (${consecutiveMotion}/6)`;
+            if (consecutiveMotion >= 6) {
               stageStartTime = Date.now();
               consecutiveMotion = 0;
               lastFramePixels = null;
               advanceLivenessStage();
             }
-          } else if (fullMotion < 0.5) {
-            consecutiveMotion = Math.max(0, consecutiveMotion - 1);
+          } else {
+            stageTimerEl.innerText = `👉 Toleh kepala ke KIRI pelan-pelan (motion: ${fullMotion.toFixed(2)})`;
+            if (fullMotion < 0.3) consecutiveMotion = Math.max(0, consecutiveMotion - 1);
           }
 
-          // Auto-advance setelah 15 detik jika tidak terdeteksi
-          if (elapsed >= 15) {
-            stageStartTime = Date.now();
-            consecutiveMotion = 0;
-            lastFramePixels = null;
+          if (elapsed >= 12) {
+            stageStartTime = Date.now(); consecutiveMotion = 0; lastFramePixels = null;
             advanceLivenessStage();
           }
         }
 
         // ============================================================
-        // STAGE 3: Toleh Kanan — wajah harus bergerak ke kanan nyata
+        // STAGE 3: Toleh Kanan — gerakkan kepala ke kanan
         // ============================================================
         else if (kycLivenessStep === 3) {
           stageTimerEl.style.color = '#a78bfa';
-          const leftPx = 55 * 120;
-          const rightPx = 55 * 120;
-          const leftAvg = leftMotion / leftPx;
-          const rightAvg = rightMotion / rightPx;
-          const asymmetry = leftAvg - rightAvg; // positif = sisi kiri lebih bergerak = toleh kanan
-          const isMovingRight = asymmetry > 0.8 && fullMotion > 1.5;
+          const isMoving = fullMotion > 2.0;
 
-          stageTimerEl.innerText = isMovingRight
-            ? `👈 Terus menoleh kanan! (${consecutiveMotion}/5)`
-            : `👈 TOLEH KANAN (asym: ${asymmetry.toFixed(2)})`;
-
-          if (isMovingRight) {
+          if (isMoving) {
             consecutiveMotion++;
-            if (consecutiveMotion >= 5) {
+            stageTimerEl.innerText = `👈 Bagus, terus toleh kanan! (${consecutiveMotion}/6)`;
+            if (consecutiveMotion >= 6) {
               stageStartTime = Date.now();
               consecutiveMotion = 0;
               lastFramePixels = null;
               advanceLivenessStage();
             }
-          } else if (fullMotion < 0.5) {
-            consecutiveMotion = Math.max(0, consecutiveMotion - 1);
+          } else {
+            stageTimerEl.innerText = `👈 Toleh kepala ke KANAN pelan-pelan (motion: ${fullMotion.toFixed(2)})`;
+            if (fullMotion < 0.3) consecutiveMotion = Math.max(0, consecutiveMotion - 1);
           }
 
-          // Auto-advance setelah 15 detik jika tidak terdeteksi
-          if (elapsed >= 15) {
-            stageStartTime = Date.now();
-            consecutiveMotion = 0;
-            lastFramePixels = null;
+          if (elapsed >= 12) {
+            stageStartTime = Date.now(); consecutiveMotion = 0; lastFramePixels = null;
             advanceLivenessStage();
           }
         }
 
         lastFramePixels = new Uint8ClampedArray(data);
       } catch(e) { console.warn('Liveness error:', e); }
-    }, 120); // ~8 fps analisis
+    }, 120);
   }
 
   async function submitKycEnroll() {
@@ -1191,6 +1170,9 @@
 
         // Tutup modal KYC setelah 2 detik, hentikan stream KYC
         setTimeout(() => {
+          // Set flag agar fetchKaryawanList tidak reset KYC banner
+          kycJustVerified = true;
+
           // Tutup modal dan hentikan stream KYC
           closeKycModal();
 
@@ -1262,34 +1244,36 @@
     } catch (e) { console.error('Fetch emp error:', e); }
   }
 
+  let kycJustVerified = false; // flag agar fetchKaryawanList tidak reset KYC box setelah save
+
   function updateEmpProfileUI(empObj) {
     if (!empObj) return;
     document.getElementById('empProfileName').innerText = empObj.nama || empObj.name || '-';
     document.getElementById('empProfileDetail').innerText = `NIK: ${empObj.nik || empObj.username} • JABATAN: ${empObj.jabatan || 'OB'} [${empObj.unit_kerja || 'CIPTA'}]`;
     document.getElementById('empPhoneDisplay').innerText = `📱 WA: ${empObj.phone_number || 'Belum diisi'}`;
-    
+
     if (empObj.phone_number) {
       document.getElementById('inputUserPhone').value = empObj.phone_number;
     }
 
-    const isKyc = empObj.is_kyc_verified === true;
+    const isKyc = empObj.is_kyc_verified === true || kycJustVerified;
     const badge = document.getElementById('empKycBadge');
     const kycBox = document.getElementById('sectionKycBox');
 
     if (isKyc) {
-      if (badge) {
-        badge.className = 'status-badge badge-success';
-        badge.innerText = '✅ KYC Biometrik Terverifikasi';
-      }
+      if (badge) { badge.className = 'status-badge badge-success'; badge.innerText = '✅ KYC Biometrik Terverifikasi'; }
       if (kycBox) kycBox.style.display = 'none';
+      const btnMasuk = document.getElementById('btnAbsenMasuk');
+      const btnPulang = document.getElementById('btnAbsenPulang');
+      if (btnMasuk) { btnMasuk.disabled = false; btnMasuk.style.opacity = '1'; }
+      if (btnPulang) { btnPulang.disabled = false; btnPulang.style.opacity = '1'; }
     } else {
-      if (badge) {
-        badge.className = 'status-badge badge-warning';
-        badge.innerText = '⚠️ Belum KYC Biometrik';
-      }
+      if (badge) { badge.className = 'status-badge badge-warning'; badge.innerText = '⚠️ Belum KYC Biometrik'; }
       if (kycBox) kycBox.style.display = 'block';
     }
   }
+
+
 
   function populateSelects() {
     const sEmp = document.getElementById('selectKaryawanEmp');

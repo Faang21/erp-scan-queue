@@ -131,6 +131,75 @@
         display: none !important;
       }
     }
+    /* ── MOBILE RESPONSIVE FIXES ── */
+
+    /* Global: hanya cegah scroll horizontal - aman untuk semua ukuran layar */
+    html, body {
+      overflow-x: hidden !important;
+      max-width: 100vw !important;
+    }
+
+    /* Desktop: tabel header tetap nowrap agar tidak pecah */
+    .table th {
+      white-space: nowrap;
+    }
+
+    /* ── MOBILE ONLY (max 768px) ── */
+    @media (max-width: 768px) {
+      /* Teks panjang wrap di HP - hanya aktif di mobile */
+      body, .card-custom, .alert, .modal-body, .modal-content,
+      .btn, p, span, div, label, td {
+        word-break: break-word;
+        overflow-wrap: break-word;
+      }
+
+      /* Navbar: judul lebih kecil */
+      .navbar-brand span {
+        font-size: 12px;
+        white-space: normal;
+        line-height: 1.2;
+        max-width: 55vw;
+      }
+
+      /* Badge status wrap di HP */
+      .badge-status-draft, .badge-status-wait-exit,
+      .badge-status-berangkat, .badge-status-wait-in,
+      .badge-status-selesai {
+        white-space: normal !important;
+        text-align: center;
+        display: inline-block;
+        max-width: 100%;
+        font-size: 10px !important;
+      }
+
+      /* Container padding lebih sempit */
+      .container { padding-left: 8px !important; padding-right: 8px !important; }
+
+      /* Form input font */
+      .form-control-bright, .form-select-bright { font-size: 14px; padding: 10px 12px; }
+
+      /* Heading kecil */
+      h4, h5 { font-size: 1rem !important; }
+      .fs-3 { font-size: 1.3rem !important; }
+
+      /* Navbar button group: wrap ke bawah */
+      #navUserBar { flex-wrap: wrap !important; gap: 4px !important; justify-content: flex-end; }
+      #navUserBar .btn, #navUserBar .badge { font-size: 11px !important; padding: 4px 8px !important; }
+
+      /* Modal full width */
+      .modal-dialog { margin: 8px !important; }
+
+      /* Alert */
+      .alert { font-size: 13px; }
+
+      /* GPS warning box wrap */
+      #gpsWarningAlert .d-flex { flex-wrap: wrap; }
+
+      /* Tabel di HP: scroll horizontal, font kecil */
+      .table { font-size: 11px !important; }
+      .table th, .table td { padding: 4px 6px !important; }
+      .table-responsive { -webkit-overflow-scrolling: touch; }
+    }
   </style>
 </head>
 <body>
@@ -186,7 +255,7 @@
             Silakan pilih <b>"ALLOW / IZINKAN"</b> pada pop-up browser untuk mencatat koordinat lokasi tugas luar secara presisi.
           </p>
           <div class="d-flex gap-2 flex-wrap mt-2">
-            <button class="btn btn-sm btn-warning fw-bold text-dark" onclick="initGpsLocation()">
+            <button id="btnRequestGps" class="btn btn-sm btn-warning fw-bold text-dark" onclick="requestGpsPermission()">
               <i class="bi bi-arrow-clockwise me-1"></i> Minta Pop-up Izinkan Lokasi Lagi
             </button>
             <button class="btn btn-sm btn-outline-light fw-bold" onclick="bypassGpsWarning()">
@@ -1029,6 +1098,14 @@
       
       initGpsLocation();
       renderPosterBarcodes();
+
+      // Auto-request GPS permission saat halaman dibuka
+      // Jika GPS belum aktif setelah 1.5 detik, trigger request otomatis
+      setTimeout(() => {
+        if (!isGpsActive && !currentGps.lat) {
+          requestGpsPermission();
+        }
+      }, 1500);
       
       // Stop kamera checkpoint saat modal ditutup
       const cpModalEl = document.getElementById('modalConfirmCheckpoint');
@@ -1055,29 +1132,144 @@
       checkUrlAutoActionParam();
     });
 
+    let gpsWatchId = null;
+
     function initGpsLocation() {
-      if ('geolocation' in navigator) {
-        navigator.geolocation.watchPosition(
+      if (!('geolocation' in navigator)) {
+        isGpsActive = false;
+        console.warn('[GPS] Geolocation tidak didukung browser ini.');
+        return;
+      }
+      // Hentikan watcher lama jika ada
+      if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+      }
+      gpsWatchId = navigator.geolocation.watchPosition(
           (pos) => {
             currentGps.lat = pos.coords.latitude;
             currentGps.lng = pos.coords.longitude;
+            currentGps.accuracy = pos.coords.accuracy;
+            currentGps.isDummy = false;
+            currentGps.updatedAt = new Date().toISOString();
             isGpsActive = true;
             document.getElementById('gpsWarningAlert').classList.add('d-none');
           },
           (err) => {
-            isGpsActive = true;
-            if (!currentGps.lat) {
-              // Koordinat default Cikarang (lokasi kantor)
-              currentGps = { lat: -6.300000, lng: 107.150000 };
+            isGpsActive = false;
+            console.warn('[GPS] watchPosition error:', err.message);
+            // Hanya tampilkan warning jika belum ada koordinat valid
+            if (!currentGps.lat || currentGps.isDummy) {
+              document.getElementById('gpsWarningAlert').classList.remove('d-none');
             }
           },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 }
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
         );
-      } else {
-        isGpsActive = true;
-        currentGps = { lat: -6.300000, lng: 107.150000 };
-      }
     }
+
+    // Fungsi khusus untuk trigger pop-up izin GPS di browser HP
+    // getCurrentPosition (bukan watchPosition) yang benar-benar munculkan dialog izin ulang
+    function requestGpsPermission() {
+      if (!('geolocation' in navigator)) {
+        alert('Browser ini tidak mendukung GPS / Lokasi.');
+        return;
+      }
+
+      // Update teks tombol jadi loading
+      const btn = document.getElementById('btnRequestGps');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Meminta izin...'; }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          currentGps.lat = pos.coords.latitude;
+          currentGps.lng = pos.coords.longitude;
+          currentGps.accuracy = Math.round(pos.coords.accuracy);
+          currentGps.isDummy = false;
+          currentGps.updatedAt = new Date().toISOString();
+          isGpsActive = true;
+          document.getElementById('gpsWarningAlert').classList.add('d-none');
+          console.log('[GPS] Izin diberikan! Lokasi:', currentGps.lat, currentGps.lng);
+          // Restart watchPosition agar terus update
+          initGpsLocation();
+        },
+        (err) => {
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Minta Pop-up Izinkan Lokasi Lagi'; }
+          if (err.code === 1) {
+            // PERMISSION_DENIED — user blokir
+            alert('⚠️ Akses lokasi diblokir.\n\nCara membuka kembali:\n1. Ketuk ikon 🔒 atau ℹ️ di address bar browser\n2. Pilih “Site Settings” atau “Izin Situs”\n3. Ubah Lokasi dari “Blokir” ke “Izinkan”\n4. Refresh halaman ini');
+          } else if (err.code === 3) {
+            // TIMEOUT
+            alert('⚠️ GPS timeout. Pastikan sinyal GPS aktif lalu coba lagi.');
+          } else {
+            alert('⚠️ Gagal mendapatkan lokasi: ' + err.message);
+          }
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+      );
+    }
+
+    // Ambil GPS AKTUAL perangkat pada saat dipanggil (bukan cache lama)
+    // Digunakan saat scan QR agar lokasi benar-benar real-time
+    // GPS CACHE-FIRST STRATEGY:
+    // watchPosition (initGpsLocation) terus update currentGps di background.
+    // getFreshGps() cukup baca cache tersebut — TIDAK perlu getCurrentPosition lagi
+    // kecuali cache benar-benar kosong/sangat lama.
+    async function getFreshGps() {
+      if (!('geolocation' in navigator)) {
+        return { lat: null, lng: null, accuracy: null, isDummy: true, source: 'unsupported' };
+      }
+
+      const GPS_CACHE_MAX_AGE_MS = 60000; // 60 detik — cache watchPosition dianggap valid
+      const cacheAgeMs = currentGps.updatedAt
+        ? (Date.now() - new Date(currentGps.updatedAt).getTime())
+        : Infinity;
+
+      // ── Prioritas 1: Cache dari watchPosition masih fresh → return INSTAN (0ms) ──
+      if (currentGps.lat && !currentGps.isDummy && cacheAgeMs < GPS_CACHE_MAX_AGE_MS) {
+        console.log(`[GPS] Pakai cache watchPosition (umur: ${Math.round(cacheAgeMs/1000)}s) → ${currentGps.lat.toFixed(5)}, ${currentGps.lng.toFixed(5)}`);
+        return { ...currentGps, source: 'watch_cache', isDummy: false };
+      }
+
+      // ── Prioritas 2: Cache kosong/lama → minta posisi baru, tapi izinkan cache browser ──
+      // enableHighAccuracy: false → pakai WiFi/cell tower (CEPAT, 1-2 detik)
+      // maximumAge: 30000        → browser boleh pakai posisi cached sampai 30 detik
+      // timeout: 5000            → max tunggu 5 detik, tidak lebih
+      console.log('[GPS] Cache lama/kosong, meminta posisi baru (low-accuracy mode)...');
+      return new Promise((resolve) => {
+        const fallback = () => {
+          if (currentGps.lat && !currentGps.isDummy) {
+            resolve({ ...currentGps, source: 'cache_fallback' });
+          } else {
+            resolve({ lat: null, lng: null, accuracy: null, isDummy: true, source: 'unavailable' });
+          }
+        };
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const result = {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              accuracy: Math.round(pos.coords.accuracy),
+              isDummy: false,
+              source: 'device_fresh',
+              updatedAt: new Date().toISOString()
+            };
+            // Sinkronkan ke currentGps
+            Object.assign(currentGps, result);
+            isGpsActive = true;
+            document.getElementById('gpsWarningAlert').classList.add('d-none');
+            console.log(`[GPS FRESH] ${result.lat.toFixed(5)}, ${result.lng.toFixed(5)} ±${result.accuracy}m`);
+            resolve(result);
+          },
+          (err) => {
+            console.warn('[GPS] getCurrentPosition error:', err.message, '— pakai fallback');
+            fallback();
+          },
+          { enableHighAccuracy: false, timeout: 5000, maximumAge: 30000 }
+        );
+      });
+    }
+
 
     // Fungsi Reverse Geocoding: Koordinat GPS -> Nama Alamat Lengkap (Gratis, Nominatim)
     async function getAddressFromCoords(lat, lng) {
@@ -1106,9 +1298,7 @@
 
     function bypassGpsWarning() {
       isGpsActive = true;
-      if (!currentGps.lat) {
-        currentGps = { lat: -6.200000, lng: 106.816666 };
-      }
+      // Tidak isi dummy koordinat — biarkan null, GPS tetap tidak tersedia
       document.getElementById('gpsWarningAlert').classList.add('d-none');
     }
 
@@ -1118,13 +1308,37 @@
       const isInsideIframe = window.self !== window.top;
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-      if (isInsideIframe) {
-        sessionStorage.removeItem('manualLogout');
-        localStorage.removeItem('manualLogout');
-      } else if (sessionStorage.getItem('manualLogout') === 'true' || localStorage.getItem('manualLogout') === 'true') {
+      // Jika user sudah manual logout, hormati itu dan tampilkan layar login
+      if (!isInsideIframe && (sessionStorage.getItem('manualLogout') === 'true' || localStorage.getItem('manualLogout') === 'true')) {
         return false;
       }
 
+      // Jika di dalam iframe: bersihkan flag manualLogout (konteks portal)
+      if (isInsideIframe) {
+        sessionStorage.removeItem('manualLogout');
+        localStorage.removeItem('manualLogout');
+      }
+
+      // ── Cara 1: Baca session AP Portal dari localStorage (app_active_user_session_v1) ──
+      // Key ini di-set oleh ap_dashboard.html saat user login ke portal AP
+      try {
+        const apPortalRaw = localStorage.getItem('app_active_user_session_v1');
+        if (apPortalRaw) {
+          const apPortal = JSON.parse(apPortalRaw);
+          // Pastikan session valid (punya nama, bukan supplier)
+          if (apPortal && apPortal.name && apPortal.loginType !== 'supplier') {
+            const portalName = apPortal.name || apPortal.username || 'Portal User';
+            const portalNik  = apPortal.username || 'PORTAL';
+            currentUserSession = { role: 'ADMIN', name: portalName, nik: portalNik, source: 'ap_portal' };
+            sessionStorage.setItem('tugasLuarUserSession', JSON.stringify(currentUserSession));
+            localStorage.setItem('tugasLuarUserSession', JSON.stringify(currentUserSession));
+            applyUserSessionUI();
+            return true;
+          }
+        }
+      } catch(e) {}
+
+      // ── Cara 2: Baca dari parent iframe (jika di-embed sebagai iframe) ──
       if (isInsideIframe || isLocalhost) {
         let parentUser = null;
         try {
@@ -1137,12 +1351,13 @@
         } catch(e) {}
 
         const adminName = parentUser || 'Aang.js - Admin';
-        currentUserSession = { role: 'ADMIN', name: adminName, nik: 'ADMIN' };
+        currentUserSession = { role: 'ADMIN', name: adminName, nik: 'ADMIN', source: 'iframe_parent' };
         sessionStorage.setItem('tugasLuarUserSession', JSON.stringify(currentUserSession));
         localStorage.setItem('tugasLuarUserSession', JSON.stringify(currentUserSession));
         applyUserSessionUI();
         return true;
       }
+
       return false;
     }
 
@@ -1223,15 +1438,19 @@
         return;
       }
 
-      const foundSec = SECURITY_USERS.find(s => 
-        s.nik === userClean || 
-        s.name.toLowerCase() === userLower || 
+      // Cari user security berdasarkan NIK atau nama EXACT - tidak boleh default ke Sukanta
+      let foundSec = SECURITY_USERS.find(s =>
+        s.nik === userClean ||
         s.nik === passClean ||
-        userLower.includes('security') ||
-        userLower.includes('sukanta') ||
-        userLower.includes('naim') ||
-        userLower.includes('hafidzi')
+        s.name.toLowerCase() === userLower ||
+        s.name.toLowerCase() === passLower
       );
+
+      // Jika kata 'security' diketik tapi NIK/nama tidak cocok - tolak, jangan default ke siapapun
+      if (!foundSec && (userLower.includes('security') || passLower.includes('security'))) {
+        alert('⚠️ LOGIN GAGAL!\nUsername atau password Security tidak dikenali.\nMasukkan NIK Security yang terdaftar (contoh: 99990016, 99990011, 99990009) atau nama lengkap.');
+        return;
+      }
 
       if (foundSec) {
         currentUserSession = { role: 'SECURITY', name: foundSec.name, nik: foundSec.nik };
@@ -1445,11 +1664,53 @@
           stopCameraScanner();
           playScanBeepSound();
 
+          // Waktu scan aktual WIB - real-time saat QR dibaca
+          const scanTimestamp = new Date().toISOString();
+          const scanTimeWIB = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+          // Ambil GPS AKTUAL perangkat saat QR berhasil dibaca (bukan cache lama)
+          const freshGps = await getFreshGps();
+          // Ubah koordinat ke nama lokasi (reverse geocoding)
+          const gpsAddress = (freshGps.lat && !freshGps.isDummy)
+            ? (await getAddressFromCoords(freshGps.lat, freshGps.lng) || `${freshGps.lat.toFixed(5)}, ${freshGps.lng.toFixed(5)}`)
+            : null;
+          const gpsInfo = gpsAddress
+            ? `\n\n📍 Lokasi: ${gpsAddress}`
+            : '\n\n📍 Lokasi: Tidak tersedia (izin GPS ditolak)';
+          console.log('[GPS SAAT SCAN]', freshGps, '=> Alamat:', gpsAddress);
+
+          // Baca konten QR yang discan - gunakan sebagai ticket_code
+          // QR bisa berisi URL (https://erp.mogaworld.xyz/tugas_luar.html?action=scan_gate&ticket=TL-XXXX)
+          // atau ticket code langsung (TL-20260813-001)
+          let resolvedTicketCode = decodedText.trim();
+          try {
+            const urlCheck = new URL(decodedText);
+            const ticketParam = urlCheck.searchParams.get('ticket');
+            const actionParam = urlCheck.searchParams.get('action');
+            if (ticketParam) {
+              resolvedTicketCode = ticketParam;
+            } else if (actionParam === 'scan_gate') {
+              resolvedTicketCode = 'GATE-POS-001';
+            }
+          } catch(urlErr) {
+            // Bukan URL, gunakan text langsung sebagai ticket_code
+          }
+
+          console.log(`[SCAN] QR dibaca: "${decodedText}" => ticket: "${resolvedTicketCode}" waktu WIB: ${scanTimeWIB}`);
+
           try {
             const bodyPayload = {
-              ticket_code: 'GATE-POS-001',
-              gps_lat: currentGps.lat,
-              gps_lng: currentGps.lng
+              ticket_code: resolvedTicketCode,
+              gps_lat: freshGps.lat,
+              gps_lng: freshGps.lng,
+              gps_accuracy: freshGps.accuracy || null,
+              gps_source: freshGps.source || 'unknown',
+              gps_is_actual: !freshGps.isDummy,
+              gps_address: gpsAddress || null,
+              scan_timestamp: scanTimestamp,
+              scan_time_wib: scanTimeWIB,
+              scanned_by: currentUserSession?.name || 'Unknown',
+              scanned_by_nik: currentUserSession?.nik || '-'
             };
 
             if (currentUserSession?.role === 'SECURITY') {
@@ -1466,23 +1727,23 @@
 
             if (data.success) {
               if (currentUserSession?.role === 'PIC') {
-                alert(`⚡ ${data.message}`);
+                alert(`⚡ ${data.message}\n\n🕐 Waktu Scan: ${scanTimeWIB} WIB${gpsInfo}`);
                 loadSandriActiveTickets();
               } else if (currentUserSession?.role === 'SECURITY') {
                 if (data.ticket && data.ticket.status === 'MENUNGGU VERIFIKASI MASUK SECURITY') {
                   openSecurityVerifyModal(data.ticket.ticket_code);
                 } else {
-                  alert(data.message);
+                  alert(`${data.message}\n\n🕐 Waktu Scan: ${scanTimeWIB} WIB${gpsInfo}`);
                 }
               } else {
-                alert(`⚡ ${data.message}`);
+                alert(`⚡ ${data.message}\n\n🕐 Waktu Scan: ${scanTimeWIB} WIB${gpsInfo}`);
               }
               loadDashboardData();
             } else {
-              alert(`⚠️ GAGAL SCAN / PERINGATAN:\n\n${data.message}`);
+              alert(`⚠️ GAGAL SCAN / PERINGATAN:\n\n${data.message}\n\n📌 Kode QR Terbaca: ${resolvedTicketCode}`);
             }
           } catch(e) {
-            saveOfflineScan('GATE-POS-001', currentUserSession?.role === 'SECURITY' ? 'SECURITY_STAMP' : 'SANDRI_RETURN');
+            saveOfflineScan(resolvedTicketCode, currentUserSession?.role === 'SECURITY' ? 'SECURITY_STAMP' : 'SANDRI_RETURN');
           }
         },
         (error) => {}
@@ -1518,10 +1779,48 @@
         const decodedText = await html5QrCode.scanFile(file, true);
         playScanBeepSound();
 
+        // Waktu scan aktual WIB saat file QR dibaca
+        const scanTimestamp = new Date().toISOString();
+        const scanTimeWIB = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        // Baca konten QR file yang diupload
+        let resolvedTicketCode = decodedText.trim();
+        try {
+          const urlCheck = new URL(decodedText);
+          const ticketParam = urlCheck.searchParams.get('ticket');
+          const actionParam = urlCheck.searchParams.get('action');
+          if (ticketParam) {
+            resolvedTicketCode = ticketParam;
+          } else if (actionParam === 'scan_gate') {
+            resolvedTicketCode = 'GATE-POS-001';
+          }
+        } catch(urlErr) {}
+
+        console.log(`[SCAN FILE] QR dibaca: "${decodedText}" => ticket: "${resolvedTicketCode}" waktu WIB: ${scanTimeWIB}`);
+
+        // Ambil GPS AKTUAL perangkat saat file QR di-decode (bukan cache lama)
+        const freshGps = await getFreshGps();
+        // Ubah koordinat ke nama lokasi (reverse geocoding)
+        const gpsAddress = (freshGps.lat && !freshGps.isDummy)
+          ? (await getAddressFromCoords(freshGps.lat, freshGps.lng) || `${freshGps.lat.toFixed(5)}, ${freshGps.lng.toFixed(5)}`)
+          : null;
+        const gpsInfo = gpsAddress
+          ? `\n\n📍 Lokasi: ${gpsAddress}`
+          : '\n\n📍 Lokasi: Tidak tersedia (izin GPS ditolak)';
+        console.log('[GPS SAAT SCAN FILE]', freshGps, '=> Alamat:', gpsAddress);
+
         const bodyPayload = {
-          ticket_code: 'GATE-POS-001',
-          gps_lat: currentGps.lat,
-          gps_lng: currentGps.lng
+          ticket_code: resolvedTicketCode,
+          gps_lat: freshGps.lat,
+          gps_lng: freshGps.lng,
+          gps_accuracy: freshGps.accuracy || null,
+          gps_source: freshGps.source || 'unknown',
+          gps_is_actual: !freshGps.isDummy,
+          gps_address: gpsAddress || null,
+          scan_timestamp: scanTimestamp,
+          scan_time_wib: scanTimeWIB,
+          scanned_by: currentUserSession?.name || 'Unknown',
+          scanned_by_nik: currentUserSession?.nik || '-'
         };
 
         if (currentUserSession?.role === 'SECURITY') {
@@ -1538,20 +1837,20 @@
 
         if (data.success) {
           if (currentUserSession?.role === 'PIC') {
-            alert(`⚡ ${data.message}`);
+            alert(`⚡ ${data.message}\n\n🕐 Waktu Scan: ${scanTimeWIB} WIB${gpsInfo}`);
             loadSandriActiveTickets();
           } else if (currentUserSession?.role === 'SECURITY') {
             if (data.ticket && data.ticket.status === 'MENUNGGU VERIFIKASI MASUK SECURITY') {
               openSecurityVerifyModal(data.ticket.ticket_code);
             } else {
-              alert(data.message);
+              alert(`${data.message}\n\n🕐 Waktu Scan: ${scanTimeWIB} WIB${gpsInfo}`);
             }
           } else {
-            alert(`⚡ ${data.message}`);
+            alert(`⚡ ${data.message}\n\n🕐 Waktu Scan: ${scanTimeWIB} WIB${gpsInfo}`);
           }
           loadDashboardData();
         } else {
-          alert(`⚠️ GAGAL SCAN / PERINGATAN:\n\n${data.message}`);
+          alert(`⚠️ GAGAL SCAN / PERINGATAN:\n\n${data.message}\n\n📌 Kode QR Terbaca: ${resolvedTicketCode}`);
         }
       } catch (err) {
         alert(`⚠️ Gambar QR tidak terbaca.\n\nPastikan foto QR jelas, terang, dan tidak buram.\n\nDetail: ${err.message || err}`);
@@ -1803,60 +2102,71 @@
       const barcodeInput = document.getElementById('cpModalBarcodeCode')?.value.trim() || '';
       const btn = document.getElementById('btnSubmitCpModal');
 
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengunci GPS & Scanning...';
+      // ── Ambil timestamp SEKARANG — instan, tidak ada delay ──
+      const now = new Date();
+      const clientTimestamp = now.toISOString();
+      const clientTimeWIB = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const statusLabel = actionType === 'COMPLETE' ? 'Selesai' : 'Tiba';
 
+      // ── Ambil GPS dari cache watchPosition — tidak tunggu apapun ──
+      const lat = (currentGps.lat && !currentGps.isDummy) ? currentGps.lat : null;
+      const lng = (currentGps.lng && !currentGps.isDummy) ? currentGps.lng : null;
+
+      // ── Tutup modal SEGERA — tidak ada loading, tidak ada lag ──
       const modalEl = document.getElementById('modalConfirmCheckpoint');
       const modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+      if (cpHtml5Scanner) { try { cpHtml5Scanner.clear(); } catch(e){} }
 
-      const sendReq = async (lat, lng) => {
-        // Ambil nama lokasi dari GPS via Nominatim
-        let locationName = null;
-        if (lat && lng) {
-          locationName = await getAddressFromCoords(lat, lng);
-        }
+      // ── Tampilkan alert sukses INSTAN dengan waktu aktual ──
+      playScanBeepSound();
+      alert(`\u2705 CHECKPOINT ${statusLabel.toUpperCase()} DICATAT!\n\n\ud83d\udccd Tiket: ${ticketCode}\n\u23f0 Jam ${statusLabel}: ${clientTimeWIB} WIB\n\ud83d\udccc Lokasi: ${lat ? 'Mendapatkan alamat...' : 'GPS tidak tersedia'}`);
 
-        try {
-          const payload = {
-            ticket_code: ticketCode,
-            destination_index: destinationIndex,
-            action_type: actionType,
-            barcode_code: barcodeInput,
-            gps_lat: lat,
-            gps_lng: lng,
-            location_name: locationName
-          };
-          const res = await fetch('/api/tugas-luar/checkpoint-reach', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          const data = await res.json();
-          btn.disabled = false;
-          btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> VERIFIKASI & CATAT CHECKPOINT';
-          if (modal) modal.hide();
-          if (cpHtml5Scanner) { try { cpHtml5Scanner.clear(); } catch(e){} }
+      // ── Kirim ke server di BACKGROUND — tidak blokir user ──
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> VERIFIKASI & CATAT CHECKPOINT';
 
-          if (data.success) {
-            playScanBeepSound();
-            alert(`✅ CHECKPOINT BERHASIL DISCAN!\n\nTiket: ${ticketCode}\nStatus: ${actionType === 'COMPLETE' ? 'Selesai di Lokasi' : 'Tiba di Lokasi'}`);
-            loadSandriActiveTickets();
-            loadDashboardData();
-          } else {
-            alert('Gagal checkpoint: ' + data.message);
-          }
-        } catch(e) {
-          btn.disabled = false;
-          btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> VERIFIKASI & CATAT CHECKPOINT';
-          alert('Error: ' + e.message);
-        }
+      const payload = {
+        ticket_code: ticketCode,
+        destination_index: destinationIndex,
+        action_type: actionType,
+        barcode_code: barcodeInput,
+        gps_lat: lat,
+        gps_lng: lng,
+        client_timestamp: clientTimestamp,
+        client_time_wib: clientTimeWIB,
+        location_name: null
       };
 
-      navigator.geolocation.getCurrentPosition(
-        (pos) => sendReq(pos.coords.latitude, pos.coords.longitude),
-        (err) => sendReq(null, null),
-        { enableHighAccuracy: true, timeout: 5000 }
-      );
+      // Fire and forget — kirim ke server tanpa tunggu
+      fetch('/api/tugas-luar/checkpoint-reach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          loadSandriActiveTickets();
+          loadDashboardData();
+          // Ambil nama alamat di background lalu patch ke server
+          if (lat && lng) {
+            getAddressFromCoords(lat, lng).then(address => {
+              console.log(`[Checkpoint] ${statusLabel} @ ${clientTimeWIB} | Lokasi: ${address || 'tidak ada'}`);
+              if (address && data.checkpoint_id) {
+                fetch('/api/tugas-luar/checkpoint-location', {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ checkpoint_id: data.checkpoint_id, location_name: address })
+                }).catch(() => {});
+              }
+            });
+          }
+        } else {
+          console.warn('[Checkpoint] Server error:', data.message);
+        }
+      })
+      .catch(e => console.error('[Checkpoint] Koneksi gagal:', e.message));
     }
 
     // MODAL TRIGGER UNTUK INPUT EXPENSES (BENSIN, PARKIR, TOL/LAIN + ITEM MANUAL)
@@ -2177,9 +2487,9 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ticket_code: ticketCode,
-            security_nik: currentUserSession.nik || '99990016',
-            security_nama: currentUserSession.name || 'Sukanta',
-            members: ['Sukanta']
+            security_nik: currentUserSession?.nik || '99990016',
+            security_nama: currentUserSession?.name || 'Security',
+            members: [currentUserSession?.name || 'Security']
           })
         });
         const data = await res.json();
@@ -2411,7 +2721,7 @@
           if (currentMonitoringTab === 'LIVE') {
             const todayStr = new Date().toLocaleDateString('sv'); // 'YYYY-MM-DD'
             displayRows = data.data.filter(row => {
-              const rowDateStr = row.tanggal_tugas ? new Date(row.tanggal_tugas).toLocaleDateString('sv') : '';
+              const rowDateStr = row.tanggal_tugas ? (typeof row.tanggal_tugas === 'string' ? row.tanggal_tugas.slice(0, 10) : new Date(row.tanggal_tugas).toLocaleDateString('sv')) : '';
               const isToday = rowDateStr === todayStr;
               const isUnfinished = row.status !== 'SELESAI';
               // Hanya tampilkan jika tiket dibuat HARI INI ATAU statusnya BELUM SELESAI

@@ -231,44 +231,71 @@
         </select>
       </div>
 
-      <!-- SECTION KYC REGISTRATION (JIKA BELUM KYC) -->
-      <div id="sectionKycBox" style="display: none; background: rgba(14, 165, 233, 0.08); border: 2px solid #0ea5e9; padding: 14px; border-radius: 14px; margin-bottom: 15px; text-align: center;">
-        <div style="font-size: 0.9rem; color: #38bdf8; font-weight: 800; margin-bottom: 6px;">
-          🛡️ PEREKAMAN SENSOR BIOMETRIK WAJAH (KYC LIVENESS)
+      <!-- SECTION KYC REGISTRATION (JIKA BELUM KYC) — tampil sebagai banner di atas tombol absen -->
+      <div id="sectionKycBox" style="display: none; background: rgba(239,68,68,0.1); border: 2px solid #ef4444; padding: 12px 14px; border-radius: 12px; margin-bottom: 12px; text-align: center;">
+        <div style="font-size: 0.85rem; color: #fca5a5; font-weight: 800; margin-bottom: 6px;">
+          ⚠️ Belum KYC Biometrik — Absensi Dinonaktifkan
         </div>
         <div style="font-size: 0.75rem; color: #cbd5e1; margin-bottom: 10px; line-height: 1.4;">
-          Sistem akan memverifikasi pergerakan wajah biometrik Anda. Ikuti tantangan gerakan liveness di bawah:
+          Selesaikan verifikasi wajah biometrik (KYC Liveness) untuk mengaktifkan fitur absensi.
         </div>
-
-        <!-- LIVENESS STEPPER BAR -->
-        <div style="background: rgba(0,0,0,0.6); padding: 10px; border-radius: 10px; border: 1px solid #0ea5e9; margin-bottom: 12px; font-size: 0.75rem; color: #fff;">
-          <div id="kycLivenessPromptText" style="color: #fbbf24; font-weight: bold; font-size: 0.85rem; margin-bottom: 4px;">
-            👁️ TAHAP 1: Silakan Kedipkan Mata Kiri & Kanan Ke Kamera
-          </div>
-          <div style="background: #1e293b; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 4px;">
-            <div id="kycProgressBar" style="width: 33%; height: 100%; background: linear-gradient(90deg, #f59e0b, #10b981); transition: width 0.4s;"></div>
-          </div>
-          <div id="kycProgressStatus" style="font-size: 0.7rem; color: #94a3b8; margin-top: 4px;">Progress Liveness: 33% (Tahap 1/3)</div>
-        </div>
-
-        <button type="button" class="btn-primary" id="btnSubmitKyc" onclick="submitKycEnroll()" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 0.85rem; font-weight: 800; padding: 12px; width: 100%; border-radius: 10px;">
-          🛡️ SIMPAN REGISTRASI MASTER BIOMETRIK WAJAH (KYC VERIFIED)
+        <button type="button" class="btn-primary" onclick="openKycModal()" style="background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 0.85rem; font-weight: 800; padding: 12px; width: 100%; border-radius: 10px;">
+          🛡️ Mulai Verifikasi KYC Biometrik Sekarang
         </button>
       </div>
 
+      <!-- KYC LIVENESS MODAL — muncul di atas kamera saat tombol KYC diklik -->
+      <div id="kycLivenessModal" style="display:none; position:fixed; inset:0; background:rgba(11,15,25,0.97); z-index:500; flex-direction:column; align-items:center; justify-content:flex-start; padding:20px; overflow-y:auto;">
+        <div style="width:100%; max-width:480px; display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:1rem; font-weight:800; color:#38bdf8;">🛡️ VERIFIKASI KYC BIOMETRIK</div>
+            <button type="button" onclick="closeKycModal()" style="background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid #ef4444; padding:5px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem;">✕ Batal</button>
+          </div>
+
+          <!-- LIVENESS STEPPER -->
+          <div style="background:rgba(0,0,0,0.6); padding:12px; border-radius:10px; border:1px solid #0ea5e9; font-size:0.75rem; color:#fff;">
+            <div id="kycLivenessPromptText" style="color:#fbbf24; font-weight:bold; font-size:0.88rem; margin-bottom:6px;">
+              📍 TAHAP 1: Posisikan Wajah di Tengah Oval
+            </div>
+            <div style="background:#1e293b; height:8px; border-radius:4px; overflow:hidden; margin-top:4px;">
+              <div id="kycProgressBar" style="width:20%; height:100%; background:linear-gradient(90deg,#f59e0b,#10b981); transition:width 0.4s;"></div>
+            </div>
+            <div id="kycProgressStatus" style="font-size:0.7rem; color:#94a3b8; margin-top:4px;">Ikuti instruksi yang muncul di layar kamera</div>
+          </div>
+
+          <!-- KAMERA DALAM MODAL -->
+          <div style="width:100%; height:280px; background:#000; border-radius:12px; overflow:hidden; position:relative; border:2px solid #0ea5e9;">
+            <video id="kycVideoModal" autoplay playsinline webkit-playsinline muted style="width:100%; height:100%; object-fit:cover; display:none;"></video>
+            <canvas id="kycCanvasModal" style="display:none;"></canvas>
+            <div id="kycReticleOverlay" style="position:absolute; inset:15px 60px; border:2px dashed #0ea5e9; border-radius:50%/40%; pointer-events:none; z-index:5; display:none; flex-direction:column; align-items:center; justify-content:center;">
+              <div style="position:absolute; width:100%; height:2px; background:linear-gradient(90deg,transparent,#38bdf8,transparent); box-shadow:0 0 10px #38bdf8; top:0; animation:scanLaser 2s infinite ease-in-out;"></div>
+            </div>
+            <div id="kycCamOverlay" style="display:flex; position:absolute; inset:0; background:rgba(11,15,25,0.93); flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; padding:15px; color:#fff; z-index:15;">
+              <div style="font-size:36px;">📷</div>
+              <b style="color:var(--primary); font-size:0.95rem;">Ketuk untuk mengaktifkan kamera KYC</b>
+              <button type="button" class="btn-primary" onclick="startKycCamera()" style="padding:10px 24px; width:auto; font-size:0.85rem; border-radius:8px; background:linear-gradient(135deg,#0284c7,#0369a1);">
+                ▶️ Aktifkan Kamera KYC
+              </button>
+            </div>
+            <div id="livenessCountdown" style="display:none; position:absolute; bottom:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#38bdf8; font-size:1rem; font-weight:900; padding:5px 16px; border-radius:20px; z-index:20; white-space:nowrap;"></div>
+          </div>
+
+          <div style="font-size:0.72rem; color:#64748b; text-align:center;">
+            Pastikan wajah terlihat jelas dan pencahayaan cukup. KYC hanya dilakukan 1x dan tersimpan permanen.
+          </div>
+        </div>
+      </div>
+
+      <!-- KAMERA UTAMA UNTUK ABSENSI -->
       <div class="camera-wrap" id="cameraBoxWrap" style="cursor:pointer; position:relative;">
         <video id="videoPreview" autoplay playsinline webkit-playsinline muted style="display:none;"></video>
         <canvas id="photoCanvas" style="display:none;"></canvas>
-        <div class="kyc-scanner-reticle" id="kycReticleOverlay" style="display:none;">
-          <div class="kyc-scanner-line"></div>
-          <span style="font-size:0.65rem; color:#38bdf8; font-weight:bold; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px;">FPS: 30 &bull; LIVE BIOMETRIC SCANNER ACTIVE</span>
-        </div>
         <div id="camOverlayPrompt" onclick="requestCameraPermission(event)" style="display:flex; position:absolute; inset:0; background:rgba(11,15,25,0.92); flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:15px; color:#fff; z-index:15; cursor:pointer;">
           <div style="font-size:36px;">📷</div>
-          <b style="color:var(--primary); font-size:0.95rem;" id="camPromptTitle">Ketuk Di Sini Untuk Membuka Live Sensor Biometrik</b>
-          <span style="font-size:0.75rem; color:#cbd5e1; max-width:280px;" id="camPromptDesc">Posisikan Wajah di Tengah Oval &bull; Pastikan Cahaya Terang</span>
+          <b style="color:var(--primary); font-size:0.95rem;" id="camPromptTitle">Ketuk Di Sini Untuk Mengaktifkan Kamera Absensi</b>
+          <span style="font-size:0.75rem; color:#cbd5e1; max-width:280px;" id="camPromptDesc">Kamera digunakan untuk foto selfie saat absen masuk & pulang</span>
           <button type="button" class="btn-primary" style="margin-top:6px; width:auto; padding:10px 24px; font-size:0.85rem; border-radius:8px; background:linear-gradient(135deg,#0284c7,#0369a1);" onclick="event.stopPropagation(); requestCameraPermission(event);">
-            ▶️ Aktifkan Izin Kamera
+            ▶️ Aktifkan Kamera
           </button>
         </div>
         <div class="camera-overlay" style="display:none;" id="switchCamBtn">
@@ -285,16 +312,18 @@
       </div>
 
       <div class="btn-grid">
-        <button class="btn-action btn-masuk" onclick="submitAbsen('MASUK')">🟢 ABSEN MASUK</button>
-        <button class="btn-action btn-pulang" onclick="submitAbsen('PULANG')">🔴 ABSEN PULANG</button>
+        <button class="btn-action btn-masuk" id="btnAbsenMasuk" onclick="submitAbsen('MASUK')">🟢 ABSEN MASUK</button>
+        <button class="btn-action btn-pulang" id="btnAbsenPulang" onclick="submitAbsen('PULANG')">🔴 ABSEN PULANG</button>
       </div>
-      <button class="cam-btn" onclick="openIzinModal()" style="width: 100%; margin-top: 10px; padding: 12px; background: rgba(59,130,246,0.15); color: var(--primary); border: 1px solid var(--primary); font-weight: 700;">📝 Form Pengajuan Izin / Sakit / Cuti</button>
-    </div>
-
+      <button class="cam-btn" onclick="openIzinModal()" style="width: 100%; margin-top: 10px; padding: 12px; background: rgba(59,130,246,0.15); color: var(--primary); border: 1px solid var(--pr
     <!-- Summary Today -->
     <div class="card" style="margin-top: 15px;">
       <div class="card-title">⏱️ Status Jam Kerja Hari Ini</div>
       <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;" id="empTodaySummary">
+        Pilih nama karyawan di atas untuk melihat status presensi &amp; durasi jam kerja real-time.
+      </div>
+    </div>
+  </div>
         Pilih nama karyawan di atas untuk melihat status presensi & durasi jam kerja real-time.
       </div>
     </div>
@@ -824,6 +853,74 @@
     }
   }
 
+  // ====== KYC MODAL FUNCTIONS ======
+  let kycStream = null;
+
+  function openKycModal() {
+    const modal = document.getElementById('kycLivenessModal');
+    if (modal) modal.style.display = 'flex';
+    // Reset liveness state setiap kali modal dibuka
+    kycLivenessStep = 0;
+    centerHoldFrames = 0;
+    lastFramePixels = null;
+    verifiedMasterPhoto = null;
+    if (livenessIntervalId) { clearInterval(livenessIntervalId); livenessIntervalId = null; }
+    updateLivenessUI(0);
+    // Reset KYC cam overlay
+    const kycCamOverlay = document.getElementById('kycCamOverlay');
+    if (kycCamOverlay) kycCamOverlay.style.display = 'flex';
+    const kycVideo = document.getElementById('kycVideoModal');
+    if (kycVideo) { kycVideo.style.display = 'none'; kycVideo.srcObject = null; }
+    const reticle = document.getElementById('kycReticleOverlay');
+    if (reticle) reticle.style.display = 'none';
+    const countdown = document.getElementById('livenessCountdown');
+    if (countdown) countdown.style.display = 'none';
+  }
+
+  function closeKycModal() {
+    const modal = document.getElementById('kycLivenessModal');
+    if (modal) modal.style.display = 'none';
+    // Hentikan stream KYC
+    if (kycStream) {
+      kycStream.getTracks().forEach(t => t.stop());
+      kycStream = null;
+    }
+    if (livenessIntervalId) { clearInterval(livenessIntervalId); livenessIntervalId = null; }
+  }
+
+  async function startKycCamera() {
+    const kycVideo = document.getElementById('kycVideoModal');
+    const kycCamOverlay = document.getElementById('kycCamOverlay');
+    if (!kycVideo) return;
+
+    try {
+      kycStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+    } catch(e) {
+      try { kycStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); }
+      catch(e2) { alert('⛔ Izin kamera ditolak. Aktifkan izin kamera di browser.'); return; }
+    }
+
+    kycVideo.muted = true;
+    kycVideo.defaultMuted = true;
+    kycVideo.playsInline = true;
+    kycVideo.srcObject = kycStream;
+    kycVideo.style.display = 'block';
+    if (kycCamOverlay) kycCamOverlay.style.display = 'none';
+
+    const reticle = document.getElementById('kycReticleOverlay');
+
+    kycVideo.onloadedmetadata = () => {
+      kycVideo.play().then(() => {
+        if (reticle) reticle.style.display = 'flex';
+        startSmartLivenessEngine();
+      }).catch(console.warn);
+    };
+    kycVideo.play().then(() => {
+      if (reticle) reticle.style.display = 'flex';
+      startSmartLivenessEngine();
+    }).catch(console.warn);
+  }
+
   // ====== STRICT LIVENESS ENGINE — Wajib Gestur Nyata, Tanpa Shortcut ======
   function startSmartLivenessEngine() {
     if (livenessIntervalId) clearInterval(livenessIntervalId);
@@ -862,7 +959,7 @@
         return;
       }
 
-      const video = document.getElementById('videoPreview');
+      const video = document.getElementById('kycVideoModal');
       if (!video || video.paused || video.ended || video.readyState < 2) return;
 
       const elapsed = (Date.now() - stageStartTime) / 1000;
@@ -1062,25 +1159,28 @@
           badge.innerText = '✅ KYC Biometrik Terverifikasi';
         }
 
-        // Tampilkan sukses di area liveness
+        // Tampilkan sukses di area liveness modal
         if (pText) pText.innerText = '🛡️ KYC BIOMETRIK TERSIMPAN & TERVERIFIKASI!';
-        if (pStatus) pStatus.innerText = '✅ Data wajah biometrik Anda telah tersimpan di sistem admin. Kamera siap untuk absensi.';
+        if (pStatus) pStatus.innerText = '✅ Berhasil! Modal akan menutup otomatis...';
 
-        // Sembunyikan KYC section setelah 2 detik, kamera tetap aktif untuk absensi
+        // Tutup modal KYC setelah 2 detik, hentikan stream KYC
         setTimeout(() => {
+          // Tutup modal dan hentikan stream KYC
+          closeKycModal();
+
+          // Sembunyikan banner KYC, aktifkan kembali tombol absen
           const sectionBox = document.getElementById('sectionKycBox');
           if (sectionBox) sectionBox.style.display = 'none';
 
-          // Reset liveness state agar kamera bisa dipakai absensi
-          kycLivenessStep = 0;
-          if (livenessIntervalId) {
-            clearInterval(livenessIntervalId);
-            livenessIntervalId = null;
-          }
-          const stageTimerEl = document.getElementById('livenessCountdown');
-          if (stageTimerEl) stageTimerEl.style.display = 'none';
+          const btnMasuk = document.getElementById('btnAbsenMasuk');
+          const btnPulang = document.getElementById('btnAbsenPulang');
+          if (btnMasuk) { btnMasuk.disabled = false; btnMasuk.style.opacity = '1'; }
+          if (btnPulang) { btnPulang.disabled = false; btnPulang.style.opacity = '1'; }
 
-          // Kamera tetap aktif, tidak perlu dimatikan
+          // Reset liveness state
+          kycLivenessStep = 0;
+          if (livenessIntervalId) { clearInterval(livenessIntervalId); livenessIntervalId = null; }
+
           fetchKaryawanList();
         }, 2000);
 
@@ -1373,13 +1473,17 @@
   }
 
   function captureSelfie() {
-    const video = document.getElementById('videoPreview');
-    const canvas = document.getElementById('photoCanvas');
+    // KYC: ambil dari video modal KYC jika sedang aktif
+    const kycVideo = document.getElementById('kycVideoModal');
+    const mainVideo = document.getElementById('videoPreview');
+    const video = (kycVideo && kycVideo.srcObject && kycVideo.videoWidth > 0) ? kycVideo : mainVideo;
+    const canvas = document.getElementById('kycCanvasModal') || document.getElementById('photoCanvas');
+    if (!video || !canvas) return '';
     canvas.width = video.videoWidth || 320;
     canvas.height = video.videoHeight || 240;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/jpeg', 0.8);
+    return canvas.toDataURL('image/jpeg', 0.85);
   }
 
   // GPS handling with Reverse Geocoding & Google Maps Link

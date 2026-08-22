@@ -1217,6 +1217,7 @@
         });
         const data = await res.json();
         if (data.success) {
+          kycJustVerified = false;
           alert(data.message);
           const sectionBox = document.getElementById('sectionKycBox');
           if (sectionBox) sectionBox.style.display = 'block';

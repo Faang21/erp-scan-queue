@@ -827,187 +827,205 @@
     }
   }
 
-  // ====== INTERACTIVE LIVENESS ENGINE dengan Timer & Visual Feedback ======
+  // ====== STRICT LIVENESS ENGINE — Wajib Gestur Nyata, Tanpa Shortcut ======
   function startSmartLivenessEngine() {
     if (livenessIntervalId) clearInterval(livenessIntervalId);
 
-    // Reset state
+    // Reset semua state
     kycLivenessStep = 0;
     centerHoldFrames = 0;
     lastFramePixels = null;
     updateLivenessUI(0);
 
-    // Canvas untuk analisis frame
     const c = document.createElement('canvas');
     c.width = 160; c.height = 120;
     const ctx = c.getContext('2d', { willReadFrequently: true });
 
-    // Timer per stage (detik)
-    const STAGE_TIME = [3, 4, 4, 4]; // waktu masing-masing stage
-    let stageStartTime = Date.now();
-    let stageTimerEl = null;
-
-    // Buat elemen countdown timer di layar
-    const reticle = document.getElementById('kycReticleOverlay');
-    if (reticle && !document.getElementById('livenessCountdown')) {
-      const timerDiv = document.createElement('div');
-      timerDiv.id = 'livenessCountdown';
-      timerDiv.style.cssText = 'position:absolute; bottom:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.75); color:#38bdf8; font-size:1.1rem; font-weight:900; padding:4px 14px; border-radius:20px; z-index:20; letter-spacing:1px;';
+    // Buat countdown timer element di atas kamera
+    let stageTimerEl = document.getElementById('livenessCountdown');
+    if (!stageTimerEl) {
+      stageTimerEl = document.createElement('div');
+      stageTimerEl.id = 'livenessCountdown';
+      stageTimerEl.style.cssText = 'position:absolute; bottom:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#38bdf8; font-size:1rem; font-weight:900; padding:5px 16px; border-radius:20px; z-index:20; white-space:nowrap;';
       const cameraWrap = document.getElementById('cameraBoxWrap');
-      if (cameraWrap) cameraWrap.appendChild(timerDiv);
-      stageTimerEl = timerDiv;
-    } else {
-      stageTimerEl = document.getElementById('livenessCountdown');
+      if (cameraWrap) cameraWrap.appendChild(stageTimerEl);
     }
+    stageTimerEl.style.display = 'block';
 
-    let motionCount = 0; // counter gerakan terdeteksi per stage
+    // State per-stage
+    let stageStartTime = Date.now();
+    let motionBuffer = []; // riwayat motion delta
+    let consecutiveMotion = 0;
+    let blinkState = 'watching'; // 'watching' | 'closed' | 'opened'
+    let blinkCloseFrame = 0;
 
     livenessIntervalId = setInterval(() => {
       if (kycLivenessStep >= 4) {
-        if (stageTimerEl) stageTimerEl.style.display = 'none';
+        stageTimerEl.style.display = 'none';
         return;
       }
 
       const video = document.getElementById('videoPreview');
       if (!video || video.paused || video.ended || video.readyState < 2) return;
 
-      // Update countdown timer UI
       const elapsed = (Date.now() - stageStartTime) / 1000;
-      const maxTime = STAGE_TIME[kycLivenessStep] || 4;
-      const remaining = Math.max(0, Math.ceil(maxTime - elapsed));
-      if (stageTimerEl) {
-        stageTimerEl.style.display = 'block';
-        stageTimerEl.innerText = `⏱ ${remaining}s`;
-      }
 
       try {
         ctx.drawImage(video, 0, 0, c.width, c.height);
         const imgData = ctx.getImageData(0, 0, c.width, c.height);
         const data = imgData.data;
 
-        // --- STAGE 0: POSISIKAN WAJAH (tahan 3 detik dengan wajah terlihat) ---
+        // ============================================================
+        // STAGE 0: Posisikan Wajah — auto setelah 3 detik kamera aktif
+        // ============================================================
         if (kycLivenessStep === 0) {
-          // Cek brightness keseluruhan frame (bukan gelap total)
+          const remaining = Math.max(0, Math.ceil(3 - elapsed));
+          stageTimerEl.innerText = `📷 Tahan wajah... ⏱ ${remaining}s`;
+          stageTimerEl.style.color = '#38bdf8';
+
           let totalBright = 0;
           for (let i = 0; i < data.length; i += 16) {
             totalBright += (data[i] + data[i+1] + data[i+2]) / 3;
           }
           const avgBright = totalBright / (data.length / 16);
 
-          if (avgBright > 25) { // kamera tidak gelap
-            centerHoldFrames++;
-          }
+          if (avgBright > 25) centerHoldFrames++;
 
-          // Auto advance setelah 3 detik kamera aktif
-          if (elapsed >= maxTime) {
+          if (elapsed >= 3 && centerHoldFrames >= 10) {
             centerHoldFrames = 0;
             stageStartTime = Date.now();
-            motionCount = 0;
+            consecutiveMotion = 0;
+            blinkState = 'watching';
+            lastFramePixels = null;
             advanceLivenessStage();
           }
           lastFramePixels = new Uint8ClampedArray(data);
           return;
         }
 
-        // --- Hitung motion delta antar frame ---
-        let motionDelta = 0;
+        // ============================================================
+        // Hitung motion delta full-frame dan zona mata
+        // ============================================================
+        let fullMotion = 0;
+        let eyeMotion = 0;
+        let leftMotion = 0;
+        let rightMotion = 0;
+
         if (lastFramePixels && lastFramePixels.length === data.length) {
           for (let i = 0; i < data.length; i += 4) {
-            motionDelta += Math.abs(data[i] - lastFramePixels[i])
-                         + Math.abs(data[i+1] - lastFramePixels[i+1])
-                         + Math.abs(data[i+2] - lastFramePixels[i+2]);
+            const dr = Math.abs(data[i] - lastFramePixels[i]);
+            const dg = Math.abs(data[i+1] - lastFramePixels[i+1]);
+            const db = Math.abs(data[i+2] - lastFramePixels[i+2]);
+            const d = (dr + dg + db) / 3;
+            fullMotion += d;
+
+            // Hitung koordinat pixel
+            const pixelIdx = i / 4;
+            const px = pixelIdx % c.width;
+            const py = Math.floor(pixelIdx / c.width);
+
+            // Zona mata (baris 10-45, kolom 25-135)
+            if (py >= 10 && py <= 45 && px >= 25 && px <= 135) {
+              eyeMotion += d;
+            }
+            // Sisi kiri frame
+            if (px < 55) leftMotion += d;
+            // Sisi kanan frame
+            if (px > 105) rightMotion += d;
           }
-          motionDelta = motionDelta / (data.length / 4); // rata-rata per pixel
+
+          fullMotion = fullMotion / (data.length / 4);
+          eyeMotion = eyeMotion / ((45-10)*(135-25));
         }
 
-        // --- STAGE 1: KEDIP MATA (deteksi perubahan cepat di zona mata) ---
+        // ============================================================
+        // STAGE 1: Kedip Mata — harus benar-benar kedip
+        // ============================================================
         if (kycLivenessStep === 1) {
-          // Zona mata: bagian atas 40% frame tengah
-          let eyeZoneDelta = 0;
-          if (lastFramePixels) {
-            for (let y = 15; y < 50; y++) {
-              for (let x = 30; x < 130; x++) {
-                const idx = (y * c.width + x) * 4;
-                eyeZoneDelta += Math.abs(data[idx] - lastFramePixels[idx]);
+          stageTimerEl.style.color = '#fbbf24';
+
+          // Deteksi pola kedip: eye motion naik tiba-tiba lalu turun lagi
+          if (blinkState === 'watching') {
+            if (eyeMotion > 12 && fullMotion > 8) {
+              blinkState = 'closed';
+              blinkCloseFrame = 0;
+              stageTimerEl.innerText = '👁️ Mata menutup... BAGUS!';
+            } else {
+              stageTimerEl.innerText = `👁️ Kedipkan mata sekarang! (eye: ${eyeMotion.toFixed(1)})`;
+            }
+          } else if (blinkState === 'closed') {
+            blinkCloseFrame++;
+            if (blinkCloseFrame >= 1 && eyeMotion > 8) {
+              // Mata membuka lagi = kedip selesai
+              blinkState = 'watching';
+              consecutiveMotion++;
+              stageTimerEl.innerText = `✅ Kedipan terdeteksi! (${consecutiveMotion}/2)`;
+              if (consecutiveMotion >= 2) {
+                stageStartTime = Date.now();
+                consecutiveMotion = 0;
+                blinkState = 'watching';
+                lastFramePixels = null;
+                advanceLivenessStage();
               }
+            } else if (blinkCloseFrame > 8) {
+              // Mata tidak membuka lagi (mungkin noise)
+              blinkState = 'watching';
             }
-          }
-          if (eyeZoneDelta > 8000 || motionDelta > 15) {
-            motionCount++;
-            if (motionCount >= 2) {
-              stageStartTime = Date.now(); motionCount = 0;
-              advanceLivenessStage();
-            }
-          }
-          // Auto-advance jika timeout (pengguna kesulitan)
-          if (elapsed >= maxTime + 3) {
-            stageStartTime = Date.now(); motionCount = 0;
-            advanceLivenessStage();
           }
         }
 
-        // --- STAGE 2: TOLEH KIRI (gerakan horizontal dominan) ---
+        // ============================================================
+        // STAGE 2: Toleh Kiri — wajah harus bergerak ke kiri nyata
+        // ============================================================
         else if (kycLivenessStep === 2) {
-          // Hitung perbedaan antara sisi kiri dan kanan frame
-          let leftDelta = 0, rightDelta = 0;
-          if (lastFramePixels) {
-            for (let y = 20; y < 100; y++) {
-              for (let x = 0; x < 60; x++) {
-                const idx = (y * c.width + x) * 4;
-                leftDelta += Math.abs(data[idx] - lastFramePixels[idx]);
-              }
-              for (let x = 100; x < 160; x++) {
-                const idx = (y * c.width + x) * 4;
-                rightDelta += Math.abs(data[idx] - lastFramePixels[idx]);
-              }
-            }
-          }
-          // Toleh kiri: sisi kanan frame lebih banyak berubah (wajah geser ke kiri)
-          if (rightDelta > leftDelta * 1.4 && motionDelta > 8) {
-            motionCount++;
-            if (motionCount >= 3) {
-              stageStartTime = Date.now(); motionCount = 0;
+          stageTimerEl.style.color = '#f97316';
+          const asymmetry = rightMotion - leftMotion;
+          const isMovingLeft = asymmetry > 800 && fullMotion > 10;
+          stageTimerEl.innerText = isMovingLeft
+            ? `👉 Terus menoleh kiri! (${consecutiveMotion}/4)`
+            : `👉 Tolehkan kepala ke KIRI sekarang!`;
+
+          if (isMovingLeft) {
+            consecutiveMotion++;
+            if (consecutiveMotion >= 4) {
+              stageStartTime = Date.now();
+              consecutiveMotion = 0;
+              lastFramePixels = null;
               advanceLivenessStage();
             }
-          }
-          if (elapsed >= maxTime + 3) {
-            stageStartTime = Date.now(); motionCount = 0;
-            advanceLivenessStage();
+          } else if (consecutiveMotion > 0 && fullMotion < 3) {
+            // Gerakan berhenti sebelum cukup
+            consecutiveMotion = Math.max(0, consecutiveMotion - 1);
           }
         }
 
-        // --- STAGE 3: TOLEH KANAN (gerakan horizontal dominan berlawanan) ---
+        // ============================================================
+        // STAGE 3: Toleh Kanan — wajah harus bergerak ke kanan nyata
+        // ============================================================
         else if (kycLivenessStep === 3) {
-          let leftDelta = 0, rightDelta = 0;
-          if (lastFramePixels) {
-            for (let y = 20; y < 100; y++) {
-              for (let x = 0; x < 60; x++) {
-                const idx = (y * c.width + x) * 4;
-                leftDelta += Math.abs(data[idx] - lastFramePixels[idx]);
-              }
-              for (let x = 100; x < 160; x++) {
-                const idx = (y * c.width + x) * 4;
-                rightDelta += Math.abs(data[idx] - lastFramePixels[idx]);
-              }
-            }
-          }
-          // Toleh kanan: sisi kiri frame lebih banyak berubah
-          if (leftDelta > rightDelta * 1.4 && motionDelta > 8) {
-            motionCount++;
-            if (motionCount >= 3) {
-              stageStartTime = Date.now(); motionCount = 0;
+          stageTimerEl.style.color = '#a78bfa';
+          const asymmetry = leftMotion - rightMotion;
+          const isMovingRight = asymmetry > 800 && fullMotion > 10;
+          stageTimerEl.innerText = isMovingRight
+            ? `👈 Terus menoleh kanan! (${consecutiveMotion}/4)`
+            : `👈 Tolehkan kepala ke KANAN sekarang!`;
+
+          if (isMovingRight) {
+            consecutiveMotion++;
+            if (consecutiveMotion >= 4) {
+              stageStartTime = Date.now();
+              consecutiveMotion = 0;
+              lastFramePixels = null;
               advanceLivenessStage();
             }
-          }
-          if (elapsed >= maxTime + 3) {
-            stageStartTime = Date.now(); motionCount = 0;
-            advanceLivenessStage();
+          } else if (consecutiveMotion > 0 && fullMotion < 3) {
+            consecutiveMotion = Math.max(0, consecutiveMotion - 1);
           }
         }
 
         lastFramePixels = new Uint8ClampedArray(data);
-      } catch(e) { console.warn('Liveness frame error:', e); }
-    }, 150); // 150ms interval ~ 6 fps analysis
+      } catch(e) { console.warn('Liveness error:', e); }
+    }, 120); // ~8 fps analisis
   }
 
   async function submitKycEnroll() {

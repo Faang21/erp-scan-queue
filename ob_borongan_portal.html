@@ -816,13 +816,10 @@
       updateLivenessUI(kycLivenessStep);
 
       if (kycLivenessStep === 4) {
+        // Ambil foto selfie saat liveness selesai
         verifiedMasterPhoto = captureSelfie();
-        const btnSubmit = document.getElementById('btnSubmitKyc');
-        if (btnSubmit) {
-          btnSubmit.style.background = 'linear-gradient(135deg, #10b981, #047857)';
-          btnSubmit.innerHTML = '🛡️ SIMPAN MASTER KYC SEKARANG (SUDAH TERVERIFIKASI ✅)';
-          btnSubmit.classList.add('pulse-anim');
-        }
+        // AUTO SIMPAN KYC — tidak perlu klik tombol lagi
+        setTimeout(() => submitKycEnroll(), 800);
       }
     }
   }
@@ -1035,16 +1032,17 @@
       return;
     }
 
-    if (kycLivenessStep < 4) {
-      alert('⚠️ TAHAP VERIFIKASI BIOMETRIK LIVENESS BELUM SELESAI!\n\nSilakan selesaikan tantangan gerakan wajah di depan kamera:\n1. Posisikan Wajah di Tengah Oval 📍\n2. Kedipkan Mata 👁️\n3. Menoleh ke Kiri & Kanan 👉👈');
-      return;
-    }
-
     const foto = verifiedMasterPhoto || captureSelfie();
     if (!foto || foto.length < 1000) {
       alert('⛔ Kamera wajib aktif untuk mengambil foto selfie Master KYC Biometrik!');
       return;
     }
+
+    // Tampilkan status simpan di UI liveness
+    const pText = document.getElementById('kycLivenessPromptText');
+    const pStatus = document.getElementById('kycProgressStatus');
+    if (pText) pText.innerText = '⏳ Menyimpan KYC ke server...';
+    if (pStatus) pStatus.innerText = '🔄 Harap tunggu, data biometrik sedang dikirim...';
 
     const phoneEl = document.getElementById('inputUserPhone');
     const phone = phoneEl ? phoneEl.value.trim() : '';
@@ -1057,20 +1055,44 @@
       });
       const data = await res.json();
       if (data.success) {
-        alert(data.message || '🛡️ Registrasi Master Wajah (KYC Biometrik) Berhasil!');
-        const sectionBox = document.getElementById('sectionKycBox');
-        if (sectionBox) sectionBox.style.display = 'none';
+        // Update badge KYC
         const badge = document.getElementById('empKycBadge');
         if (badge) {
           badge.className = 'status-badge badge-success';
           badge.innerText = '✅ KYC Biometrik Terverifikasi';
         }
-        fetchKaryawanList();
+
+        // Tampilkan sukses di area liveness
+        if (pText) pText.innerText = '🛡️ KYC BIOMETRIK TERSIMPAN & TERVERIFIKASI!';
+        if (pStatus) pStatus.innerText = '✅ Data wajah biometrik Anda telah tersimpan di sistem admin. Kamera siap untuk absensi.';
+
+        // Sembunyikan KYC section setelah 2 detik, kamera tetap aktif untuk absensi
+        setTimeout(() => {
+          const sectionBox = document.getElementById('sectionKycBox');
+          if (sectionBox) sectionBox.style.display = 'none';
+
+          // Reset liveness state agar kamera bisa dipakai absensi
+          kycLivenessStep = 0;
+          if (livenessIntervalId) {
+            clearInterval(livenessIntervalId);
+            livenessIntervalId = null;
+          }
+          const stageTimerEl = document.getElementById('livenessCountdown');
+          if (stageTimerEl) stageTimerEl.style.display = 'none';
+
+          // Kamera tetap aktif, tidak perlu dimatikan
+          fetchKaryawanList();
+        }, 2000);
+
       } else {
+        if (pText) pText.innerText = '⛔ Gagal simpan KYC';
+        if (pStatus) pStatus.innerText = data.message || data.error || 'Terjadi kesalahan saat menyimpan KYC.';
         alert('⛔ ' + (data.message || data.error || 'Gagal registrasi KYC Master'));
       }
     } catch (e) {
-      alert('⛔ Connection Error / Gagal terhubung saat simpan KYC Master!');
+      if (pText) pText.innerText = '⛔ Koneksi gagal';
+      if (pStatus) pStatus.innerText = 'Periksa koneksi internet Anda dan coba lagi.';
+      alert('⛔ Gagal terhubung ke server saat simpan KYC!');
     }
   }
 

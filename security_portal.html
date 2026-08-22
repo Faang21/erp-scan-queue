@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Portal Absensi & KYC Biometrik Security - PT EMJ</title>
+  <title>Portal Personil Security - PT EMJ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="manifest" href="/manifest_security.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0284c7">
   <style>
     :root {
       --bg-main: #0b0f19;
@@ -579,9 +582,47 @@
     <span id="toastText">Notifikasi</span>
   </div>
 
+  <!-- PWA INSTALL GUIDE MODAL -->
+  <div class="modal-backdrop" id="pwaGuideModalSec" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 99999; justify-content: center; align-items: center; padding: 16px;">
+    <div class="modal-box" style="text-align: center; max-width: 360px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 20px;">
+      <div style="background: rgba(2,132,199,0.15); border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 28px;">
+        📱
+      </div>
+      <h3 style="font-size: 1.1rem; margin-bottom: 6px; color: var(--primary);">Pasang Aplikasi Security Android</h3>
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;">Agar akses presensi, kamera KYC & GPS lebih cepat tanpa membuka browser:</p>
+
+      <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; text-align: left; font-size: 0.82rem; line-height: 1.6; margin-bottom: 14px;">
+        <div style="margin-bottom: 6px;">
+          <b style="color: #38bdf8;">Langkah 1:</b><br>
+          Ketuk tombol <b>Menu Titik Tiga (⋮)</b> di pojok kanan atas Google Chrome HP Anda.
+        </div>
+        <div>
+          <b style="color: #38bdf8;">Langkah 2:</b><br>
+          Pilih <b>"Instal aplikasi"</b> atau <b>"Tambahkan ke Layar Utama"</b> (<i>Add to Home screen</i>).
+        </div>
+      </div>
+
+      <button type="button" class="btn-primary" onclick="closeSecPwaGuideModal()" style="width: 100%; padding: 11px; border:none; border-radius:10px; background:var(--primary); color:#fff; font-weight:bold; cursor:pointer; font-size: 13px;">
+        👍 Siap, Saya Mengerti
+      </button>
+    </div>
+  </div>
+
   <!-- LOGIN MODAL -->
   <div id="loginOverlay">
     <div class="login-box">
+      <!-- PWA INSTALL BANNER -->
+      <div id="pwaInstallBanner" style="display: flex; background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; padding: 10px 14px; border-radius: 12px; font-size: 12px; align-items: center; justify-content: space-between; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <img src="/logo_emj.png" style="height:28px; width:auto; background:#fff; padding:2px; border-radius:4px;">
+          <div>
+            <b>Install Aplikasi Android</b><br>
+            <span style="font-size:10px; opacity:0.9;">Pasang di layar HP agar presensi lebih cepat</span>
+          </div>
+        </div>
+        <button type="button" onclick="triggerSecPwaInstall()" style="background:#fff; color:#0284c7; border:none; font-weight:bold; padding:7px 12px; border-radius:8px; cursor:pointer; font-size:11px; box-shadow:0 2px 6px rgba(0,0,0,0.2);">📱 Install</button>
+      </div>
+
       <div class="login-logo">
         <img src="/logo_emj.png?v=3" alt="Logo PT EMJ" style="height: 54px; object-fit: contain; margin-bottom: 8px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));">
         <h2 class="login-title">Portal Personil Security</h2>
@@ -1210,21 +1251,31 @@
         if (mediaStream) {
           mediaStream.getTracks().forEach(t => t.stop());
         }
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: currentFacingMode, width: { ideal: 640 }, height: { ideal: 480 } },
-          audio: false
-        });
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: currentFacingMode }, width: { ideal: 640 }, height: { ideal: 480 } },
+            audio: false
+          });
+        } catch (eFallback) {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        }
         mediaStream = stream;
         const v = document.getElementById('videoStream');
         v.srcObject = stream;
+        v.setAttribute('playsinline', 'true');
+        v.setAttribute('autoplay', 'true');
+        v.setAttribute('muted', 'true');
+        v.muted = true;
         v.style.display = 'block';
         v.style.transform = (currentFacingMode === 'user') ? 'scaleX(-1)' : 'none';
         
+        await v.play().catch(e => console.log('Video play catch:', e));
         v.onloadedmetadata = () => {
           startContinuousCameraScanner();
         };
       } catch (err) {
-        showToast('Izin kamera tidak aktif: ' + err.message, '❌');
+        showToast('Kamera Gelap / Izin kamera tidak aktif: ' + err.message, '❌');
       }
     }
 
@@ -1692,6 +1743,48 @@
       } catch (err) {
         showToast('Error submit izin: ' + err.message, '❌');
       }
+    }
+
+    let deferredPromptSec = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPromptSec = e;
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) banner.style.display = 'flex';
+    });
+
+    function closeSecPwaGuideModal() {
+      const guide = document.getElementById('pwaGuideModalSec');
+      if (guide) guide.style.display = 'none';
+    }
+
+    function triggerSecPwaInstall() {
+      if (deferredPromptSec) {
+        deferredPromptSec.prompt();
+        deferredPromptSec.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            const banner = document.getElementById('pwaInstallBanner');
+            if (banner) banner.style.display = 'none';
+          }
+          deferredPromptSec = null;
+        });
+      } else {
+        // Tampilkan panduan manual install karena prompt tidak tersedia
+        const guide = document.getElementById('pwaGuideModalSec');
+        if (guide) {
+          guide.style.display = 'flex';
+        } else {
+          // Fallback: alert dengan panduan
+          alert('📱 Cara Install Aplikasi Security ke HP Android:\n\n1. Buka Chrome di HP\n2. Masuk ke: https://erp.mogaworld.xyz/security-portal\n3. Ketuk ikon ⋮ (titik 3) pojok kanan atas Chrome\n4. Pilih "Tambahkan ke layar Utama" / "Add to Home Screen"\n5. Ketuk "Tambah" / "Add"\n\n✅ Aplikasi akan terpasang seperti app Android!');
+        }
+      }
+    }
+
+    // PWA Service Worker & Install Handler
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW register fail:', err));
+      });
     }
   </script>
 </body>

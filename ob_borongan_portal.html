@@ -261,16 +261,19 @@
       </div>
 
       <div class="camera-wrap" id="cameraBoxWrap" onclick="initCamera(true)" style="cursor:pointer; position:relative;">
-        <video id="videoPreview" autoplay playsinline muted></video>
+        <video id="videoPreview" autoplay playsinline webkit-playsinline muted></video>
         <canvas id="photoCanvas" style="display:none;"></canvas>
         <div class="kyc-scanner-reticle" id="kycReticleOverlay">
           <div class="kyc-scanner-line"></div>
           <span style="font-size:0.65rem; color:#38bdf8; font-weight:bold; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px;">FPS: 30 &bull; LIVE BIOMETRIC SCANNER ACTIVE</span>
         </div>
-        <div id="camOverlayPrompt" style="display:none; position:absolute; inset:0; background:rgba(11,15,25,0.85); flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:15px; color:#fff; z-index:15;">
-          <div style="font-size:32px;">🛡️</div>
-          <b style="color:var(--primary); font-size:0.9rem;">Ketuk Di Sini Untuk Membuka Live Sensor Biometrik</b>
-          <span style="font-size:0.75rem; color:var(--text-muted);">Posisikan Wajah di Tengah Oval &bull; Pastikan Cahaya Terang</span>
+        <div id="camOverlayPrompt" onclick="requestCameraPermission(event)" style="display:none; position:absolute; inset:0; background:rgba(11,15,25,0.92); flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:15px; color:#fff; z-index:15; cursor:pointer;">
+          <div style="font-size:36px;">📷</div>
+          <b style="color:var(--primary); font-size:0.95rem;" id="camPromptTitle">Ketuk Di Sini Untuk Membuka Kamera</b>
+          <span style="font-size:0.75rem; color:#cbd5e1; max-width:280px;" id="camPromptDesc">Pilih "Izinkan / Allow" pada kotak pesan izin kamera browser HP Anda.</span>
+          <button type="button" class="btn-primary" style="margin-top:6px; width:auto; padding:8px 18px; font-size:0.8rem; border-radius:8px; background:linear-gradient(135deg,#0284c7,#0369a1);" onclick="event.stopPropagation(); requestCameraPermission(event);">
+            ▶️ Aktifkan Izin Kamera
+          </button>
         </div>
         <div class="camera-overlay">
           <button type="button" class="cam-btn" onclick="event.stopPropagation(); toggleCamera();">🔄 Switch Kamera</button>
@@ -1160,45 +1163,112 @@
   }
 
   // Live In-App WebRTC Camera Stream Handling
+  async function requestCameraPermission(e) {
+    if (e) e.stopPropagation();
+    const promptTitle = document.getElementById('camPromptTitle');
+    const promptDesc = document.getElementById('camPromptDesc');
+    if (promptTitle) promptTitle.innerText = "⏳ Membuka Kamera...";
+    if (promptDesc) promptDesc.innerText = "Mohon pilih 'Izinkan / Allow' pada kotak notifikasi browser";
+    
+    await initCamera(true);
+  }
+
   async function initCamera(isUserClick = false) {
     const video = document.getElementById('videoPreview');
     const promptOverlay = document.getElementById('camOverlayPrompt');
+    const promptTitle = document.getElementById('camPromptTitle');
+    const promptDesc = document.getElementById('camPromptDesc');
     if (!video) return;
 
+    if (currentStream) {
+      try {
+        currentStream.getTracks().forEach(t => t.stop());
+      } catch(e) {}
+      currentStream = null;
+    }
+
+    // Ensure navigator.mediaDevices compatibility
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices = navigator.mediaDevices || {};
+      const legacyGetUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+      if (legacyGetUserMedia) {
+        navigator.mediaDevices.getUserMedia = function(constraints) {
+          return new Promise((resolve, reject) => {
+            legacyGetUserMedia.call(navigator, constraints, resolve, reject);
+          });
+        };
+      } else {
+        if (promptOverlay) promptOverlay.style.display = 'flex';
+        if (promptTitle) promptTitle.innerText = '⚠️ Browser Tidak Mendukung Kamera';
+        if (promptDesc) promptDesc.innerText = 'Gunakan browser Google Chrome / Safari versi terbaru di HP Anda.';
+        return;
+      }
+    }
+
+    let stream = null;
+    let lastError = null;
+
+    const strategies = [
+      { video: { facingMode: facingMode, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false },
+      { video: { facingMode: { ideal: facingMode } }, audio: false },
+      { video: { facingMode: 'user' }, audio: false },
+      { video: { facingMode: 'environment' }, audio: false },
+      { video: true, audio: false }
+    ];
+
+    for (const constraint of strategies) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraint);
+        if (stream) break;
+      } catch(err) {
+        lastError = err;
+      }
+    }
+
+    if (!stream) {
+      console.warn('All getUserMedia attempts failed:', lastError);
+      if (promptOverlay) promptOverlay.style.display = 'flex';
+      if (promptTitle) promptTitle.innerText = '⛔ Izin Kamera Belum Diaktifkan';
+      if (promptDesc) {
+        promptDesc.innerHTML = 'Ketuk tombol di bawah, atau klik <b>Ikon Gembok (🔒)</b> di samping URL <i>https://...</i> lalu ubah izin Kamera menjadi <b>Izinkan (Allow)</b>.';
+      }
+      if (isUserClick && lastError) {
+        if (lastError.name === 'NotAllowedError' || lastError.name === 'PermissionDeniedError') {
+          alert('⛔ Izin kamera diblokir oleh browser!\n\nCara Mengaktifkan:\n1. Klik ikon Gembok (🔒) di sebelah tulisan https://erp.mogaworld.xyz...\n2. Pilih "Izin Situs" / "Permissions"\n3. Ubah Kamera menjadi "Izinkan / Allow"\n4. Refresh / Muat ulang halaman.');
+        } else if (lastError.name === 'NotFoundError' || lastError.name === 'DevicesNotFoundError') {
+          alert('⚠️ Kamera tidak terdeteksi pada perangkat ini.');
+        } else {
+          alert('⚠️ Gagal mengakses kamera: ' + (lastError.message || lastError.name));
+        }
+      }
+      return;
+    }
+
     try {
-      if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); }
-      
-      let stream = null;
-      const attempts = [
-        { video: { facingMode: { ideal: facingMode }, width: { ideal: 640 }, height: { ideal: 480 } } },
-        { video: { facingMode: facingMode } },
-        { video: { facingMode: 'user' } },
-        { video: { facingMode: 'environment' } },
-        { video: true }
-      ];
-
-      for (const constraint of attempts) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia(constraint);
-          if (stream) break;
-        } catch(errConstraint) {}
-      }
-
-      if (!stream) {
-        throw new Error('All getUserMedia attempts failed');
-      }
-
       currentStream = stream;
-      video.srcObject = currentStream;
+      video.muted = true;
+      video.playsInline = true;
       video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
       video.setAttribute('autoplay', 'true');
       video.setAttribute('muted', 'true');
-      video.muted = true;
+      video.srcObject = stream;
       video.style.display = 'block';
-      await video.play().catch(e => console.log('Video play catch:', e));
-      if (promptOverlay) promptOverlay.style.display = 'none';
-    } catch (e) {
-      console.warn('Camera stream access denied/failed:', e);
+
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          if (promptOverlay) promptOverlay.style.display = 'none';
+          console.log('✅ In-App Video Stream Active');
+        }).catch(err => {
+          console.log('Video play catch:', err);
+          if (promptOverlay) promptOverlay.style.display = 'flex';
+        });
+      } else {
+        if (promptOverlay) promptOverlay.style.display = 'none';
+      }
+    } catch(e) {
+      console.error('Video element attach error:', e);
       if (promptOverlay) promptOverlay.style.display = 'flex';
     }
   }

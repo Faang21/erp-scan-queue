@@ -59,7 +59,6 @@
       inset: 15px 60px;
       border: 2px dashed #0ea5e9;
       border-radius: 50% / 40%;
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
       pointer-events: none;
       z-index: 5;
       display: flex;
@@ -257,22 +256,22 @@
         </button>
       </div>
 
-      <div class="camera-wrap" id="cameraBoxWrap" onclick="initCamera(true)" style="cursor:pointer; position:relative;">
-        <video id="videoPreview" autoplay playsinline webkit-playsinline muted></video>
+      <div class="camera-wrap" id="cameraBoxWrap" style="cursor:pointer; position:relative;">
+        <video id="videoPreview" autoplay playsinline webkit-playsinline muted style="display:none;"></video>
         <canvas id="photoCanvas" style="display:none;"></canvas>
-        <div class="kyc-scanner-reticle" id="kycReticleOverlay">
+        <div class="kyc-scanner-reticle" id="kycReticleOverlay" style="display:none;">
           <div class="kyc-scanner-line"></div>
           <span style="font-size:0.65rem; color:#38bdf8; font-weight:bold; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px;">FPS: 30 &bull; LIVE BIOMETRIC SCANNER ACTIVE</span>
         </div>
-        <div id="camOverlayPrompt" onclick="requestCameraPermission(event)" style="display:none; position:absolute; inset:0; background:rgba(11,15,25,0.92); flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:15px; color:#fff; z-index:15; cursor:pointer;">
+        <div id="camOverlayPrompt" onclick="requestCameraPermission(event)" style="display:flex; position:absolute; inset:0; background:rgba(11,15,25,0.92); flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:15px; color:#fff; z-index:15; cursor:pointer;">
           <div style="font-size:36px;">📷</div>
-          <b style="color:var(--primary); font-size:0.95rem;" id="camPromptTitle">Ketuk Di Sini Untuk Membuka Kamera</b>
-          <span style="font-size:0.75rem; color:#cbd5e1; max-width:280px;" id="camPromptDesc">Pilih "Izinkan / Allow" pada kotak pesan izin kamera browser HP Anda.</span>
-          <button type="button" class="btn-primary" style="margin-top:6px; width:auto; padding:8px 18px; font-size:0.8rem; border-radius:8px; background:linear-gradient(135deg,#0284c7,#0369a1);" onclick="event.stopPropagation(); requestCameraPermission(event);">
+          <b style="color:var(--primary); font-size:0.95rem;" id="camPromptTitle">Ketuk Di Sini Untuk Membuka Live Sensor Biometrik</b>
+          <span style="font-size:0.75rem; color:#cbd5e1; max-width:280px;" id="camPromptDesc">Posisikan Wajah di Tengah Oval &bull; Pastikan Cahaya Terang</span>
+          <button type="button" class="btn-primary" style="margin-top:6px; width:auto; padding:10px 24px; font-size:0.85rem; border-radius:8px; background:linear-gradient(135deg,#0284c7,#0369a1);" onclick="event.stopPropagation(); requestCameraPermission(event);">
             ▶️ Aktifkan Izin Kamera
           </button>
         </div>
-        <div class="camera-overlay">
+        <div class="camera-overlay" style="display:none;" id="switchCamBtn">
           <button type="button" class="cam-btn" onclick="event.stopPropagation(); toggleCamera();">🔄 Switch Kamera</button>
         </div>
       </div>
@@ -491,10 +490,8 @@
   window.addEventListener('DOMContentLoaded', () => {
     checkExistingSession();
     fetchKaryawanList();
-    initCamera();
     initGps();
     setDefaultDates();
-    startSmartLivenessEngine();
     setInterval(fetchKaryawanList, 5000);
   });
 
@@ -1195,21 +1192,29 @@
       video.srcObject = stream;
       video.style.display = 'block';
 
+      const reticle = document.getElementById('kycReticleOverlay');
+      const switchBtn = document.getElementById('switchCamBtn');
+
+      const onCameraReady = () => {
+        if (promptOverlay) promptOverlay.style.display = 'none';
+        if (reticle) reticle.style.display = 'flex';
+        if (switchBtn) switchBtn.style.display = 'block';
+        console.log('✅ Camera stream active:', video.videoWidth, 'x', video.videoHeight);
+        // Start liveness only after camera is confirmed active
+        startSmartLivenessEngine();
+      };
+
       video.onloadedmetadata = () => {
-        video.play().then(() => {
-          if (promptOverlay) promptOverlay.style.display = 'none';
-          console.log('✅ In-App Video Stream Active with dimensions:', video.videoWidth, video.videoHeight);
-        }).catch(err => {
-          console.warn('Video play catch onloadedmetadata:', err);
+        video.play().then(onCameraReady).catch(err => {
+          console.warn('Play error on loadedmetadata:', err);
         });
       };
 
-      // Direct trigger fallback
-      video.play().then(() => {
-        if (promptOverlay) promptOverlay.style.display = 'none';
-      }).catch(err => {
-        console.log('Direct video play catch:', err);
+      // Fallback: try playing immediately
+      video.play().then(onCameraReady).catch(err => {
+        console.log('Direct play catch (waiting for loadedmetadata):', err);
       });
+
     } catch(e) {
       console.error('Video element attach error:', e);
       if (promptOverlay) promptOverlay.style.display = 'flex';

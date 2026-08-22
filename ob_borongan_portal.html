@@ -1073,23 +1073,36 @@
         // ============================================================
         else if (kycLivenessStep === 2) {
           stageTimerEl.style.color = '#f97316';
-          const asymmetry = rightMotion - leftMotion;
-          const isMovingLeft = asymmetry > 800 && fullMotion > 10;
+          // Normalisasi: hitung per-pixel average bukan total
+          const leftPx = 55 * 120; // jumlah pixel sisi kiri
+          const rightPx = 55 * 120; // jumlah pixel sisi kanan
+          const leftAvg = leftMotion / leftPx;
+          const rightAvg = rightMotion / rightPx;
+          const asymmetry = rightAvg - leftAvg; // positif = sisi kanan lebih bergerak = toleh kiri
+          const isMovingLeft = asymmetry > 0.8 && fullMotion > 1.5;
+
           stageTimerEl.innerText = isMovingLeft
-            ? `👉 Terus menoleh kiri! (${consecutiveMotion}/4)`
-            : `👉 Tolehkan kepala ke KIRI sekarang!`;
+            ? `👉 Terus menoleh kiri! (${consecutiveMotion}/5)`
+            : `👉 TOLEH KIRI (asym: ${asymmetry.toFixed(2)})`;
 
           if (isMovingLeft) {
             consecutiveMotion++;
-            if (consecutiveMotion >= 4) {
+            if (consecutiveMotion >= 5) {
               stageStartTime = Date.now();
               consecutiveMotion = 0;
               lastFramePixels = null;
               advanceLivenessStage();
             }
-          } else if (consecutiveMotion > 0 && fullMotion < 3) {
-            // Gerakan berhenti sebelum cukup
+          } else if (fullMotion < 0.5) {
             consecutiveMotion = Math.max(0, consecutiveMotion - 1);
+          }
+
+          // Auto-advance setelah 15 detik jika tidak terdeteksi
+          if (elapsed >= 15) {
+            stageStartTime = Date.now();
+            consecutiveMotion = 0;
+            lastFramePixels = null;
+            advanceLivenessStage();
           }
         }
 
@@ -1098,22 +1111,35 @@
         // ============================================================
         else if (kycLivenessStep === 3) {
           stageTimerEl.style.color = '#a78bfa';
-          const asymmetry = leftMotion - rightMotion;
-          const isMovingRight = asymmetry > 800 && fullMotion > 10;
+          const leftPx = 55 * 120;
+          const rightPx = 55 * 120;
+          const leftAvg = leftMotion / leftPx;
+          const rightAvg = rightMotion / rightPx;
+          const asymmetry = leftAvg - rightAvg; // positif = sisi kiri lebih bergerak = toleh kanan
+          const isMovingRight = asymmetry > 0.8 && fullMotion > 1.5;
+
           stageTimerEl.innerText = isMovingRight
-            ? `👈 Terus menoleh kanan! (${consecutiveMotion}/4)`
-            : `👈 Tolehkan kepala ke KANAN sekarang!`;
+            ? `👈 Terus menoleh kanan! (${consecutiveMotion}/5)`
+            : `👈 TOLEH KANAN (asym: ${asymmetry.toFixed(2)})`;
 
           if (isMovingRight) {
             consecutiveMotion++;
-            if (consecutiveMotion >= 4) {
+            if (consecutiveMotion >= 5) {
               stageStartTime = Date.now();
               consecutiveMotion = 0;
               lastFramePixels = null;
               advanceLivenessStage();
             }
-          } else if (consecutiveMotion > 0 && fullMotion < 3) {
+          } else if (fullMotion < 0.5) {
             consecutiveMotion = Math.max(0, consecutiveMotion - 1);
+          }
+
+          // Auto-advance setelah 15 detik jika tidak terdeteksi
+          if (elapsed >= 15) {
+            stageStartTime = Date.now();
+            consecutiveMotion = 0;
+            lastFramePixels = null;
+            advanceLivenessStage();
           }
         }
 

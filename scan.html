@@ -314,6 +314,16 @@
 
     <!-- Config Card -->
     <div class="card">
+      <!-- Site Selection Dropdown (CIPTA / CEMERLANG / SIP) -->
+      <div class="form-group" id="siteSelectGroup">
+        <label for="siteSelect"><i class="fa-solid fa-building"></i> Pilih Perusahaan / Site</label>
+        <select id="siteSelect" onchange="onSiteChanged()" style="font-weight: 700; background: rgba(30, 41, 59, 0.9); border: 1.5px solid #818cf8; color: #fff;">
+          <option value="CNC1" selected>🔩 CIPTA (CNC 1 - PT. Chandra Nugerahcipta)</option>
+          <option value="CNC">🏭 CEMERLANG (CNC - PT. Chandra Nugerah Cemerlang)</option>
+          <option value="SIP">🏗️ SIP (PT. Sarana Inti Presisi)</option>
+        </select>
+      </div>
+
       <div class="form-group" id="roleSelectGroup">
         <label for="roleSelect">Pilih Posisi Departemen</label>
         <select id="roleSelect">
@@ -464,12 +474,34 @@
       <option value="proses">Proses AP (Update Tanggal Proses Setelah Finance)</option>
     `;
 
+    const CEMERLANG_AP_ROLES_HTML = `
+      <option value="auto">Serahkan ke Pengecekan Berikutnya (Auto-Detect)</option>
+      <option value="purchasing">Purchasing Dept (Update Tgl Purchasing)</option>
+      <option value="accounting">Accounting Dept (Update Tgl Accounting)</option>
+      <option value="pa_ali">Pa Ali (Update Tgl Pa Ali)</option>
+      <option value="cherly">Ibu Cherly (Update Tgl Ibu Cherly)</option>
+      <option value="finance">Finance Dept (Update Tgl Finance + Settle)</option>
+      <option value="proses">Proses AP (Update Tanggal Proses Setelah Finance)</option>
+    `;
+
     const AR_ROLES_HTML = `
       <option value="kirim">🚚 Kirim / Serah Terima Dokumen ke Customer (Update Tgl Kirim)</option>
       <option value="sandri">✍️ Verifikasi Sandri (Update Tgl Verif Sandri)</option>
       <option value="herry">✍️ Verifikasi Pak Herry (Update Tgl Verif Pak Herry)</option>
       <option value="handoko">✍️ Verifikasi Pak Handoko (Update Tgl Verif Pak Handoko)</option>
     `;
+
+    function updateRoleOptionsForSite() {
+      if (currentScanMode !== 'AP') return;
+      const roleSelect = document.getElementById('roleSelect');
+      if (!roleSelect) return;
+      const site = document.getElementById('siteSelect')?.value || 'CNC1';
+      if (site === 'CNC') {
+        roleSelect.innerHTML = CEMERLANG_AP_ROLES_HTML;
+      } else {
+        roleSelect.innerHTML = AP_ROLES_HTML;
+      }
+    }
 
     function setScanMode(mode) {
       currentScanMode = mode;
@@ -490,7 +522,7 @@
         btnAR.style.background = 'transparent';
         btnAR.style.color = 'var(--text-muted)';
         
-        roleSelect.innerHTML = AP_ROLES_HTML;
+        updateRoleOptionsForSite();
         manualInputLabel.innerText = "Atau Masukkan ID Invoice AP Secara Manual";
         manualInput.placeholder = "Contoh: 1784019283748";
         headerTitle.innerHTML = `<i class="fa-solid fa-qrcode"></i> BARCODE SCANNER AP`;
@@ -565,33 +597,44 @@
         const response = await fetch('/api/scan-login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
+          body: JSON.stringify({ username, password, url: '/scan.html' })
         });
-        const contentType = response.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) {
-          const data = await response.json();
-          if (data.success) {
-            localStorage.setItem(AUTH_KEY, JSON.stringify(data.user));
-            document.getElementById('usernameInput').value = '';
-            document.getElementById('passwordInput').value = '';
-            checkAuth();
-            return;
-          }
+        const data = await response.json();
+        if (response.status === 429) {
+          loginErrorMsg.textContent = data.error || 'Terlalu banyak percobaan login gagal. Silakan tunggu.';
+          loginError.style.display = 'block';
+          playBeep('error');
+          return;
         }
-      } catch(err) {}
 
-      // Fallback local authentication for ANY user on mobile HP
+        if (data.success && data.user) {
+          localStorage.setItem(AUTH_KEY, JSON.stringify(data.user));
+          document.getElementById('usernameInput').value = '';
+          document.getElementById('passwordInput').value = '';
+          checkAuth();
+          return;
+        } else {
+          loginErrorMsg.textContent = data.error || 'Username atau Password salah!';
+          loginError.style.display = 'block';
+          playBeep('error');
+          return;
+        }
+      } catch(err) {
+        console.warn('[SCAN-AUTH-ERR]', err);
+      }
+
+      // Fallback local authentication
       const uClean = username.trim();
       const fallbackUser = { username: uClean.toLowerCase(), name: uClean, dept: 'Internal Scanner', role: 'user' };
       localStorage.setItem(AUTH_KEY, JSON.stringify(fallbackUser));
       document.getElementById('usernameInput').value = '';
       document.getElementById('passwordInput').value = '';
       checkAuth();
-      return;
-
-      loginErrorMsg.textContent = 'Username atau Password salah!';
-      loginError.style.display = 'block';
-      playBeep('error');
+      fetch('/api/auth/log-activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: uClean, status: 'Berhasil (Scanner)', url: '/scan.html' })
+      }).catch(() => {});
     }
 
     function logoutScanner() {
@@ -619,7 +662,18 @@
       inputEl.value = '';
     }
 
+    function onSiteChanged() {
+      const site = document.getElementById('siteSelect')?.value || 'CNC1';
+      localStorage.setItem('scan_active_site', site);
+      updateRoleOptionsForSite();
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
+      const savedSite = localStorage.getItem('scan_active_site') || 'CNC1';
+      if (document.getElementById('siteSelect')) {
+        document.getElementById('siteSelect').value = savedSite;
+      }
+      updateRoleOptionsForSite();
       checkAuth();
       loadCameraDevices();
 
@@ -907,6 +961,28 @@
 
       alertDiv.style.display = 'none';
 
+      // Smart URL QR Code check & extraction
+      let scannedCode = String(decodedText || '').trim();
+      if (scannedCode.startsWith('http://') || scannedCode.startsWith('https://')) {
+        try {
+          const u = new URL(scannedCode);
+          const p = u.searchParams.get('doc_id') || u.searchParams.get('id') || u.searchParams.get('noTtd') || u.searchParams.get('receipt_no');
+          if (p) {
+            scannedCode = p;
+          } else {
+            playBeep('error');
+            alertDiv.className = 'result-alert error';
+            alertDiv.innerHTML = `<strong><i class="fa-solid fa-circle-info"></i> Link Website Terdeteksi</strong><div>QR Code yang discan adalah URL link scanner web. Harap scan Barcode / QR Code Nomor Dokumen Tanda Terima (misal: 2658) di bagian atas cetakan.</div>`;
+            alertDiv.style.display = 'block';
+            setTimeout(() => {
+              isProcessing = false;
+              if (isScannerRunning) document.getElementById('scannerWrapper').classList.add('scanner-active');
+            }, 2500);
+            return;
+          }
+        } catch(e) {}
+      }
+
       // Capture GPS geolocation if available
       let gpsLocation = null;
       if (navigator.geolocation) {
@@ -920,9 +996,9 @@
         }
       }
 
-      const isCustomerReceipt = currentScanMode === 'AR' || String(decodedText).trim().startsWith('TTDC-');
+      const isCustomerReceipt = currentScanMode === 'AR' || scannedCode.startsWith('TTDC-');
 
-      if (currentScanMode === 'AP' && String(decodedText).trim().startsWith('TTDC-')) {
+      if (currentScanMode === 'AP' && scannedCode.startsWith('TTDC-')) {
         playBeep('error');
         alertDiv.className = 'result-alert error';
         alertDiv.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation"></i> Salah Mode Scan</strong><div>Anda sedang dalam Mode Scan AP (Supplier). Harap ganti ke Mode AR (Customer) di bagian atas untuk men-scan barcode ini.</div>`;
@@ -943,7 +1019,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              receipt_no: decodedText,
+              receipt_no: scannedCode,
               location: gpsLocation,
               role: role,
               custom_date: document.getElementById('dateModeSelect').value === 'custom' ? document.getElementById('customScanDate').value : ''
@@ -956,10 +1032,10 @@
             
             alertDiv.className = 'result-alert success';
             alertDiv.innerHTML = `
-              <strong><i class="fa-solid fa-circle-check"></i> ${data.message}</strong>
-              <div>No TTR: ${data.data.receipt_no}</div>
-              <div>Customer: ${data.data.customer_name}</div>
-              <div>Invoices: ${data.data.invoice_no}</div>
+              <strong><i class="fa-solid fa-circle-check"></i> ${esc(data.message)}</strong>
+              <div>No TTR: ${esc(data.data.receipt_no)}</div>
+              <div>Customer: ${esc(data.data.customer_name)}</div>
+              <div>Invoices: ${esc(data.data.invoice_no)}</div>
               <div>Lokasi: ${data.data.delivery_location || '<span style="color:#ef4444;font-style:italic">Tidak ada GPS</span>'}</div>
             `;
             alertDiv.style.display = 'block';
@@ -969,40 +1045,44 @@
           } else {
             playBeep('error');
             alertDiv.className = 'result-alert error';
-            alertDiv.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation"></i> Error</strong><div>${data.error}</div>`;
+            alertDiv.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation"></i> Error</strong><div>${esc(data.error)}</div>`;
             alertDiv.style.display = 'block';
           }
         } else {
           // Supplier receipt logic
+          const selectedSite = document.getElementById('siteSelect')?.value || 'CNC1';
           const response = await fetch('/api/scan-receipt', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              doc_id: decodedText,
+              doc_id: scannedCode,
               role: role,
+              site: selectedSite,
               custom_date: document.getElementById('dateModeSelect').value === 'custom' ? document.getElementById('customScanDate').value : ''
             })
           });
           const data = await response.json();
 
-          if (data.success) {
+          if (data.success && data.doc) {
             playBeep('success');
-            
+            const invNo = data.doc.invoiceNo || data.doc.invoice_no || '-';
+            const suppName = data.doc.supplierName || data.doc.supplier_name || '-';
+
             alertDiv.className = 'result-alert success';
             alertDiv.innerHTML = `
-              <strong><i class="fa-solid fa-circle-check"></i> ${data.message}</strong>
-              <div>Invoice: ${data.doc.invoice_no} (${data.doc.supplier_name})</div>
-              <div>Total: Rp ${parseFloat(data.doc.amount).toLocaleString('id-ID')}</div>
-              <div style="font-size:12px;opacity:0.8;">Status: ${data.doc.status}</div>
+              <strong><i class="fa-solid fa-circle-check"></i> ${esc(data.message)}</strong>
+              <div>Invoice: ${esc(invNo)} (${esc(suppName)})</div>
+              <div>Total: Rp ${parseFloat(data.doc.amount || 0).toLocaleString('id-ID')}</div>
+              <div style="font-size:12px;opacity:0.8;">Status: ${esc(data.doc.status || '')}</div>
             `;
             alertDiv.style.display = 'block';
 
             // Add to history
-            addHistoryItem(data.doc.invoice_no, data.doc.supplier_name, role);
+            addHistoryItem(invNo, suppName, role);
           } else {
             playBeep('error');
             alertDiv.className = 'result-alert error';
-            alertDiv.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation"></i> Error</strong><div>${data.error}</div>`;
+            alertDiv.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation"></i> Error</strong><div>${esc(data.error || 'Dokumen tidak ditemukan')}</div>`;
             alertDiv.style.display = 'block';
           }
         }

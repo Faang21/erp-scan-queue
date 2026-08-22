@@ -827,83 +827,187 @@
     }
   }
 
-  // Real-Time Computer Vision Liveness Engine (Zero Dependency & Instant)
+  // ====== INTERACTIVE LIVENESS ENGINE dengan Timer & Visual Feedback ======
   function startSmartLivenessEngine() {
     if (livenessIntervalId) clearInterval(livenessIntervalId);
 
+    // Reset state
+    kycLivenessStep = 0;
+    centerHoldFrames = 0;
+    lastFramePixels = null;
+    updateLivenessUI(0);
+
+    // Canvas untuk analisis frame
     const c = document.createElement('canvas');
-    c.width = 120;
-    c.height = 90;
+    c.width = 160; c.height = 120;
     const ctx = c.getContext('2d', { willReadFrequently: true });
 
+    // Timer per stage (detik)
+    const STAGE_TIME = [3, 4, 4, 4]; // waktu masing-masing stage
+    let stageStartTime = Date.now();
+    let stageTimerEl = null;
+
+    // Buat elemen countdown timer di layar
+    const reticle = document.getElementById('kycReticleOverlay');
+    if (reticle && !document.getElementById('livenessCountdown')) {
+      const timerDiv = document.createElement('div');
+      timerDiv.id = 'livenessCountdown';
+      timerDiv.style.cssText = 'position:absolute; bottom:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.75); color:#38bdf8; font-size:1.1rem; font-weight:900; padding:4px 14px; border-radius:20px; z-index:20; letter-spacing:1px;';
+      const cameraWrap = document.getElementById('cameraBoxWrap');
+      if (cameraWrap) cameraWrap.appendChild(timerDiv);
+      stageTimerEl = timerDiv;
+    } else {
+      stageTimerEl = document.getElementById('livenessCountdown');
+    }
+
+    let motionCount = 0; // counter gerakan terdeteksi per stage
+
     livenessIntervalId = setInterval(() => {
-      if (kycLivenessStep >= 4) return;
+      if (kycLivenessStep >= 4) {
+        if (stageTimerEl) stageTimerEl.style.display = 'none';
+        return;
+      }
+
       const video = document.getElementById('videoPreview');
       if (!video || video.paused || video.ended || video.readyState < 2) return;
+
+      // Update countdown timer UI
+      const elapsed = (Date.now() - stageStartTime) / 1000;
+      const maxTime = STAGE_TIME[kycLivenessStep] || 4;
+      const remaining = Math.max(0, Math.ceil(maxTime - elapsed));
+      if (stageTimerEl) {
+        stageTimerEl.style.display = 'block';
+        stageTimerEl.innerText = `⏱ ${remaining}s`;
+      }
 
       try {
         ctx.drawImage(video, 0, 0, c.width, c.height);
         const imgData = ctx.getImageData(0, 0, c.width, c.height);
         const data = imgData.data;
 
-        // 1. Calculate center brightness and skin-tone presence
-        let centerBrightness = 0;
-        let centerCount = 0;
-        for (let y = 30; y < 60; y++) {
-          for (let x = 40; x < 80; x++) {
-            const idx = (y * c.width + x) * 4;
-            const r = data[idx], g = data[idx+1], b = data[idx+2];
-            centerBrightness += (r + g + b) / 3;
-            centerCount++;
-          }
-        }
-        const avgBrightness = centerBrightness / (centerCount || 1);
-
-        // Stage 0: Check Centered Face & Normal Lighting (> 30 brightness)
+        // --- STAGE 0: POSISIKAN WAJAH (tahan 3 detik dengan wajah terlihat) ---
         if (kycLivenessStep === 0) {
-          if (avgBrightness > 30 && avgBrightness < 240) {
-            centerHoldFrames++;
-            if (centerHoldFrames >= 4) { // ~0.8s hold
-              advanceLivenessStage();
-            }
-          } else {
-            centerHoldFrames = 0;
+          // Cek brightness keseluruhan frame (bukan gelap total)
+          let totalBright = 0;
+          for (let i = 0; i < data.length; i += 16) {
+            totalBright += (data[i] + data[i+1] + data[i+2]) / 3;
           }
-          lastFramePixels = data;
+          const avgBright = totalBright / (data.length / 16);
+
+          if (avgBright > 25) { // kamera tidak gelap
+            centerHoldFrames++;
+          }
+
+          // Auto advance setelah 3 detik kamera aktif
+          if (elapsed >= maxTime) {
+            centerHoldFrames = 0;
+            stageStartTime = Date.now();
+            motionCount = 0;
+            advanceLivenessStage();
+          }
+          lastFramePixels = new Uint8ClampedArray(data);
           return;
         }
 
-        // Compute motion delta
-        if (lastFramePixels) {
-          let motionDelta = 0;
-          let sampleStep = 8;
-          for (let i = 0; i < data.length; i += sampleStep * 4) {
-            motionDelta += Math.abs(data[i] - lastFramePixels[i]);
+        // --- Hitung motion delta antar frame ---
+        let motionDelta = 0;
+        if (lastFramePixels && lastFramePixels.length === data.length) {
+          for (let i = 0; i < data.length; i += 4) {
+            motionDelta += Math.abs(data[i] - lastFramePixels[i])
+                         + Math.abs(data[i+1] - lastFramePixels[i+1])
+                         + Math.abs(data[i+2] - lastFramePixels[i+2]);
           }
+          motionDelta = motionDelta / (data.length / 4); // rata-rata per pixel
+        }
 
-          // Stage 1: Blink Detection (Medium rapid delta)
-          if (kycLivenessStep === 1) {
-            if (motionDelta > 2500) {
+        // --- STAGE 1: KEDIP MATA (deteksi perubahan cepat di zona mata) ---
+        if (kycLivenessStep === 1) {
+          // Zona mata: bagian atas 40% frame tengah
+          let eyeZoneDelta = 0;
+          if (lastFramePixels) {
+            for (let y = 15; y < 50; y++) {
+              for (let x = 30; x < 130; x++) {
+                const idx = (y * c.width + x) * 4;
+                eyeZoneDelta += Math.abs(data[idx] - lastFramePixels[idx]);
+              }
+            }
+          }
+          if (eyeZoneDelta > 8000 || motionDelta > 15) {
+            motionCount++;
+            if (motionCount >= 2) {
+              stageStartTime = Date.now(); motionCount = 0;
               advanceLivenessStage();
             }
           }
-          // Stage 2: Turn Left Detection
-          else if (kycLivenessStep === 2) {
-            if (motionDelta > 3200) {
+          // Auto-advance jika timeout (pengguna kesulitan)
+          if (elapsed >= maxTime + 3) {
+            stageStartTime = Date.now(); motionCount = 0;
+            advanceLivenessStage();
+          }
+        }
+
+        // --- STAGE 2: TOLEH KIRI (gerakan horizontal dominan) ---
+        else if (kycLivenessStep === 2) {
+          // Hitung perbedaan antara sisi kiri dan kanan frame
+          let leftDelta = 0, rightDelta = 0;
+          if (lastFramePixels) {
+            for (let y = 20; y < 100; y++) {
+              for (let x = 0; x < 60; x++) {
+                const idx = (y * c.width + x) * 4;
+                leftDelta += Math.abs(data[idx] - lastFramePixels[idx]);
+              }
+              for (let x = 100; x < 160; x++) {
+                const idx = (y * c.width + x) * 4;
+                rightDelta += Math.abs(data[idx] - lastFramePixels[idx]);
+              }
+            }
+          }
+          // Toleh kiri: sisi kanan frame lebih banyak berubah (wajah geser ke kiri)
+          if (rightDelta > leftDelta * 1.4 && motionDelta > 8) {
+            motionCount++;
+            if (motionCount >= 3) {
+              stageStartTime = Date.now(); motionCount = 0;
               advanceLivenessStage();
             }
           }
-          // Stage 3: Turn Right Detection
-          else if (kycLivenessStep === 3) {
-            if (motionDelta > 3200) {
+          if (elapsed >= maxTime + 3) {
+            stageStartTime = Date.now(); motionCount = 0;
+            advanceLivenessStage();
+          }
+        }
+
+        // --- STAGE 3: TOLEH KANAN (gerakan horizontal dominan berlawanan) ---
+        else if (kycLivenessStep === 3) {
+          let leftDelta = 0, rightDelta = 0;
+          if (lastFramePixels) {
+            for (let y = 20; y < 100; y++) {
+              for (let x = 0; x < 60; x++) {
+                const idx = (y * c.width + x) * 4;
+                leftDelta += Math.abs(data[idx] - lastFramePixels[idx]);
+              }
+              for (let x = 100; x < 160; x++) {
+                const idx = (y * c.width + x) * 4;
+                rightDelta += Math.abs(data[idx] - lastFramePixels[idx]);
+              }
+            }
+          }
+          // Toleh kanan: sisi kiri frame lebih banyak berubah
+          if (leftDelta > rightDelta * 1.4 && motionDelta > 8) {
+            motionCount++;
+            if (motionCount >= 3) {
+              stageStartTime = Date.now(); motionCount = 0;
               advanceLivenessStage();
             }
+          }
+          if (elapsed >= maxTime + 3) {
+            stageStartTime = Date.now(); motionCount = 0;
+            advanceLivenessStage();
           }
         }
 
         lastFramePixels = new Uint8ClampedArray(data);
-      } catch(e) {}
-    }, 200);
+      } catch(e) { console.warn('Liveness frame error:', e); }
+    }, 150); // 150ms interval ~ 6 fps analysis
   }
 
   async function submitKycEnroll() {
